@@ -385,6 +385,57 @@ export const appRouter = router({
         });
         return { imported: input.investors.length };
       }),
+    
+    // Admin creates investor with email/password
+    create: adminProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(8),
+        name: z.string().min(1),
+        company: z.string().optional(),
+        phone: z.string().optional(),
+        investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
+        kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).default("pending"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Check if email already exists
+        const existingUser = await db.getUserByEmail(input.email);
+        if (existingUser) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'E-Mail-Adresse bereits registriert' });
+        }
+        
+        // Hash password
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        
+        // Create user
+        const userId = await db.createUserWithPassword({
+          email: input.email,
+          passwordHash,
+          name: input.name,
+        });
+        
+        // Update additional fields
+        if (input.company || input.phone || input.investorType || input.kycStatus !== "pending") {
+          await db.updateUserProfile(userId, {
+            company: input.company,
+            phone: input.phone,
+            investorType: input.investorType,
+            kycStatus: input.kycStatus,
+          });
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "investor.create",
+          entityType: "user",
+          entityId: userId,
+          details: { email: input.email, name: input.name, createdByAdmin: true },
+          ipAddress: ctx.req.ip,
+        });
+        
+        return { success: true, userId };
+      }),
   }),
 
   // ==================== WALLET ROUTES ====================

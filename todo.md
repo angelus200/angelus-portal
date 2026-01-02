@@ -60,3 +60,4 @@
 - [x] E-Mail/Passwort Login (zusätzlich zu Manus OAuth)
 - [x] Registrierung mit E-Mail-Verifizierung
 - [ ] Passwort-Reset Funktion
+- [x] Admin-Funktion: Investoren mit E-Mail/Passwort anlegen

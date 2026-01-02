@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
+import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye, Plus, Mail, Lock, User, Building, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
@@ -44,6 +44,55 @@ export default function AdminInvestors() {
   const [kycFilter, setKycFilter] = useState("all");
   const [importData, setImportData] = useState("");
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  
+  // Create investor form state
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createCompany, setCreateCompany] = useState("");
+  const [createPhone, setCreatePhone] = useState("");
+  const [createInvestorType, setCreateInvestorType] = useState<"professional" | "entrepreneur" | "institutional" | undefined>(undefined);
+  const [createKycStatus, setCreateKycStatus] = useState<"pending" | "verified">("pending");
+  
+  const createInvestor = trpc.investors.create.useMutation({
+    onSuccess: () => {
+      toast.success("Investor erfolgreich angelegt");
+      refetch();
+      setIsCreateOpen(false);
+      // Reset form
+      setCreateEmail("");
+      setCreatePassword("");
+      setCreateName("");
+      setCreateCompany("");
+      setCreatePhone("");
+      setCreateInvestorType(undefined);
+      setCreateKycStatus("pending");
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
+  
+  const handleCreateInvestor = () => {
+    if (!createEmail || !createPassword || !createName) {
+      toast.error("Bitte füllen Sie alle Pflichtfelder aus");
+      return;
+    }
+    if (createPassword.length < 8) {
+      toast.error("Passwort muss mindestens 8 Zeichen lang sein");
+      return;
+    }
+    createInvestor.mutate({
+      email: createEmail,
+      password: createPassword,
+      name: createName,
+      company: createCompany || undefined,
+      phone: createPhone || undefined,
+      investorType: createInvestorType,
+      kycStatus: createKycStatus,
+    });
+  };
 
   const filteredInvestors = investors?.filter((inv: { name?: string | null; email?: string | null; kycStatus?: string | null }) => {
     const matchesSearch = !searchTerm || 
@@ -88,13 +137,148 @@ export default function AdminInvestors() {
               Übersicht aller registrierten Investoren
             </p>
           </div>
-          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="w-4 h-4" />
-                Investoren importieren
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Plus className="w-4 h-4" />
+                  Neuer Investor
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Neuen Investor anlegen</DialogTitle>
+                  <DialogDescription>
+                    Erstellen Sie einen neuen Investor-Account mit E-Mail und Passwort.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-name">Name *</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="create-name"
+                        placeholder="Vollständiger Name"
+                        value={createName}
+                        onChange={(e) => setCreateName(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="create-email">E-Mail *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="create-email"
+                        type="email"
+                        placeholder="investor@example.com"
+                        value={createEmail}
+                        onChange={(e) => setCreateEmail(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="create-password">Passwort *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="create-password"
+                        type="password"
+                        placeholder="Mindestens 8 Zeichen"
+                        value={createPassword}
+                        onChange={(e) => setCreatePassword(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-company">Unternehmen</Label>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="create-company"
+                          placeholder="Firma GmbH"
+                          value={createCompany}
+                          onChange={(e) => setCreateCompany(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="create-phone">Telefon</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="create-phone"
+                          placeholder="+41 79 123 4567"
+                          value={createPhone}
+                          onChange={(e) => setCreatePhone(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Investortyp</Label>
+                      <Select value={createInvestorType || "none"} onValueChange={(v) => setCreateInvestorType(v === "none" ? undefined : v as any)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Typ wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nicht angegeben</SelectItem>
+                          <SelectItem value="professional">Professionell</SelectItem>
+                          <SelectItem value="entrepreneur">Unternehmer</SelectItem>
+                          <SelectItem value="institutional">Institutionell</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>KYC-Status</Label>
+                      <Select value={createKycStatus} onValueChange={(v) => setCreateKycStatus(v as any)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Ausstehend</SelectItem>
+                          <SelectItem value="verified">Verifiziert</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Abbrechen
+                  </Button>
+                  <Button 
+                    onClick={handleCreateInvestor}
+                    disabled={createInvestor.isPending}
+                    className="bg-primary text-primary-foreground"
+                  >
+                    {createInvestor.isPending ? "Wird erstellt..." : "Investor anlegen"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  Importieren
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Investoren importieren</DialogTitle>
@@ -144,7 +328,8 @@ export default function AdminInvestors() {
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Filters */}
