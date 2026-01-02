@@ -362,28 +362,322 @@ export const appRouter = router({
         return { success: true };
       }),
     
+    // Validate import data without saving
+    validateImport: adminProcedure
+      .input(z.object({
+        investors: z.array(z.object({
+          // Personal data
+          email: z.string(),
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          taxNumber: z.string().optional(),
+          phone: z.string().optional(),
+          // Address
+          street: z.string().optional(),
+          houseNumber: z.string().optional(),
+          postalCode: z.string().optional(),
+          city: z.string().optional(),
+          country: z.string().optional(),
+          // Company
+          isCompany: z.boolean().optional(),
+          companyName: z.string().optional(),
+          companyRegisterNumber: z.string().optional(),
+          companyTaxNumber: z.string().optional(),
+          // Bank
+          bankAccountHolder: z.string().optional(),
+          bankIban: z.string().optional(),
+          bankBic: z.string().optional(),
+          bankName: z.string().optional(),
+          // Other
+          investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
+          kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).optional(),
+          // Subscriptions
+          subscriptions: z.array(z.object({
+            bondName: z.string(),
+            amount: z.number(),
+            subscribedAt: z.string().optional(),
+            status: z.enum(["pending", "confirmed", "paid", "cancelled"]).optional(),
+          })).optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const results: Array<{
+          row: number;
+          email: string;
+          valid: boolean;
+          errors: string[];
+          warnings: string[];
+        }> = [];
+        
+        for (let i = 0; i < input.investors.length; i++) {
+          const inv = input.investors[i];
+          const errors: string[] = [];
+          const warnings: string[] = [];
+          
+          // Validate email
+          if (!inv.email || !inv.email.includes('@')) {
+            errors.push('Ungültige E-Mail-Adresse');
+          } else {
+            // Check if email already exists
+            const existing = await db.getUserByEmail(inv.email);
+            if (existing) {
+              warnings.push('E-Mail bereits registriert - Daten werden aktualisiert');
+            }
+          }
+          
+          // Validate required fields
+          if (!inv.firstName && !inv.lastName) {
+            warnings.push('Kein Name angegeben');
+          }
+          
+          // Validate IBAN format (basic)
+          if (inv.bankIban && inv.bankIban.length < 15) {
+            errors.push('IBAN zu kurz');
+          }
+          
+          // Validate subscriptions
+          if (inv.subscriptions && inv.subscriptions.length > 0) {
+            for (const sub of inv.subscriptions) {
+              if (!sub.bondName) {
+                errors.push('Zeichnung ohne Anleihen-Name');
+              }
+              if (!sub.amount || sub.amount <= 0) {
+                errors.push('Zeichnung ohne gültigen Betrag');
+              }
+            }
+          }
+          
+          results.push({
+            row: i + 1,
+            email: inv.email || '(leer)',
+            valid: errors.length === 0,
+            errors,
+            warnings,
+          });
+        }
+        
+        return {
+          total: input.investors.length,
+          valid: results.filter(r => r.valid).length,
+          invalid: results.filter(r => !r.valid).length,
+          results,
+        };
+      }),
+    
+    // Full import with all data
     import: adminProcedure
       .input(z.object({
         investors: z.array(z.object({
+          // Personal data
           email: z.string().email(),
-          name: z.string(),
-          company: z.string().optional(),
+          password: z.string().optional(), // Optional - will generate if not provided
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          taxNumber: z.string().optional(),
           phone: z.string().optional(),
+          // Address
+          street: z.string().optional(),
+          houseNumber: z.string().optional(),
+          postalCode: z.string().optional(),
+          city: z.string().optional(),
+          country: z.string().optional(),
+          // Company
+          isCompany: z.boolean().optional(),
+          companyName: z.string().optional(),
+          companyRegisterNumber: z.string().optional(),
+          companyTaxNumber: z.string().optional(),
+          companyStreet: z.string().optional(),
+          companyHouseNumber: z.string().optional(),
+          companyPostalCode: z.string().optional(),
+          companyCity: z.string().optional(),
+          companyCountry: z.string().optional(),
+          // Bank
+          bankAccountHolder: z.string().optional(),
+          bankIban: z.string().optional(),
+          bankBic: z.string().optional(),
+          bankName: z.string().optional(),
+          // Other
           investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
+          kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).optional(),
+          // Subscriptions
+          subscriptions: z.array(z.object({
+            bondName: z.string(),
+            amount: z.number(),
+            subscribedAt: z.string().optional(),
+            status: z.enum(["pending", "confirmed", "paid", "cancelled"]).optional(),
+          })).optional(),
         })),
+        updateExisting: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Import logic would create placeholder users
-        // In production, this would send invitation emails
+        const results: Array<{
+          email: string;
+          success: boolean;
+          action: 'created' | 'updated' | 'skipped';
+          error?: string;
+          subscriptionsImported: number;
+        }> = [];
+        
+        // Get all bonds for matching
+        const allBonds = await db.getAllBonds();
+        
+        for (const inv of input.investors) {
+          try {
+            // Check if user exists
+            const existingUser = await db.getUserByEmail(inv.email);
+            let userId: number;
+            let action: 'created' | 'updated' | 'skipped' = 'created';
+            
+            if (existingUser) {
+              if (!input.updateExisting) {
+                results.push({
+                  email: inv.email,
+                  success: false,
+                  action: 'skipped',
+                  error: 'Benutzer existiert bereits',
+                  subscriptionsImported: 0,
+                });
+                continue;
+              }
+              userId = existingUser.id;
+              action = 'updated';
+              
+              // Update existing user
+              await db.updateUserProfile(userId, {
+                firstName: inv.firstName,
+                lastName: inv.lastName,
+                name: inv.firstName && inv.lastName ? `${inv.firstName} ${inv.lastName}` : undefined,
+                dateOfBirth: inv.dateOfBirth ? new Date(inv.dateOfBirth) : undefined,
+                taxNumber: inv.taxNumber,
+                phone: inv.phone,
+                street: inv.street,
+                houseNumber: inv.houseNumber,
+                postalCode: inv.postalCode,
+                city: inv.city,
+                country: inv.country,
+                isCompany: inv.isCompany,
+                companyName: inv.companyName,
+                companyRegisterNumber: inv.companyRegisterNumber,
+                companyTaxNumber: inv.companyTaxNumber,
+                companyStreet: inv.companyStreet,
+                companyHouseNumber: inv.companyHouseNumber,
+                companyPostalCode: inv.companyPostalCode,
+                companyCity: inv.companyCity,
+                companyCountry: inv.companyCountry,
+                bankAccountHolder: inv.bankAccountHolder,
+                bankIban: inv.bankIban,
+                bankBic: inv.bankBic,
+                bankName: inv.bankName,
+                investorType: inv.investorType,
+                kycStatus: inv.kycStatus,
+              });
+            } else {
+              // Create new user
+              const password = inv.password || Math.random().toString(36).slice(-12);
+              const passwordHash = await bcrypt.hash(password, 12);
+              const fullName = inv.firstName && inv.lastName ? `${inv.firstName} ${inv.lastName}` : inv.email;
+              
+              userId = await db.createUserWithPassword({
+                email: inv.email,
+                passwordHash,
+                name: fullName,
+              });
+              
+              // Update all fields
+              await db.updateUserProfile(userId, {
+                firstName: inv.firstName,
+                lastName: inv.lastName,
+                dateOfBirth: inv.dateOfBirth ? new Date(inv.dateOfBirth) : undefined,
+                taxNumber: inv.taxNumber,
+                phone: inv.phone,
+                street: inv.street,
+                houseNumber: inv.houseNumber,
+                postalCode: inv.postalCode,
+                city: inv.city,
+                country: inv.country,
+                isCompany: inv.isCompany,
+                companyName: inv.companyName,
+                companyRegisterNumber: inv.companyRegisterNumber,
+                companyTaxNumber: inv.companyTaxNumber,
+                companyStreet: inv.companyStreet,
+                companyHouseNumber: inv.companyHouseNumber,
+                companyPostalCode: inv.companyPostalCode,
+                companyCity: inv.companyCity,
+                companyCountry: inv.companyCountry,
+                bankAccountHolder: inv.bankAccountHolder,
+                bankIban: inv.bankIban,
+                bankBic: inv.bankBic,
+                bankName: inv.bankName,
+                investorType: inv.investorType,
+                kycStatus: inv.kycStatus || 'pending',
+              });
+            }
+            
+            // Import subscriptions
+            let subscriptionsImported = 0;
+            if (inv.subscriptions && inv.subscriptions.length > 0) {
+              for (const sub of inv.subscriptions) {
+                // Find bond by name
+                const bond = allBonds.find(b => 
+                  b.name.toLowerCase() === sub.bondName.toLowerCase() ||
+                  b.isin === sub.bondName
+                );
+                
+                if (bond) {
+                  await db.createSubscription({
+                    userId,
+                    bondId: bond.id,
+                    amount: sub.amount.toString(),
+                    status: (sub.status === 'paid' ? 'confirmed' : sub.status) || 'confirmed',
+                    consentTimestamp: sub.subscribedAt ? new Date(sub.subscribedAt) : new Date(),
+                    consentIpAddress: ctx.req.ip || 'import',
+                  });
+                  subscriptionsImported++;
+                }
+              }
+            }
+            
+            results.push({
+              email: inv.email,
+              success: true,
+              action,
+              subscriptionsImported,
+            });
+          } catch (error) {
+            results.push({
+              email: inv.email,
+              success: false,
+              action: 'skipped',
+              error: error instanceof Error ? error.message : 'Unbekannter Fehler',
+              subscriptionsImported: 0,
+            });
+          }
+        }
+        
         await db.createAuditLog({
           userId: ctx.user.id,
           userEmail: ctx.user.email,
           action: "investor.import",
           entityType: "user",
-          details: { count: input.investors.length },
+          details: { 
+            total: input.investors.length,
+            created: results.filter(r => r.action === 'created').length,
+            updated: results.filter(r => r.action === 'updated').length,
+            skipped: results.filter(r => r.action === 'skipped').length,
+          },
           ipAddress: ctx.req.ip,
         });
-        return { imported: input.investors.length };
+        
+        return {
+          total: input.investors.length,
+          created: results.filter(r => r.action === 'created').length,
+          updated: results.filter(r => r.action === 'updated').length,
+          skipped: results.filter(r => r.action === 'skipped').length,
+          totalSubscriptions: results.reduce((sum, r) => sum + r.subscriptionsImported, 0),
+          results,
+        };
       }),
     
     // Admin creates investor with email/password

@@ -65,3 +65,7 @@
 - [x] Erweiterte Investoren-Daten: Adresse (Straße, Hausnummer, PLZ, Ort)
 - [x] Erweiterte Investoren-Daten: Firma (ja/nein, Firmenname, Register, Steuernummer)
 - [x] Erweiterte Investoren-Daten: Bankverbindung (IBAN, BIC, Kontoinhaber)
+- [x] Verbesserter CSV-Import für Investoren mit allen Feldern
+- [x] Import von bestehenden Zeichnungen/Anleihen pro Investor
+- [x] Import-Vorschau mit Validierung und Fehleranzeige
+- [x] Beispiel-CSV-Template zum Download

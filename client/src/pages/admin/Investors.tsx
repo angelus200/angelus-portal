@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye, Plus, Mail, Lock, User, Building, Phone, MapPin, CreditCard, Calendar } from "lucide-react";
+import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye, Plus, Mail, Lock, User, Building, Phone, MapPin, CreditCard, Calendar, Download, AlertTriangle, FileText, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
 import { toast } from "sonner";
+
+// CSV Template for download
+const CSV_TEMPLATE = `email,firstName,lastName,dateOfBirth,taxNumber,phone,street,houseNumber,postalCode,city,country,isCompany,companyName,companyRegisterNumber,companyTaxNumber,bankAccountHolder,bankIban,bankBic,bankName,investorType,kycStatus,subscription_bondName,subscription_amount,subscription_status
+max.mustermann@example.com,Max,Mustermann,1980-05-15,CHE-123.456.789,+41 79 123 45 67,Bahnhofstrasse,10,8001,Zürich,Schweiz,false,,,,,Max Mustermann,CH93 0076 2011 6238 5295 7,UBSWCHZH80A,UBS,professional,verified,Angelus Bond 2024,100000,confirmed
+firma@example.com,Hans,Meier,1975-03-20,CHE-987.654.321,+41 44 123 45 67,Industriestrasse,25,8005,Zürich,Schweiz,true,Meier AG,CHE-123.456.789 HR,CHE-123.456.789 MWST,Meier AG,CH93 0076 2011 6238 5295 8,CRESCHZZ80A,Credit Suisse,institutional,verified,Angelus Bond 2024,500000,confirmed`;
+
+interface ImportValidationResult {
+  row: number;
+  email: string;
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+interface ImportResult {
+  email: string;
+  success: boolean;
+  action: 'created' | 'updated' | 'skipped';
+  error?: string;
+  subscriptionsImported: number;
+}
 
 export default function AdminInvestors() {
   const { data: investors, isLoading, refetch } = trpc.investors.list.useQuery();
@@ -29,11 +54,14 @@ export default function AdminInvestors() {
     },
   });
 
+  const validateImport = trpc.investors.validateImport.useMutation();
+  
   const importInvestors = trpc.investors.import.useMutation({
-    onSuccess: (result: { imported: number }) => {
-      toast.success(`${result.imported} Investoren importiert`);
+    onSuccess: (result) => {
+      toast.success(`Import abgeschlossen: ${result.created} erstellt, ${result.updated} aktualisiert, ${result.skipped} übersprungen`);
       refetch();
-      setIsImportOpen(false);
+      setImportStep('results');
+      setImportResults(result.results);
     },
     onError: (error: { message: string }) => {
       toast.error("Fehler: " + error.message);
@@ -43,10 +71,18 @@ export default function AdminInvestors() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [kycFilter, setKycFilter] = useState("all");
-  const [importData, setImportData] = useState("");
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  
+  // Import wizard state
+  const [importStep, setImportStep] = useState<'upload' | 'preview' | 'importing' | 'results'>('upload');
+  const [importCsvData, setImportCsvData] = useState("");
+  const [parsedInvestors, setParsedInvestors] = useState<any[]>([]);
+  const [validationResults, setValidationResults] = useState<ImportValidationResult[]>([]);
+  const [importResults, setImportResults] = useState<ImportResult[]>([]);
+  const [updateExisting, setUpdateExisting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
   
   // Create investor form state - Personal data
   const [createEmail, setCreateEmail] = useState("");
@@ -127,138 +163,425 @@ export default function AdminInvestors() {
     setCreateKycStatus("pending");
   };
   
-  const handleCreateInvestor = () => {
-    if (!createEmail || !createPassword || !createFirstName || !createLastName) {
-      toast.error("Bitte füllen Sie alle Pflichtfelder aus (E-Mail, Passwort, Vorname, Nachname)");
-      return;
-    }
-    if (createPassword.length < 8) {
-      toast.error("Passwort muss mindestens 8 Zeichen lang sein");
-      return;
-    }
-    createInvestor.mutate({
-      email: createEmail,
-      password: createPassword,
-      firstName: createFirstName,
-      lastName: createLastName,
-      dateOfBirth: createDateOfBirth || undefined,
-      taxNumber: createTaxNumber || undefined,
-      phone: createPhone || undefined,
-      street: createStreet || undefined,
-      houseNumber: createHouseNumber || undefined,
-      postalCode: createPostalCode || undefined,
-      city: createCity || undefined,
-      country: createCountry || undefined,
-      isCompany: createIsCompany,
-      companyName: createCompanyName || undefined,
-      companyRegisterNumber: createCompanyRegisterNumber || undefined,
-      companyTaxNumber: createCompanyTaxNumber || undefined,
-      companyStreet: createCompanyStreet || undefined,
-      companyHouseNumber: createCompanyHouseNumber || undefined,
-      companyPostalCode: createCompanyPostalCode || undefined,
-      companyCity: createCompanyCity || undefined,
-      companyCountry: createCompanyCountry || undefined,
-      bankAccountHolder: createBankAccountHolder || undefined,
-      bankIban: createBankIban || undefined,
-      bankBic: createBankBic || undefined,
-      bankName: createBankName || undefined,
-      investorType: createInvestorType,
-      kycStatus: createKycStatus,
-    });
+  const resetImportWizard = () => {
+    setImportStep('upload');
+    setImportCsvData("");
+    setParsedInvestors([]);
+    setValidationResults([]);
+    setImportResults([]);
+    setUpdateExisting(false);
+    setImportProgress(0);
   };
 
-  const filteredInvestors = investors?.filter((inv: { name?: string | null; email?: string | null; kycStatus?: string | null }) => {
-    const matchesSearch = !searchTerm || 
+  // Parse CSV data
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim());
+    const investors: any[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const investor: any = {};
+      
+      headers.forEach((header, index) => {
+        const value = values[index] || '';
+        if (header === 'isCompany') {
+          investor[header] = value.toLowerCase() === 'true';
+        } else if (header.startsWith('subscription_')) {
+          // Handle subscriptions
+          if (!investor.subscriptions) investor.subscriptions = [];
+          const subField = header.replace('subscription_', '');
+          if (investor.subscriptions.length === 0) {
+            investor.subscriptions.push({});
+          }
+          const lastSub = investor.subscriptions[investor.subscriptions.length - 1];
+          if (subField === 'amount') {
+            lastSub[subField] = parseFloat(value) || 0;
+          } else {
+            lastSub[subField] = value;
+          }
+        } else {
+          investor[header] = value;
+        }
+      });
+      
+      // Clean up empty subscriptions
+      if (investor.subscriptions) {
+        investor.subscriptions = investor.subscriptions.filter((s: any) => s.bondName && s.amount > 0);
+        if (investor.subscriptions.length === 0) delete investor.subscriptions;
+      }
+      
+      if (investor.email) {
+        investors.push(investor);
+      }
+    }
+    
+    return investors;
+  };
+
+  // Handle CSV file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        setImportCsvData(text);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Download CSV template
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'investoren_import_vorlage.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Validate and preview import
+  const handleValidateImport = async () => {
+    const parsed = parseCSV(importCsvData);
+    if (parsed.length === 0) {
+      toast.error("Keine gültigen Daten gefunden");
+      return;
+    }
+    
+    setParsedInvestors(parsed);
+    
+    try {
+      const result = await validateImport.mutateAsync({ investors: parsed });
+      setValidationResults(result.results);
+      setImportStep('preview');
+    } catch (error) {
+      toast.error("Validierung fehlgeschlagen");
+    }
+  };
+
+  // Execute import
+  const handleExecuteImport = async () => {
+    setImportStep('importing');
+    setImportProgress(0);
+    
+    try {
+      await importInvestors.mutateAsync({
+        investors: parsedInvestors,
+        updateExisting,
+      });
+    } catch (error) {
+      setImportStep('preview');
+    }
+  };
+
+  const filteredInvestors = investors?.filter(inv => {
+    const matchesSearch = 
       inv.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      inv.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesKyc = kycFilter === "all" || inv.kycStatus === kycFilter;
+    
     return matchesSearch && matchesKyc;
   });
 
-  const getKycBadge = (status: string) => {
+  const getKycBadge = (status: string | null) => {
     switch (status) {
       case "verified":
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> Verifiziert</Badge>;
+        return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Verifiziert</Badge>;
       case "rejected":
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> Abgelehnt</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Abgelehnt</Badge>;
       case "in_progress":
-        return <Badge className="bg-blue-100 text-blue-800"><Clock className="w-3 h-3 mr-1" /> In Prüfung</Badge>;
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> In Bearbeitung</Badge>;
       default:
-        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> Ausstehend</Badge>;
+        return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Ausstehend</Badge>;
     }
   };
 
-  const handleImport = () => {
-    try {
-      const lines = importData.trim().split("\n");
-      const parsedInvestors = lines.map(line => {
-        const [email, name, company, phone] = line.split(",").map(s => s.trim());
-        return { email, name, company, phone };
-      }).filter(inv => inv.email && inv.name);
-      
-      if (parsedInvestors.length === 0) {
-        toast.error("Keine gültigen Daten gefunden");
-        return;
-      }
-      
-      importInvestors.mutate({ investors: parsedInvestors });
-    } catch {
-      toast.error("Fehler beim Parsen der Daten");
+  const getInvestorTypeBadge = (type: string | null) => {
+    switch (type) {
+      case "professional":
+        return <Badge variant="outline">Professionell</Badge>;
+      case "entrepreneur":
+        return <Badge variant="outline">Unternehmer</Badge>;
+      case "institutional":
+        return <Badge variant="outline">Institutionell</Badge>;
+      default:
+        return <Badge variant="outline">-</Badge>;
     }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Investoren</h1>
-          <p className="text-muted-foreground">Verwalten Sie registrierte Anleger</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="w-4 h-4" />
-                Importieren
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Investoren importieren</DialogTitle>
-                <DialogDescription>
-                  Fügen Sie CSV-Daten ein (E-Mail, Name, Firma, Telefon)
-                </DialogDescription>
-              </DialogHeader>
-              <textarea
-                className="w-full h-40 p-2 border rounded-md font-mono text-sm"
-                placeholder="email@example.com, Max Mustermann, Firma GmbH, +41..."
-                value={importData}
-                onChange={(e) => setImportData(e.target.value)}
-              />
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsImportOpen(false)}>Abbrechen</Button>
-                <Button onClick={handleImport} disabled={importInvestors.isPending}>
-                  {importInvestors.isPending ? "Importiere..." : "Importieren"}
+    <DashboardLayout variant="admin">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Investoren</h1>
+            <p className="text-muted-foreground">Verwaltung aller registrierten Anleger</p>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={isImportOpen} onOpenChange={(open) => {
+              setIsImportOpen(open);
+              if (!open) resetImportWizard();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importieren
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-primary text-primary-foreground">
-                <Plus className="w-4 h-4" />
-                Neuer Investor
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle>Neuen Investor anlegen</DialogTitle>
-                <DialogDescription>
-                  Erstellen Sie einen neuen Investor-Account mit allen erforderlichen Daten
-                </DialogDescription>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh] pr-4">
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>Investoren importieren</DialogTitle>
+                  <DialogDescription>
+                    Importieren Sie bestehende Investoren und deren Zeichnungen aus einer CSV-Datei
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex-1 overflow-auto">
+                  {importStep === 'upload' && (
+                    <div className="space-y-6 py-4">
+                      <Alert>
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>CSV-Format</AlertTitle>
+                        <AlertDescription>
+                          Laden Sie die Vorlage herunter, um das korrekte Format zu sehen. 
+                          Die erste Zeile muss die Spaltenüberschriften enthalten.
+                        </AlertDescription>
+                      </Alert>
+                      
+                      <div className="flex gap-4">
+                        <Button variant="outline" onClick={downloadTemplate}>
+                          <Download className="w-4 h-4 mr-2" />
+                          Vorlage herunterladen
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>CSV-Datei hochladen</Label>
+                        <Input 
+                          type="file" 
+                          accept=".csv"
+                          onChange={handleFileUpload}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Oder CSV-Daten einfügen</Label>
+                        <Textarea
+                          placeholder="CSV-Daten hier einfügen..."
+                          value={importCsvData}
+                          onChange={(e) => setImportCsvData(e.target.value)}
+                          className="min-h-[200px] font-mono text-sm"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="updateExisting"
+                          checked={updateExisting}
+                          onCheckedChange={(checked) => setUpdateExisting(checked as boolean)}
+                        />
+                        <Label htmlFor="updateExisting">
+                          Bestehende Investoren aktualisieren (wenn E-Mail bereits existiert)
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {importStep === 'preview' && (
+                    <div className="space-y-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h3 className="font-semibold">Validierungsergebnis</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {validationResults.filter(r => r.valid).length} von {validationResults.length} Einträgen gültig
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant="outline" className="bg-green-50">
+                            <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                            {validationResults.filter(r => r.valid).length} Gültig
+                          </Badge>
+                          <Badge variant="outline" className="bg-red-50">
+                            <XCircle className="w-3 h-3 mr-1 text-red-500" />
+                            {validationResults.filter(r => !r.valid).length} Ungültig
+                          </Badge>
+                          <Badge variant="outline" className="bg-yellow-50">
+                            <AlertTriangle className="w-3 h-3 mr-1 text-yellow-500" />
+                            {validationResults.filter(r => r.warnings.length > 0).length} Warnungen
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <ScrollArea className="h-[400px] border rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">Zeile</TableHead>
+                              <TableHead>E-Mail</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Fehler / Warnungen</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {validationResults.map((result) => (
+                              <TableRow key={result.row} className={!result.valid ? 'bg-red-50' : result.warnings.length > 0 ? 'bg-yellow-50' : ''}>
+                                <TableCell>{result.row}</TableCell>
+                                <TableCell className="font-mono text-sm">{result.email}</TableCell>
+                                <TableCell>
+                                  {result.valid ? (
+                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    {result.errors.map((err, i) => (
+                                      <div key={i} className="text-sm text-red-600 flex items-center gap-1">
+                                        <XCircle className="w-3 h-3" /> {err}
+                                      </div>
+                                    ))}
+                                    {result.warnings.map((warn, i) => (
+                                      <div key={i} className="text-sm text-yellow-600 flex items-center gap-1">
+                                        <AlertTriangle className="w-3 h-3" /> {warn}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                      
+                      {parsedInvestors.some(inv => inv.subscriptions?.length > 0) && (
+                        <Alert>
+                          <FileText className="h-4 w-4" />
+                          <AlertTitle>Zeichnungen gefunden</AlertTitle>
+                          <AlertDescription>
+                            {parsedInvestors.reduce((sum, inv) => sum + (inv.subscriptions?.length || 0), 0)} Zeichnungen werden ebenfalls importiert
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+                  
+                  {importStep === 'importing' && (
+                    <div className="space-y-6 py-8">
+                      <div className="text-center space-y-4">
+                        <RefreshCw className="w-12 h-12 mx-auto animate-spin text-primary" />
+                        <h3 className="font-semibold text-lg">Import läuft...</h3>
+                        <p className="text-muted-foreground">Bitte warten Sie, während die Daten importiert werden.</p>
+                      </div>
+                      <Progress value={importProgress} className="w-full" />
+                    </div>
+                  )}
+                  
+                  {importStep === 'results' && (
+                    <div className="space-y-4 py-4">
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <AlertTitle>Import abgeschlossen</AlertTitle>
+                        <AlertDescription>
+                          {importResults.filter(r => r.action === 'created').length} erstellt, 
+                          {importResults.filter(r => r.action === 'updated').length} aktualisiert, 
+                          {importResults.filter(r => r.action === 'skipped').length} übersprungen
+                        </AlertDescription>
+                      </Alert>
+                      
+                      <ScrollArea className="h-[400px] border rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>E-Mail</TableHead>
+                              <TableHead>Aktion</TableHead>
+                              <TableHead>Zeichnungen</TableHead>
+                              <TableHead>Details</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {importResults.map((result, i) => (
+                              <TableRow key={i} className={!result.success ? 'bg-red-50' : ''}>
+                                <TableCell className="font-mono text-sm">{result.email}</TableCell>
+                                <TableCell>
+                                  {result.action === 'created' && <Badge className="bg-green-500">Erstellt</Badge>}
+                                  {result.action === 'updated' && <Badge className="bg-blue-500">Aktualisiert</Badge>}
+                                  {result.action === 'skipped' && <Badge variant="secondary">Übersprungen</Badge>}
+                                </TableCell>
+                                <TableCell>{result.subscriptionsImported}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {result.error || '-'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter className="border-t pt-4">
+                  {importStep === 'upload' && (
+                    <>
+                      <Button variant="outline" onClick={() => setIsImportOpen(false)}>
+                        Abbrechen
+                      </Button>
+                      <Button 
+                        onClick={handleValidateImport}
+                        disabled={!importCsvData.trim() || validateImport.isPending}
+                      >
+                        {validateImport.isPending ? 'Validiere...' : 'Weiter zur Vorschau'}
+                      </Button>
+                    </>
+                  )}
+                  {importStep === 'preview' && (
+                    <>
+                      <Button variant="outline" onClick={() => setImportStep('upload')}>
+                        Zurück
+                      </Button>
+                      <Button 
+                        onClick={handleExecuteImport}
+                        disabled={validationResults.filter(r => r.valid).length === 0 || importInvestors.isPending}
+                      >
+                        {validationResults.filter(r => r.valid).length} Investoren importieren
+                      </Button>
+                    </>
+                  )}
+                  {importStep === 'results' && (
+                    <Button onClick={() => {
+                      setIsImportOpen(false);
+                      resetImportWizard();
+                    }}>
+                      Schließen
+                    </Button>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Neuer Investor
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Neuen Investor anlegen</DialogTitle>
+                  <DialogDescription>
+                    Erstellen Sie einen neuen Investor mit E-Mail und Passwort
+                  </DialogDescription>
+                </DialogHeader>
+                
                 <Tabs defaultValue="personal" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="personal">Persönlich</TabsTrigger>
@@ -267,105 +590,84 @@ export default function AdminInvestors() {
                     <TabsTrigger value="bank">Bank</TabsTrigger>
                   </TabsList>
                   
-                  {/* Personal Data Tab */}
                   <TabsContent value="personal" className="space-y-4 mt-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-email">E-Mail *</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-email"
-                            type="email"
-                            placeholder="investor@example.com"
-                            value={createEmail}
-                            onChange={(e) => setCreateEmail(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="email"><Mail className="w-4 h-4 inline mr-1" />E-Mail *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={createEmail}
+                          onChange={(e) => setCreateEmail(e.target.value)}
+                          placeholder="investor@example.com"
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-password">Passwort *</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-password"
-                            type="password"
-                            placeholder="Mindestens 8 Zeichen"
-                            value={createPassword}
-                            onChange={(e) => setCreatePassword(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="password"><Lock className="w-4 h-4 inline mr-1" />Passwort *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={createPassword}
+                          onChange={(e) => setCreatePassword(e.target.value)}
+                          placeholder="Min. 8 Zeichen"
+                        />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-firstName">Vorname *</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-firstName"
-                            placeholder="Max"
-                            value={createFirstName}
-                            onChange={(e) => setCreateFirstName(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="firstName"><User className="w-4 h-4 inline mr-1" />Vorname *</Label>
+                        <Input
+                          id="firstName"
+                          value={createFirstName}
+                          onChange={(e) => setCreateFirstName(e.target.value)}
+                          placeholder="Max"
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-lastName">Nachname *</Label>
+                        <Label htmlFor="lastName">Nachname *</Label>
                         <Input
-                          id="create-lastName"
-                          placeholder="Mustermann"
+                          id="lastName"
                           value={createLastName}
                           onChange={(e) => setCreateLastName(e.target.value)}
+                          placeholder="Mustermann"
                         />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-dateOfBirth">Geburtsdatum</Label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-dateOfBirth"
-                            type="date"
-                            value={createDateOfBirth}
-                            onChange={(e) => setCreateDateOfBirth(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="dateOfBirth"><Calendar className="w-4 h-4 inline mr-1" />Geburtsdatum</Label>
+                        <Input
+                          id="dateOfBirth"
+                          type="date"
+                          value={createDateOfBirth}
+                          onChange={(e) => setCreateDateOfBirth(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-taxNumber">Steuernummer</Label>
+                        <Label htmlFor="taxNumber">Steuernummer</Label>
                         <Input
-                          id="create-taxNumber"
-                          placeholder="CHE-123.456.789"
+                          id="taxNumber"
                           value={createTaxNumber}
                           onChange={(e) => setCreateTaxNumber(e.target.value)}
+                          placeholder="CHE-123.456.789"
                         />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-phone">Telefon</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-phone"
-                            placeholder="+41 79 123 45 67"
-                            value={createPhone}
-                            onChange={(e) => setCreatePhone(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="phone"><Phone className="w-4 h-4 inline mr-1" />Telefon</Label>
+                        <Input
+                          id="phone"
+                          value={createPhone}
+                          onChange={(e) => setCreatePhone(e.target.value)}
+                          placeholder="+41 79 123 45 67"
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-investorType">Investortyp</Label>
+                        <Label htmlFor="investorType">Investortyp</Label>
                         <Select value={createInvestorType || ""} onValueChange={(v) => setCreateInvestorType(v as any)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Auswählen..." />
@@ -380,7 +682,7 @@ export default function AdminInvestors() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="create-kycStatus">KYC-Status</Label>
+                      <Label htmlFor="kycStatus">KYC-Status</Label>
                       <Select value={createKycStatus} onValueChange={(v) => setCreateKycStatus(v as any)}>
                         <SelectTrigger>
                           <SelectValue />
@@ -393,419 +695,464 @@ export default function AdminInvestors() {
                     </div>
                   </TabsContent>
                   
-                  {/* Address Tab */}
                   <TabsContent value="address" className="space-y-4 mt-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div className="col-span-2 space-y-2">
-                        <Label htmlFor="create-street">Straße</Label>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="create-street"
-                            placeholder="Bahnhofstrasse"
-                            value={createStreet}
-                            onChange={(e) => setCreateStreet(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                        <Label htmlFor="street"><MapPin className="w-4 h-4 inline mr-1" />Straße</Label>
+                        <Input
+                          id="street"
+                          value={createStreet}
+                          onChange={(e) => setCreateStreet(e.target.value)}
+                          placeholder="Bahnhofstrasse"
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-houseNumber">Hausnummer</Label>
+                        <Label htmlFor="houseNumber">Hausnummer</Label>
                         <Input
-                          id="create-houseNumber"
-                          placeholder="123"
+                          id="houseNumber"
                           value={createHouseNumber}
                           onChange={(e) => setCreateHouseNumber(e.target.value)}
+                          placeholder="10"
                         />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-postalCode">PLZ</Label>
+                        <Label htmlFor="postalCode">PLZ</Label>
                         <Input
-                          id="create-postalCode"
-                          placeholder="8001"
+                          id="postalCode"
                           value={createPostalCode}
                           onChange={(e) => setCreatePostalCode(e.target.value)}
+                          placeholder="8001"
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <Label htmlFor="create-city">Ort</Label>
+                        <Label htmlFor="city">Ort</Label>
                         <Input
-                          id="create-city"
-                          placeholder="Zürich"
+                          id="city"
                           value={createCity}
                           onChange={(e) => setCreateCity(e.target.value)}
+                          placeholder="Zürich"
                         />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="create-country">Land</Label>
+                      <Label htmlFor="country">Land</Label>
                       <Input
-                        id="create-country"
-                        placeholder="Schweiz"
+                        id="country"
                         value={createCountry}
                         onChange={(e) => setCreateCountry(e.target.value)}
+                        placeholder="Schweiz"
                       />
                     </div>
                   </TabsContent>
                   
-                  {/* Company Tab */}
                   <TabsContent value="company" className="space-y-4 mt-4">
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center space-x-2 mb-4">
                       <Checkbox
-                        id="create-isCompany"
+                        id="isCompany"
                         checked={createIsCompany}
-                        onCheckedChange={(checked) => setCreateIsCompany(checked === true)}
+                        onCheckedChange={(checked) => setCreateIsCompany(checked as boolean)}
                       />
-                      <Label htmlFor="create-isCompany" className="font-medium">
-                        Investor handelt im Namen einer Firma
+                      <Label htmlFor="isCompany" className="font-medium">
+                        <Building className="w-4 h-4 inline mr-1" />
+                        Investor ist eine Firma
                       </Label>
                     </div>
                     
                     {createIsCompany && (
                       <>
+                        <div className="space-y-2">
+                          <Label htmlFor="companyName">Firmenname</Label>
+                          <Input
+                            id="companyName"
+                            value={createCompanyName}
+                            onChange={(e) => setCreateCompanyName(e.target.value)}
+                            placeholder="Muster AG"
+                          />
+                        </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="create-companyName">Firmenname</Label>
-                            <div className="relative">
-                              <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                              <Input
-                                id="create-companyName"
-                                placeholder="Muster AG"
-                                value={createCompanyName}
-                                onChange={(e) => setCreateCompanyName(e.target.value)}
-                                className="pl-10"
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="create-companyRegisterNumber">Handelsregisternummer</Label>
+                            <Label htmlFor="companyRegisterNumber">Handelsregisternummer</Label>
                             <Input
-                              id="create-companyRegisterNumber"
-                              placeholder="CHE-123.456.789"
+                              id="companyRegisterNumber"
                               value={createCompanyRegisterNumber}
                               onChange={(e) => setCreateCompanyRegisterNumber(e.target.value)}
+                              placeholder="CHE-123.456.789 HR"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="companyTaxNumber">Firmen-Steuernummer</Label>
+                            <Input
+                              id="companyTaxNumber"
+                              value={createCompanyTaxNumber}
+                              onChange={(e) => setCreateCompanyTaxNumber(e.target.value)}
+                              placeholder="CHE-123.456.789 MWST"
                             />
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="create-companyTaxNumber">Firmen-Steuernummer</Label>
-                          <Input
-                            id="create-companyTaxNumber"
-                            placeholder="CHE-123.456.789 MWST"
-                            value={createCompanyTaxNumber}
-                            onChange={(e) => setCreateCompanyTaxNumber(e.target.value)}
-                          />
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="col-span-2 space-y-2">
+                            <Label htmlFor="companyStreet">Firmenadresse - Straße</Label>
+                            <Input
+                              id="companyStreet"
+                              value={createCompanyStreet}
+                              onChange={(e) => setCreateCompanyStreet(e.target.value)}
+                              placeholder="Industriestrasse"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="companyHouseNumber">Hausnummer</Label>
+                            <Input
+                              id="companyHouseNumber"
+                              value={createCompanyHouseNumber}
+                              onChange={(e) => setCreateCompanyHouseNumber(e.target.value)}
+                              placeholder="25"
+                            />
+                          </div>
                         </div>
                         
-                        <div className="border-t pt-4 mt-4">
-                          <h4 className="font-medium mb-4">Firmenadresse</h4>
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="col-span-2 space-y-2">
-                              <Label htmlFor="create-companyStreet">Straße</Label>
-                              <Input
-                                id="create-companyStreet"
-                                placeholder="Industriestrasse"
-                                value={createCompanyStreet}
-                                onChange={(e) => setCreateCompanyStreet(e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="create-companyHouseNumber">Nr.</Label>
-                              <Input
-                                id="create-companyHouseNumber"
-                                placeholder="10"
-                                value={createCompanyHouseNumber}
-                                onChange={(e) => setCreateCompanyHouseNumber(e.target.value)}
-                              />
-                            </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="companyPostalCode">PLZ</Label>
+                            <Input
+                              id="companyPostalCode"
+                              value={createCompanyPostalCode}
+                              onChange={(e) => setCreateCompanyPostalCode(e.target.value)}
+                              placeholder="8005"
+                            />
                           </div>
-                          
-                          <div className="grid grid-cols-3 gap-4 mt-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="create-companyPostalCode">PLZ</Label>
-                              <Input
-                                id="create-companyPostalCode"
-                                placeholder="8001"
-                                value={createCompanyPostalCode}
-                                onChange={(e) => setCreateCompanyPostalCode(e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="create-companyCity">Ort</Label>
-                              <Input
-                                id="create-companyCity"
-                                placeholder="Zürich"
-                                value={createCompanyCity}
-                                onChange={(e) => setCreateCompanyCity(e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="create-companyCountry">Land</Label>
-                              <Input
-                                id="create-companyCountry"
-                                placeholder="Schweiz"
-                                value={createCompanyCountry}
-                                onChange={(e) => setCreateCompanyCountry(e.target.value)}
-                              />
-                            </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="companyCity">Ort</Label>
+                            <Input
+                              id="companyCity"
+                              value={createCompanyCity}
+                              onChange={(e) => setCreateCompanyCity(e.target.value)}
+                              placeholder="Zürich"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="companyCountry">Land</Label>
+                            <Input
+                              id="companyCountry"
+                              value={createCompanyCountry}
+                              onChange={(e) => setCreateCompanyCountry(e.target.value)}
+                              placeholder="Schweiz"
+                            />
                           </div>
                         </div>
                       </>
                     )}
                   </TabsContent>
                   
-                  {/* Bank Tab */}
                   <TabsContent value="bank" className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="create-bankAccountHolder">Kontoinhaber</Label>
-                      <div className="relative">
-                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="create-bankAccountHolder"
-                          placeholder="Max Mustermann"
-                          value={createBankAccountHolder}
-                          onChange={(e) => setCreateBankAccountHolder(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
+                      <Label htmlFor="bankAccountHolder"><CreditCard className="w-4 h-4 inline mr-1" />Kontoinhaber</Label>
+                      <Input
+                        id="bankAccountHolder"
+                        value={createBankAccountHolder}
+                        onChange={(e) => setCreateBankAccountHolder(e.target.value)}
+                        placeholder="Max Mustermann"
+                      />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="create-bankIban">IBAN</Label>
+                      <Label htmlFor="bankIban">IBAN</Label>
                       <Input
-                        id="create-bankIban"
-                        placeholder="CH93 0076 2011 6238 5295 7"
+                        id="bankIban"
                         value={createBankIban}
                         onChange={(e) => setCreateBankIban(e.target.value)}
+                        placeholder="CH93 0076 2011 6238 5295 7"
                       />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="create-bankBic">BIC/SWIFT</Label>
+                        <Label htmlFor="bankBic">BIC/SWIFT</Label>
                         <Input
-                          id="create-bankBic"
-                          placeholder="UBSWCHZH80A"
+                          id="bankBic"
                           value={createBankBic}
                           onChange={(e) => setCreateBankBic(e.target.value)}
+                          placeholder="UBSWCHZH80A"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="create-bankName">Bankname</Label>
+                        <Label htmlFor="bankName">Bankname</Label>
                         <Input
-                          id="create-bankName"
-                          placeholder="UBS Switzerland AG"
+                          id="bankName"
                           value={createBankName}
                           onChange={(e) => setCreateBankName(e.target.value)}
+                          placeholder="UBS"
                         />
                       </div>
                     </div>
                   </TabsContent>
                 </Tabs>
-              </ScrollArea>
-              <DialogFooter className="mt-4">
-                <Button variant="outline" onClick={() => { setIsCreateOpen(false); resetCreateForm(); }}>
-                  Abbrechen
-                </Button>
-                <Button onClick={handleCreateInvestor} disabled={createInvestor.isPending} className="bg-primary text-primary-foreground">
-                  {createInvestor.isPending ? "Wird angelegt..." : "Investor anlegen"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Suche nach Name oder E-Mail..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={kycFilter} onValueChange={setKycFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="KYC-Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Status</SelectItem>
-                <SelectItem value="pending">Ausstehend</SelectItem>
-                <SelectItem value="in_progress">In Prüfung</SelectItem>
-                <SelectItem value="verified">Verifiziert</SelectItem>
-                <SelectItem value="rejected">Abgelehnt</SelectItem>
-              </SelectContent>
-            </Select>
+                
+                <DialogFooter className="mt-6">
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Abbrechen
+                  </Button>
+                  <Button 
+                    onClick={() => createInvestor.mutate({
+                      email: createEmail,
+                      password: createPassword,
+                      firstName: createFirstName,
+                      lastName: createLastName,
+                      dateOfBirth: createDateOfBirth || undefined,
+                      taxNumber: createTaxNumber || undefined,
+                      phone: createPhone || undefined,
+                      street: createStreet || undefined,
+                      houseNumber: createHouseNumber || undefined,
+                      postalCode: createPostalCode || undefined,
+                      city: createCity || undefined,
+                      country: createCountry || undefined,
+                      isCompany: createIsCompany,
+                      companyName: createCompanyName || undefined,
+                      companyRegisterNumber: createCompanyRegisterNumber || undefined,
+                      companyTaxNumber: createCompanyTaxNumber || undefined,
+                      companyStreet: createCompanyStreet || undefined,
+                      companyHouseNumber: createCompanyHouseNumber || undefined,
+                      companyPostalCode: createCompanyPostalCode || undefined,
+                      companyCity: createCompanyCity || undefined,
+                      companyCountry: createCompanyCountry || undefined,
+                      bankAccountHolder: createBankAccountHolder || undefined,
+                      bankIban: createBankIban || undefined,
+                      bankBic: createBankBic || undefined,
+                      bankName: createBankName || undefined,
+                      investorType: createInvestorType,
+                      kycStatus: createKycStatus,
+                    })}
+                    disabled={!createEmail || !createPassword || !createFirstName || !createLastName || createInvestor.isPending}
+                  >
+                    {createInvestor.isPending ? "Wird angelegt..." : "Investor anlegen"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Investors Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            Registrierte Investoren ({filteredInvestors?.length || 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Lade Investoren...</div>
-          ) : filteredInvestors?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Keine Investoren gefunden</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>E-Mail</TableHead>
-                  <TableHead>Telefon</TableHead>
-                  <TableHead>Firma</TableHead>
-                  <TableHead>KYC-Status</TableHead>
-                  <TableHead>Registriert</TableHead>
-                  <TableHead>Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvestors?.map((investor: any) => (
-                  <TableRow key={investor.id}>
-                    <TableCell className="font-medium">
-                      {investor.firstName && investor.lastName 
-                        ? `${investor.firstName} ${investor.lastName}`
-                        : investor.name || "-"}
-                    </TableCell>
-                    <TableCell>{investor.email}</TableCell>
-                    <TableCell>{investor.phone || "-"}</TableCell>
-                    <TableCell>
-                      {investor.isCompany ? (
-                        <span className="flex items-center gap-1">
-                          <Building className="w-3 h-3" />
-                          {investor.companyName || "-"}
-                        </span>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>{getKycBadge(investor.kycStatus)}</TableCell>
-                    <TableCell>
-                      {investor.createdAt ? format(new Date(investor.createdAt), "dd.MM.yyyy", { locale: de }) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setSelectedInvestor(investor); setIsViewOpen(true); }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {investor.kycStatus !== "verified" && (
+        {/* Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Suchen nach Name, E-Mail oder Firma..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Select value={kycFilter} onValueChange={setKycFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="KYC-Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Status</SelectItem>
+                  <SelectItem value="pending">Ausstehend</SelectItem>
+                  <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                  <SelectItem value="verified">Verifiziert</SelectItem>
+                  <SelectItem value="rejected">Abgelehnt</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Investors Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Investorenliste
+            </CardTitle>
+            <CardDescription>
+              {filteredInvestors?.length || 0} Investoren gefunden
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>E-Mail</TableHead>
+                    <TableHead>Typ</TableHead>
+                    <TableHead>KYC-Status</TableHead>
+                    <TableHead>Registriert</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvestors?.map((investor) => (
+                    <TableRow key={investor.id}>
+                      <TableCell className="font-medium">
+                        {investor.firstName && investor.lastName 
+                          ? `${investor.firstName} ${investor.lastName}`
+                          : investor.name || '-'}
+                        {investor.isCompany && investor.companyName && (
+                          <div className="text-sm text-muted-foreground">{investor.companyName}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>{investor.email}</TableCell>
+                      <TableCell>{getInvestorTypeBadge(investor.investorType)}</TableCell>
+                      <TableCell>{getKycBadge(investor.kycStatus)}</TableCell>
+                      <TableCell>
+                        {investor.createdAt ? format(new Date(investor.createdAt), "dd.MM.yyyy", { locale: de }) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => updateKycStatus.mutate({
-                              userId: investor.id,
-                              status: "verified",
+                            onClick={() => {
+                              setSelectedInvestor(investor);
+                              setIsViewOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Select
+                            value={investor.kycStatus || "pending"}
+                            onValueChange={(value) => updateKycStatus.mutate({ 
+                              userId: investor.id, 
+                              status: value as any 
                             })}
                           >
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                            <SelectTrigger className="w-[140px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Ausstehend</SelectItem>
+                              <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                              <SelectItem value="verified">Verifiziert</SelectItem>
+                              <SelectItem value="rejected">Abgelehnt</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* View Investor Dialog */}
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Investor Details</DialogTitle>
-          </DialogHeader>
-          {selectedInvestor && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Persönliche Daten</h4>
-                  <div className="space-y-1 text-sm">
-                    <p><span className="text-muted-foreground">Name:</span> {selectedInvestor.firstName} {selectedInvestor.lastName}</p>
-                    <p><span className="text-muted-foreground">E-Mail:</span> {selectedInvestor.email}</p>
-                    <p><span className="text-muted-foreground">Telefon:</span> {selectedInvestor.phone || "-"}</p>
-                    <p><span className="text-muted-foreground">Geburtsdatum:</span> {selectedInvestor.dateOfBirth ? format(new Date(selectedInvestor.dateOfBirth), "dd.MM.yyyy") : "-"}</p>
-                    <p><span className="text-muted-foreground">Steuernummer:</span> {selectedInvestor.taxNumber || "-"}</p>
+        {/* View Investor Dialog */}
+        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Investor Details</DialogTitle>
+            </DialogHeader>
+            {selectedInvestor && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Name</Label>
+                    <p className="font-medium">
+                      {selectedInvestor.firstName && selectedInvestor.lastName 
+                        ? `${selectedInvestor.firstName} ${selectedInvestor.lastName}`
+                        : selectedInvestor.name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">E-Mail</Label>
+                    <p className="font-medium">{selectedInvestor.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Telefon</Label>
+                    <p className="font-medium">{selectedInvestor.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Geburtsdatum</Label>
+                    <p className="font-medium">
+                      {selectedInvestor.dateOfBirth 
+                        ? format(new Date(selectedInvestor.dateOfBirth), "dd.MM.yyyy", { locale: de })
+                        : '-'}
+                    </p>
                   </div>
                 </div>
+                
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Adresse</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>{selectedInvestor.street} {selectedInvestor.houseNumber}</p>
-                    <p>{selectedInvestor.postalCode} {selectedInvestor.city}</p>
-                    <p>{selectedInvestor.country}</p>
-                  </div>
+                  <Label className="text-muted-foreground">Adresse</Label>
+                  <p className="font-medium">
+                    {selectedInvestor.street && selectedInvestor.houseNumber
+                      ? `${selectedInvestor.street} ${selectedInvestor.houseNumber}, ${selectedInvestor.postalCode} ${selectedInvestor.city}, ${selectedInvestor.country}`
+                      : '-'}
+                  </p>
                 </div>
-              </div>
-              
-              {selectedInvestor.isCompany && (
+                
+                {selectedInvestor.isCompany && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Building className="w-4 h-4" /> Firmendaten
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground">Firmenname</Label>
+                        <p className="font-medium">{selectedInvestor.companyName || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Handelsregister</Label>
+                        <p className="font-medium">{selectedInvestor.companyRegisterNumber || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Firmendaten</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" /> Bankverbindung
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p><span className="text-muted-foreground">Firma:</span> {selectedInvestor.companyName}</p>
-                      <p><span className="text-muted-foreground">Register:</span> {selectedInvestor.companyRegisterNumber || "-"}</p>
-                      <p><span className="text-muted-foreground">Steuernr.:</span> {selectedInvestor.companyTaxNumber || "-"}</p>
+                      <Label className="text-muted-foreground">IBAN</Label>
+                      <p className="font-medium font-mono">{selectedInvestor.bankIban || '-'}</p>
                     </div>
                     <div>
-                      <p>{selectedInvestor.companyStreet} {selectedInvestor.companyHouseNumber}</p>
-                      <p>{selectedInvestor.companyPostalCode} {selectedInvestor.companyCity}</p>
-                      <p>{selectedInvestor.companyCountry}</p>
+                      <Label className="text-muted-foreground">BIC</Label>
+                      <p className="font-medium">{selectedInvestor.bankBic || '-'}</p>
                     </div>
                   </div>
                 </div>
-              )}
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Bankverbindung</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p><span className="text-muted-foreground">Kontoinhaber:</span> {selectedInvestor.bankAccountHolder || "-"}</p>
-                    <p><span className="text-muted-foreground">IBAN:</span> {selectedInvestor.bankIban || "-"}</p>
-                  </div>
-                  <div>
-                    <p><span className="text-muted-foreground">BIC:</span> {selectedInvestor.bankBic || "-"}</p>
-                    <p><span className="text-muted-foreground">Bank:</span> {selectedInvestor.bankName || "-"}</p>
+                
+                <div className="border-t pt-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground">Investortyp</Label>
+                      <p>{getInvestorTypeBadge(selectedInvestor.investorType)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">KYC-Status</Label>
+                      <p>{getKycBadge(selectedInvestor.kycStatus)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Registriert</Label>
+                      <p className="font-medium">
+                        {selectedInvestor.createdAt 
+                          ? format(new Date(selectedInvestor.createdAt), "dd.MM.yyyy HH:mm", { locale: de })
+                          : '-'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Status</h4>
-                <div className="flex gap-4">
-                  {getKycBadge(selectedInvestor.kycStatus)}
-                  {selectedInvestor.investorType && (
-                    <Badge variant="outline">
-                      {selectedInvestor.investorType === "professional" ? "Professioneller Anleger" :
-                       selectedInvestor.investorType === "entrepreneur" ? "Unternehmer" : "Institutionell"}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
   );
 }
