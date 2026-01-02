@@ -61,3 +61,7 @@
 - [x] Registrierung mit E-Mail-Verifizierung
 - [x] Passwort-Reset Funktion
 - [x] Admin-Funktion: Investoren mit E-Mail/Passwort anlegen
+- [x] Erweiterte Investoren-Daten: Persönliche Daten (Vorname, Nachname, Geburtsdatum, Steuernummer)
+- [x] Erweiterte Investoren-Daten: Adresse (Straße, Hausnummer, PLZ, Ort)
+- [x] Erweiterte Investoren-Daten: Firma (ja/nein, Firmenname, Register, Steuernummer)
+- [x] Erweiterte Investoren-Daten: Bankverbindung (IBAN, BIC, Kontoinhaber)

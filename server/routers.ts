@@ -391,9 +391,34 @@ export const appRouter = router({
       .input(z.object({
         email: z.string().email(),
         password: z.string().min(8),
-        name: z.string().min(1),
-        company: z.string().optional(),
+        // Personal data
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        dateOfBirth: z.string().optional(), // ISO date string
+        taxNumber: z.string().optional(),
         phone: z.string().optional(),
+        // Address
+        street: z.string().optional(),
+        houseNumber: z.string().optional(),
+        postalCode: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        // Company data
+        isCompany: z.boolean().default(false),
+        companyName: z.string().optional(),
+        companyRegisterNumber: z.string().optional(),
+        companyTaxNumber: z.string().optional(),
+        companyStreet: z.string().optional(),
+        companyHouseNumber: z.string().optional(),
+        companyPostalCode: z.string().optional(),
+        companyCity: z.string().optional(),
+        companyCountry: z.string().optional(),
+        // Bank details
+        bankAccountHolder: z.string().optional(),
+        bankIban: z.string().optional(),
+        bankBic: z.string().optional(),
+        bankName: z.string().optional(),
+        // Other
         investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
         kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).default("pending"),
       }))
@@ -407,22 +432,42 @@ export const appRouter = router({
         // Hash password
         const passwordHash = await bcrypt.hash(input.password, 12);
         
-        // Create user
+        // Create user with full name
+        const fullName = `${input.firstName} ${input.lastName}`;
         const userId = await db.createUserWithPassword({
           email: input.email,
           passwordHash,
-          name: input.name,
+          name: fullName,
         });
         
-        // Update additional fields
-        if (input.company || input.phone || input.investorType || input.kycStatus !== "pending") {
-          await db.updateUserProfile(userId, {
-            company: input.company,
-            phone: input.phone,
-            investorType: input.investorType,
-            kycStatus: input.kycStatus,
-          });
-        }
+        // Update all additional fields
+        await db.updateUserProfile(userId, {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+          taxNumber: input.taxNumber,
+          phone: input.phone,
+          street: input.street,
+          houseNumber: input.houseNumber,
+          postalCode: input.postalCode,
+          city: input.city,
+          country: input.country,
+          isCompany: input.isCompany,
+          companyName: input.companyName,
+          companyRegisterNumber: input.companyRegisterNumber,
+          companyTaxNumber: input.companyTaxNumber,
+          companyStreet: input.companyStreet,
+          companyHouseNumber: input.companyHouseNumber,
+          companyPostalCode: input.companyPostalCode,
+          companyCity: input.companyCity,
+          companyCountry: input.companyCountry,
+          bankAccountHolder: input.bankAccountHolder,
+          bankIban: input.bankIban,
+          bankBic: input.bankBic,
+          bankName: input.bankName,
+          investorType: input.investorType,
+          kycStatus: input.kycStatus,
+        });
         
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -430,11 +475,72 @@ export const appRouter = router({
           action: "investor.create",
           entityType: "user",
           entityId: userId,
-          details: { email: input.email, name: input.name, createdByAdmin: true },
+          details: { email: input.email, name: fullName, createdByAdmin: true },
           ipAddress: ctx.req.ip,
         });
         
         return { success: true, userId };
+      }),
+    
+    // Update investor profile
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        // Personal data
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        taxNumber: z.string().optional(),
+        phone: z.string().optional(),
+        // Address
+        street: z.string().optional(),
+        houseNumber: z.string().optional(),
+        postalCode: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        // Company data
+        isCompany: z.boolean().optional(),
+        companyName: z.string().optional(),
+        companyRegisterNumber: z.string().optional(),
+        companyTaxNumber: z.string().optional(),
+        companyStreet: z.string().optional(),
+        companyHouseNumber: z.string().optional(),
+        companyPostalCode: z.string().optional(),
+        companyCity: z.string().optional(),
+        companyCountry: z.string().optional(),
+        // Bank details
+        bankAccountHolder: z.string().optional(),
+        bankIban: z.string().optional(),
+        bankBic: z.string().optional(),
+        bankName: z.string().optional(),
+        // Other
+        investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
+        kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, dateOfBirth, ...rest } = input;
+        
+        const updateData: Record<string, unknown> = { ...rest };
+        if (dateOfBirth) {
+          updateData.dateOfBirth = new Date(dateOfBirth);
+        }
+        if (rest.firstName && rest.lastName) {
+          updateData.name = `${rest.firstName} ${rest.lastName}`;
+        }
+        
+        await db.updateUserProfile(id, updateData);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "investor.update",
+          entityType: "user",
+          entityId: id,
+          details: { updatedFields: Object.keys(rest) },
+          ipAddress: ctx.req.ip,
+        });
+        
+        return { success: true };
       }),
   }),
 

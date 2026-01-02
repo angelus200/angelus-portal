@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, date } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -7,7 +7,6 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean,
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).unique(),
-  name: text("name"),
   email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
   
@@ -19,11 +18,41 @@ export const users = mysqlTable("users", {
   passwordResetExpires: timestamp("passwordResetExpires"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   
-  // Investor-specific fields
+  // Personal data
+  firstName: varchar("firstName", { length: 128 }),
+  lastName: varchar("lastName", { length: 128 }),
+  name: text("name"), // Full name (legacy/display)
+  dateOfBirth: date("dateOfBirth"),
+  taxNumber: varchar("taxNumber", { length: 64 }),
   phone: varchar("phone", { length: 32 }),
+  
+  // Address
+  street: varchar("street", { length: 255 }),
+  houseNumber: varchar("houseNumber", { length: 16 }),
+  postalCode: varchar("postalCode", { length: 16 }),
+  city: varchar("city", { length: 128 }),
+  country: varchar("country", { length: 64 }),
+  
+  // Company data (if isCompany = true)
+  isCompany: boolean("isCompany").default(false),
+  companyName: varchar("companyName", { length: 255 }),
+  companyRegisterNumber: varchar("companyRegisterNumber", { length: 64 }),
+  companyTaxNumber: varchar("companyTaxNumber", { length: 64 }),
+  companyStreet: varchar("companyStreet", { length: 255 }),
+  companyHouseNumber: varchar("companyHouseNumber", { length: 16 }),
+  companyPostalCode: varchar("companyPostalCode", { length: 16 }),
+  companyCity: varchar("companyCity", { length: 128 }),
+  companyCountry: varchar("companyCountry", { length: 64 }),
+  
+  // Bank details
+  bankAccountHolder: varchar("bankAccountHolder", { length: 255 }),
+  bankIban: varchar("bankIban", { length: 34 }),
+  bankBic: varchar("bankBic", { length: 11 }),
+  bankName: varchar("bankName", { length: 128 }),
+  
+  // Legacy fields (kept for compatibility)
   company: varchar("company", { length: 255 }),
   address: text("address"),
-  country: varchar("country", { length: 64 }),
   
   // KYC and compliance
   kycStatus: mysqlEnum("kycStatus", ["pending", "in_progress", "verified", "rejected"]).default("pending").notNull(),
