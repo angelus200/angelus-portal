@@ -27,6 +27,7 @@ import AdminInvestors from "./pages/admin/Investors";
 import AdminNews from "./pages/admin/News";
 import AdminWallets from "./pages/admin/Wallets";
 import AdminContracts from "./pages/admin/Contracts";
+import AdminInvestorDetails from "./pages/admin/InvestorDetails";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/admin/news" component={AdminNews} />
       <Route path="/admin/wallets" component={AdminWallets} />
       <Route path="/admin/contracts" component={AdminContracts} />
+      <Route path="/admin/investors/:id" component={AdminInvestorDetails} />
       
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

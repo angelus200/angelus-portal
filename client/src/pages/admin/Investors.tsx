@@ -14,7 +14,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye, Plus, Mail, Lock, User, Building, Phone, MapPin, CreditCard, Calendar, Download, AlertTriangle, FileText, RefreshCw } from "lucide-react";
+import { Users, Upload, Search, CheckCircle, XCircle, Clock, Eye, Plus, Mail, Lock, User, Building, Phone, MapPin, CreditCard, Calendar, Download, AlertTriangle, FileText, RefreshCw, ExternalLink } from "lucide-react";
+import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
@@ -1022,6 +1023,15 @@ export default function AdminInvestors() {
                             }}
                           >
                             <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <Link href={`/admin/investors/${investor.id}`}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
                           </Button>
                           <Select
                             value={investor.kycStatus || "pending"}

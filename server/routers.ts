@@ -342,6 +342,79 @@ export const appRouter = router({
         return db.getUserById(input.id);
       }),
     
+    // Get detailed investor info with subscriptions, wallets, documents
+    getDetails: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const user = await db.getUserById(input.id);
+        if (!user) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Investor nicht gefunden' });
+        }
+        
+        const [subscriptionsList, walletsList, contractsList, riskProfile, auditLogsList] = await Promise.all([
+          db.getSubscriptionsByUser(input.id),
+          db.getWalletsByUser(input.id),
+          db.getContractsByUser(input.id),
+          db.getRiskProfileByUser(input.id),
+          db.getAuditLogsByUser(input.id),
+        ]);
+        
+        return {
+          user,
+          subscriptions: subscriptionsList,
+          wallets: walletsList,
+          contracts: contractsList,
+          riskProfile,
+          auditLogs: auditLogsList,
+        };
+      }),
+    
+    // Update investor data
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          taxNumber: z.string().optional(),
+          street: z.string().optional(),
+          houseNumber: z.string().optional(),
+          postalCode: z.string().optional(),
+          city: z.string().optional(),
+          country: z.string().optional(),
+          isCompany: z.boolean().optional(),
+          companyName: z.string().optional(),
+          companyRegisterNumber: z.string().optional(),
+          companyTaxNumber: z.string().optional(),
+          companyStreet: z.string().optional(),
+          companyHouseNumber: z.string().optional(),
+          companyPostalCode: z.string().optional(),
+          companyCity: z.string().optional(),
+          companyCountry: z.string().optional(),
+          bankAccountHolder: z.string().optional(),
+          bankIban: z.string().optional(),
+          bankBic: z.string().optional(),
+          bankName: z.string().optional(),
+          investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateInvestor(input.id, input.data);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "investor.update",
+          entityType: "user",
+          entityId: input.id,
+          details: input.data,
+          ipAddress: ctx.req.ip,
+        });
+        return { success: true };
+      }),
+    
     updateKycStatus: adminProcedure
       .input(z.object({
         userId: z.number(),
@@ -776,66 +849,6 @@ export const appRouter = router({
         return { success: true, userId };
       }),
     
-    // Update investor profile
-    update: adminProcedure
-      .input(z.object({
-        id: z.number(),
-        // Personal data
-        firstName: z.string().optional(),
-        lastName: z.string().optional(),
-        dateOfBirth: z.string().optional(),
-        taxNumber: z.string().optional(),
-        phone: z.string().optional(),
-        // Address
-        street: z.string().optional(),
-        houseNumber: z.string().optional(),
-        postalCode: z.string().optional(),
-        city: z.string().optional(),
-        country: z.string().optional(),
-        // Company data
-        isCompany: z.boolean().optional(),
-        companyName: z.string().optional(),
-        companyRegisterNumber: z.string().optional(),
-        companyTaxNumber: z.string().optional(),
-        companyStreet: z.string().optional(),
-        companyHouseNumber: z.string().optional(),
-        companyPostalCode: z.string().optional(),
-        companyCity: z.string().optional(),
-        companyCountry: z.string().optional(),
-        // Bank details
-        bankAccountHolder: z.string().optional(),
-        bankIban: z.string().optional(),
-        bankBic: z.string().optional(),
-        bankName: z.string().optional(),
-        // Other
-        investorType: z.enum(["professional", "entrepreneur", "institutional"]).optional(),
-        kycStatus: z.enum(["pending", "in_progress", "verified", "rejected"]).optional(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const { id, dateOfBirth, ...rest } = input;
-        
-        const updateData: Record<string, unknown> = { ...rest };
-        if (dateOfBirth) {
-          updateData.dateOfBirth = new Date(dateOfBirth);
-        }
-        if (rest.firstName && rest.lastName) {
-          updateData.name = `${rest.firstName} ${rest.lastName}`;
-        }
-        
-        await db.updateUserProfile(id, updateData);
-        
-        await db.createAuditLog({
-          userId: ctx.user.id,
-          userEmail: ctx.user.email,
-          action: "investor.update",
-          entityType: "user",
-          entityId: id,
-          details: { updatedFields: Object.keys(rest) },
-          ipAddress: ctx.req.ip,
-        });
-        
-        return { success: true };
-      }),
   }),
 
   // ==================== WALLET ROUTES ====================

@@ -69,3 +69,8 @@
 - [x] Import von bestehenden Zeichnungen/Anleihen pro Investor
 - [x] Import-Vorschau mit Validierung und Fehleranzeige
 - [x] Beispiel-CSV-Template zum Download
+- [x] Detaillierte Investor-Ansicht: Persönliche Daten Tab
+- [x] Detaillierte Investor-Ansicht: Zeichnungen/Investments Tab
+- [x] Detaillierte Investor-Ansicht: Dokumente Tab
+- [x] Detaillierte Investor-Ansicht: Wallet/Transaktionen Tab
+- [x] Detaillierte Investor-Ansicht: Aktivitätslog

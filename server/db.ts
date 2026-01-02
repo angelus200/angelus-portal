@@ -521,3 +521,78 @@ export async function updateLastSignedIn(userId: number) {
   if (!db) return;
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
+
+// ==================== INVESTOR DETAIL FUNCTIONS ====================
+
+export async function getAuditLogsByUser(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(auditLogs)
+    .where(eq(auditLogs.entityId, userId))
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
+}
+
+export async function updateInvestor(id: number, data: Partial<{
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  taxNumber: string;
+  street: string;
+  houseNumber: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  isCompany: boolean;
+  companyName: string;
+  companyRegisterNumber: string;
+  companyTaxNumber: string;
+  companyStreet: string;
+  companyHouseNumber: string;
+  companyPostalCode: string;
+  companyCity: string;
+  companyCountry: string;
+  bankAccountHolder: string;
+  bankIban: string;
+  bankBic: string;
+  bankName: string;
+  investorType: "professional" | "entrepreneur" | "institutional";
+}>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: Record<string, any> = {};
+  
+  // Map all fields
+  if (data.firstName !== undefined) updateData.firstName = data.firstName;
+  if (data.lastName !== undefined) updateData.lastName = data.lastName;
+  if (data.email !== undefined) updateData.email = data.email;
+  if (data.phone !== undefined) updateData.phone = data.phone;
+  if (data.dateOfBirth !== undefined) updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
+  if (data.taxNumber !== undefined) updateData.taxNumber = data.taxNumber;
+  if (data.street !== undefined) updateData.street = data.street;
+  if (data.houseNumber !== undefined) updateData.houseNumber = data.houseNumber;
+  if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
+  if (data.city !== undefined) updateData.city = data.city;
+  if (data.country !== undefined) updateData.country = data.country;
+  if (data.isCompany !== undefined) updateData.isCompany = data.isCompany;
+  if (data.companyName !== undefined) updateData.companyName = data.companyName;
+  if (data.companyRegisterNumber !== undefined) updateData.companyRegisterNumber = data.companyRegisterNumber;
+  if (data.companyTaxNumber !== undefined) updateData.companyTaxNumber = data.companyTaxNumber;
+  if (data.companyStreet !== undefined) updateData.companyStreet = data.companyStreet;
+  if (data.companyHouseNumber !== undefined) updateData.companyHouseNumber = data.companyHouseNumber;
+  if (data.companyPostalCode !== undefined) updateData.companyPostalCode = data.companyPostalCode;
+  if (data.companyCity !== undefined) updateData.companyCity = data.companyCity;
+  if (data.companyCountry !== undefined) updateData.companyCountry = data.companyCountry;
+  if (data.bankAccountHolder !== undefined) updateData.bankAccountHolder = data.bankAccountHolder;
+  if (data.bankIban !== undefined) updateData.bankIban = data.bankIban;
+  if (data.bankBic !== undefined) updateData.bankBic = data.bankBic;
+  if (data.bankName !== undefined) updateData.bankName = data.bankName;
+  if (data.investorType !== undefined) updateData.investorType = data.investorType;
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(users).set(updateData).where(eq(users.id, id));
+  }
+}
