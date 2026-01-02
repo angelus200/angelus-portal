@@ -36,9 +36,11 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">A</span>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Angelus" 
+              className="w-10 h-10 object-contain"
+            />
             <span className="font-semibold text-xl">Angelus</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
@@ -337,9 +339,11 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold">A</span>
-                </div>
+                <img 
+                  src="/logo.png" 
+                  alt="Angelus" 
+                  className="w-8 h-8 object-contain"
+                />
                 <span className="font-semibold text-secondary-foreground">Angelus KG</span>
               </div>
               <p className="text-sm text-secondary-foreground/60">

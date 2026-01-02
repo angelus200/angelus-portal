@@ -237,13 +237,23 @@ function DashboardLayoutContent({
                 className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-sidebar-foreground/70" />
+                {isCollapsed ? (
+                  <img 
+                    src="/logo.png" 
+                    alt="Angelus" 
+                    className="w-7 h-7 object-contain rounded bg-white/90 p-0.5"
+                  />
+                ) : (
+                  <PanelLeft className="h-4 w-4 text-sidebar-foreground/70" />
+                )}
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-foreground font-bold text-sm">A</span>
-                  </div>
+                  <img 
+                    src="/logo.png" 
+                    alt="Angelus" 
+                    className="w-10 h-10 object-contain flex-shrink-0 rounded bg-white/90 p-0.5"
+                  />
                   <span className="font-semibold tracking-tight truncate text-sidebar-foreground">
                     Angelus
                   </span>
