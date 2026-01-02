@@ -1191,6 +1191,109 @@ export const appRouter = router({
         return { id };
       }),
   }),
+  
+  // ==================== INVESTOR NOTES ROUTES ====================
+  notes: router({
+    // Get all notes for an investor (admin only)
+    list: adminProcedure
+      .input(z.object({ investorId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getInvestorNotes(input.investorId);
+      }),
+    
+    // Create a new note
+    create: adminProcedure
+      .input(z.object({
+        investorId: z.number(),
+        title: z.string().optional(),
+        content: z.string().min(1),
+        category: z.enum(["general", "kyc", "compliance", "payment", "communication", "other"]).default("general"),
+        priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+        isPinned: z.boolean().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createInvestorNote({
+          investorId: input.investorId,
+          authorId: ctx.user.id,
+          authorName: ctx.user.name || ctx.user.email || 'Admin',
+          title: input.title,
+          content: input.content,
+          category: input.category,
+          priority: input.priority,
+          isPinned: input.isPinned,
+        });
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "note.create",
+          entityType: "investorNote",
+          entityId: id,
+          details: { investorId: input.investorId, category: input.category },
+          ipAddress: ctx.req.ip,
+        });
+        
+        return { id };
+      }),
+    
+    // Update a note
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          title: z.string().optional(),
+          content: z.string().optional(),
+          category: z.enum(["general", "kyc", "compliance", "payment", "communication", "other"]).optional(),
+          priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+          isPinned: z.boolean().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateInvestorNote(input.id, input.data);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "note.update",
+          entityType: "investorNote",
+          entityId: input.id,
+          ipAddress: ctx.req.ip,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Delete a note
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteInvestorNote(input.id);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "note.delete",
+          entityType: "investorNote",
+          entityId: input.id,
+          ipAddress: ctx.req.ip,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Toggle pin status
+    togglePin: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const note = await db.getInvestorNoteById(input.id);
+        if (!note) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Notiz nicht gefunden' });
+        }
+        
+        await db.updateInvestorNote(input.id, { isPinned: !note.isPinned });
+        return { success: true, isPinned: !note.isPinned };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

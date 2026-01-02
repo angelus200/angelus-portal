@@ -354,3 +354,31 @@ export const auditLogs = mysqlTable("audit_logs", {
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Admin notes for investors
+ */
+export const investorNotes = mysqlTable("investor_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  investorId: int("investorId").notNull(), // User ID of the investor
+  authorId: int("authorId").notNull(), // Admin who created the note
+  authorName: varchar("authorName", { length: 255 }),
+  
+  // Note content
+  title: varchar("title", { length: 255 }),
+  content: text("content").notNull(),
+  
+  // Categorization
+  category: mysqlEnum("category", ["general", "kyc", "compliance", "payment", "communication", "other"]).default("general"),
+  priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal"),
+  
+  // Status
+  isPrivate: boolean("isPrivate").default(true), // Only visible to admins
+  isPinned: boolean("isPinned").default(false),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InvestorNote = typeof investorNotes.$inferSelect;
+export type InsertInvestorNote = typeof investorNotes.$inferInsert;

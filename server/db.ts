@@ -10,7 +10,8 @@ import {
   walletTransactions, InsertWalletTransaction, WalletTransaction,
   news, InsertNews, News,
   riskProfiles, InsertRiskProfile, RiskProfile,
-  auditLogs, InsertAuditLog
+  auditLogs, InsertAuditLog,
+  investorNotes, InsertInvestorNote, InvestorNote
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -595,4 +596,46 @@ export async function updateInvestor(id: number, data: Partial<{
   if (Object.keys(updateData).length > 0) {
     await db.update(users).set(updateData).where(eq(users.id, id));
   }
+}
+
+// ==================== INVESTOR NOTES FUNCTIONS ====================
+
+export async function getInvestorNotes(investorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(investorNotes)
+    .where(eq(investorNotes.investorId, investorId))
+    .orderBy(desc(investorNotes.isPinned), desc(investorNotes.createdAt));
+}
+
+export async function createInvestorNote(note: InsertInvestorNote) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(investorNotes).values(note);
+  return result[0].insertId;
+}
+
+export async function updateInvestorNote(id: number, data: Partial<{
+  title: string;
+  content: string;
+  category: "general" | "kyc" | "compliance" | "payment" | "communication" | "other";
+  priority: "low" | "normal" | "high" | "urgent";
+  isPinned: boolean;
+}>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(investorNotes).set(data).where(eq(investorNotes.id, id));
+}
+
+export async function deleteInvestorNote(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(investorNotes).where(eq(investorNotes.id, id));
+}
+
+export async function getInvestorNoteById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(investorNotes).where(eq(investorNotes.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }

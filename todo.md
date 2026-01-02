@@ -74,3 +74,9 @@
 - [x] Detaillierte Investor-Ansicht: Dokumente Tab
 - [x] Detaillierte Investor-Ansicht: Wallet/Transaktionen Tab
 - [x] Detaillierte Investor-Ansicht: Aktivitätslog
+- [x] Admin-Notizen: Datenbank-Tabelle für Investor-Notizen
+- [x] Admin-Notizen: API-Endpunkte (erstellen, bearbeiten, löschen, auflisten)
+- [x] Admin-Notizen: Notizen-Tab in der Investor-Detailansicht
+- [x] Admin-Notizen: Kategorien (Allgemein, KYC, Compliance, Zahlung, Kommunikation)
+- [x] Admin-Notizen: Prioritäten (Niedrig, Normal, Hoch, Dringend)
+- [x] Admin-Notizen: Anheften-Funktion

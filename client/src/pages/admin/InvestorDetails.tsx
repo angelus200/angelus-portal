@@ -18,8 +18,10 @@ import {
   ArrowLeft, User, Building2, CreditCard, FileText, Wallet, 
   History, Shield, Edit, Save, X, CheckCircle, Clock, AlertCircle,
   Download, Eye, Trash2, Plus, TrendingUp, Calendar, Mail, Phone,
-  MapPin, Briefcase, BadgeCheck, FileWarning
+  MapPin, Briefcase, BadgeCheck, FileWarning, StickyNote, Pin, PinOff,
+  MessageSquare, AlertTriangle, Info
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 
 
@@ -239,7 +241,7 @@ export default function InvestorDetails() {
         
         {/* Tabs */}
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+          <TabsList className="grid grid-cols-7 w-full max-w-4xl">
             <TabsTrigger value="personal" className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Persönlich</span>
@@ -263,6 +265,10 @@ export default function InvestorDetails() {
             <TabsTrigger value="activity" className="flex items-center gap-1">
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">Aktivität</span>
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="flex items-center gap-1">
+              <StickyNote className="w-4 h-4" />
+              <span className="hidden sm:inline">Notizen</span>
             </TabsTrigger>
           </TabsList>
           
@@ -886,8 +892,352 @@ export default function InvestorDetails() {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          {/* Notes Tab */}
+          <TabsContent value="notes">
+            <NotesTab investorId={investorId} />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Notes Tab Component
+function NotesTab({ investorId }: { investorId: number }) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingNote, setEditingNote] = useState<number | null>(null);
+  const [newNote, setNewNote] = useState({
+    title: "",
+    content: "",
+    category: "general" as const,
+    priority: "normal" as const,
+    isPinned: false,
+  });
+  const [editData, setEditData] = useState<Record<string, any>>({});
+  
+  const { data: notes = [], refetch } = trpc.notes.list.useQuery({ investorId });
+  
+  const createMutation = trpc.notes.create.useMutation({
+    onSuccess: () => {
+      toast.success("Notiz erstellt");
+      setIsCreating(false);
+      setNewNote({ title: "", content: "", category: "general", priority: "normal", isPinned: false });
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  
+  const updateMutation = trpc.notes.update.useMutation({
+    onSuccess: () => {
+      toast.success("Notiz aktualisiert");
+      setEditingNote(null);
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  
+  const deleteMutation = trpc.notes.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Notiz gelöscht");
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  
+  const togglePinMutation = trpc.notes.togglePin.useMutation({
+    onSuccess: () => refetch(),
+    onError: (error) => toast.error(error.message),
+  });
+  
+  const getCategoryBadge = (category: string) => {
+    const colors: Record<string, string> = {
+      general: "bg-gray-500",
+      kyc: "bg-blue-500",
+      compliance: "bg-purple-500",
+      payment: "bg-green-500",
+      communication: "bg-yellow-500",
+      other: "bg-gray-400",
+    };
+    const labels: Record<string, string> = {
+      general: "Allgemein",
+      kyc: "KYC",
+      compliance: "Compliance",
+      payment: "Zahlung",
+      communication: "Kommunikation",
+      other: "Sonstiges",
+    };
+    return <Badge className={colors[category]}>{labels[category]}</Badge>;
+  };
+  
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case "high":
+        return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case "normal":
+        return <Info className="w-4 h-4 text-blue-500" />;
+      default:
+        return <Info className="w-4 h-4 text-gray-400" />;
+    }
+  };
+  
+  const formatDateTime = (date: Date | string | null) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("de-DE");
+  };
+  
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Notizen</CardTitle>
+          <CardDescription>Interne Notizen zu diesem Investor</CardDescription>
+        </div>
+        <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
+          <Plus className="w-4 h-4 mr-2" />
+          Neue Notiz
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Create Note Form */}
+        {isCreating && (
+          <Card className="border-primary">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Neue Notiz erstellen</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Titel (optional)</Label>
+                <Input
+                  value={newNote.title}
+                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                  placeholder="Titel der Notiz..."
+                />
+              </div>
+              <div>
+                <Label>Inhalt *</Label>
+                <Textarea
+                  value={newNote.content}
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  placeholder="Notizinhalt..."
+                  rows={4}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Kategorie</Label>
+                  <Select
+                    value={newNote.category}
+                    onValueChange={(v) => setNewNote({ ...newNote, category: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">Allgemein</SelectItem>
+                      <SelectItem value="kyc">KYC</SelectItem>
+                      <SelectItem value="compliance">Compliance</SelectItem>
+                      <SelectItem value="payment">Zahlung</SelectItem>
+                      <SelectItem value="communication">Kommunikation</SelectItem>
+                      <SelectItem value="other">Sonstiges</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Priorität</Label>
+                  <Select
+                    value={newNote.priority}
+                    onValueChange={(v) => setNewNote({ ...newNote, priority: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Niedrig</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">Hoch</SelectItem>
+                      <SelectItem value="urgent">Dringend</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={newNote.isPinned}
+                  onCheckedChange={(v) => setNewNote({ ...newNote, isPinned: v })}
+                />
+                <Label>Notiz anheften</Label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                  Abbrechen
+                </Button>
+                <Button
+                  onClick={() => createMutation.mutate({ investorId, ...newNote })}
+                  disabled={!newNote.content.trim() || createMutation.isPending}
+                >
+                  {createMutation.isPending ? "Speichern..." : "Speichern"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Notes List */}
+        {notes.length === 0 && !isCreating ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <StickyNote className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Keine Notizen vorhanden</p>
+            <p className="text-sm">Erstellen Sie die erste Notiz zu diesem Investor</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notes.map((note: any) => (
+              <Card key={note.id} className={note.isPinned ? "border-primary bg-primary/5" : ""}>
+                <CardContent className="pt-4">
+                  {editingNote === note.id ? (
+                    // Edit Mode
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Titel</Label>
+                        <Input
+                          value={editData.title || ""}
+                          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Inhalt</Label>
+                        <Textarea
+                          value={editData.content || ""}
+                          onChange={(e) => setEditData({ ...editData, content: e.target.value })}
+                          rows={4}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Kategorie</Label>
+                          <Select
+                            value={editData.category}
+                            onValueChange={(v) => setEditData({ ...editData, category: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">Allgemein</SelectItem>
+                              <SelectItem value="kyc">KYC</SelectItem>
+                              <SelectItem value="compliance">Compliance</SelectItem>
+                              <SelectItem value="payment">Zahlung</SelectItem>
+                              <SelectItem value="communication">Kommunikation</SelectItem>
+                              <SelectItem value="other">Sonstiges</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Priorität</Label>
+                          <Select
+                            value={editData.priority}
+                            onValueChange={(v) => setEditData({ ...editData, priority: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Niedrig</SelectItem>
+                              <SelectItem value="normal">Normal</SelectItem>
+                              <SelectItem value="high">Hoch</SelectItem>
+                              <SelectItem value="urgent">Dringend</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setEditingNote(null)}>
+                          Abbrechen
+                        </Button>
+                        <Button
+                          onClick={() => updateMutation.mutate({ id: note.id, data: editData })}
+                          disabled={updateMutation.isPending}
+                        >
+                          Speichern
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View Mode
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {note.isPinned && <Pin className="w-4 h-4 text-primary" />}
+                          {getPriorityIcon(note.priority)}
+                          {note.title && <h4 className="font-semibold">{note.title}</h4>}
+                          {getCategoryBadge(note.category)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => togglePinMutation.mutate({ id: note.id })}
+                            title={note.isPinned ? "Loslösen" : "Anheften"}
+                          >
+                            {note.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingNote(note.id);
+                              setEditData({
+                                title: note.title || "",
+                                content: note.content,
+                                category: note.category,
+                                priority: note.priority,
+                              });
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Notiz löschen?</DialogTitle>
+                                <DialogDescription>
+                                  Möchten Sie diese Notiz wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline">Abbrechen</Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => deleteMutation.mutate({ id: note.id })}
+                                >
+                                  Löschen
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap mb-3">{note.content}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Von: {note.authorName}</span>
+                        <span>{formatDateTime(note.createdAt)}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
