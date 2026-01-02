@@ -80,3 +80,8 @@
 - [x] Admin-Notizen: Kategorien (Allgemein, KYC, Compliance, Zahlung, Kommunikation)
 - [x] Admin-Notizen: Prioritäten (Niedrig, Normal, Hoch, Dringend)
 - [x] Admin-Notizen: Anheften-Funktion
+- [x] CSV-Export: API-Endpunkt für Investoren-Export
+- [x] CSV-Export: Alle persönlichen Daten, Adresse, Firma, Bank
+- [x] CSV-Export: Zeichnungen und Investitionsbeträge pro Investor
+- [x] CSV-Export: Export-Button in der Admin-Investoren-Übersicht
+- [x] CSV-Export: Filteroptionen (KYC-Status, Investortyp)

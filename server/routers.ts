@@ -435,6 +435,107 @@ export const appRouter = router({
         return { success: true };
       }),
     
+    // CSV Export for accounting
+    exportCsv: adminProcedure
+      .input(z.object({
+        kycStatus: z.enum(["all", "pending", "in_progress", "verified", "rejected"]).optional(),
+        investorType: z.enum(["all", "professional", "entrepreneur", "institutional"]).optional(),
+        includeSubscriptions: z.boolean().optional(),
+        includeWallets: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const filters = input || {};
+        const investors = await db.getAllInvestors();
+        
+        // Filter investors based on criteria
+        let filteredInvestors = investors;
+        if (filters.kycStatus && filters.kycStatus !== "all") {
+          filteredInvestors = filteredInvestors.filter((i: any) => i.kycStatus === filters.kycStatus);
+        }
+        if (filters.investorType && filters.investorType !== "all") {
+          filteredInvestors = filteredInvestors.filter((i: any) => i.investorType === filters.investorType);
+        }
+        
+        // Get subscriptions and wallets if requested
+        const exportData = await Promise.all(
+          filteredInvestors.map(async (investor: any) => {
+            let subscriptions: any[] = [];
+            let wallets: any[] = [];
+            let totalInvested = 0;
+            let walletBalance = 0;
+            
+            if (filters.includeSubscriptions) {
+              subscriptions = await db.getSubscriptionsByUser(investor.id);
+              totalInvested = subscriptions
+                .filter((s: any) => s.status === "confirmed")
+                .reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0);
+            }
+            
+            if (filters.includeWallets) {
+              wallets = await db.getWalletsByUser(investor.id);
+              walletBalance = wallets.reduce((sum: number, w: any) => sum + Number(w.balance || 0), 0);
+            }
+            
+            return {
+              // ID
+              id: investor.id,
+              
+              // Personal Data
+              email: investor.email || "",
+              firstName: investor.firstName || "",
+              lastName: investor.lastName || "",
+              dateOfBirth: investor.dateOfBirth ? new Date(investor.dateOfBirth).toLocaleDateString("de-DE") : "",
+              phone: investor.phone || "",
+              taxNumber: investor.taxNumber || "",
+              
+              // Address
+              street: investor.street || "",
+              houseNumber: investor.houseNumber || "",
+              postalCode: investor.postalCode || "",
+              city: investor.city || "",
+              country: investor.country || "",
+              
+              // Company Data
+              isCompany: investor.isCompany ? "Ja" : "Nein",
+              companyName: investor.companyName || "",
+              companyRegisterNumber: investor.companyRegisterNumber || "",
+              companyTaxNumber: investor.companyTaxNumber || "",
+              companyStreet: investor.companyStreet || "",
+              companyHouseNumber: investor.companyHouseNumber || "",
+              companyPostalCode: investor.companyPostalCode || "",
+              companyCity: investor.companyCity || "",
+              companyCountry: investor.companyCountry || "",
+              
+              // Bank Data
+              bankAccountHolder: investor.bankAccountHolder || "",
+              bankIban: investor.bankIban || "",
+              bankBic: investor.bankBic || "",
+              bankName: investor.bankName || "",
+              
+              // Status
+              investorType: investor.investorType || "",
+              kycStatus: investor.kycStatus || "",
+              role: investor.role || "",
+              
+              // Financial Summary
+              totalInvested: totalInvested.toFixed(2),
+              walletBalance: walletBalance.toFixed(2),
+              subscriptionCount: subscriptions.length,
+              
+              // Dates
+              createdAt: investor.createdAt ? new Date(investor.createdAt).toLocaleDateString("de-DE") : "",
+              lastSignedIn: investor.lastSignedIn ? new Date(investor.lastSignedIn).toLocaleDateString("de-DE") : "",
+            };
+          })
+        );
+        
+        return {
+          data: exportData,
+          count: exportData.length,
+          exportedAt: new Date().toISOString(),
+        };
+      }),
+
     // Validate import data without saving
     validateImport: adminProcedure
       .input(z.object({

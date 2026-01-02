@@ -326,6 +326,9 @@ export default function AdminInvestors() {
             <p className="text-muted-foreground">Verwaltung aller registrierten Anleger</p>
           </div>
           <div className="flex gap-2">
+            {/* Export Dialog */}
+            <ExportDialog />
+            
             <Dialog open={isImportOpen} onOpenChange={(open) => {
               setIsImportOpen(open);
               if (!open) resetImportWizard();
@@ -1164,5 +1167,210 @@ export default function AdminInvestors() {
         </Dialog>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Export Dialog Component
+function ExportDialog() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [kycFilter, setKycFilter] = useState<"all" | "pending" | "in_progress" | "verified" | "rejected">("all");
+  const [investorTypeFilter, setInvestorTypeFilter] = useState<"all" | "professional" | "entrepreneur" | "institutional">("all");
+  const [includeSubscriptions, setIncludeSubscriptions] = useState(true);
+  const [includeWallets, setIncludeWallets] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  
+  const exportQuery = trpc.investors.exportCsv.useQuery(
+    {
+      kycStatus: kycFilter,
+      investorType: investorTypeFilter,
+      includeSubscriptions,
+      includeWallets,
+    },
+    { enabled: false }
+  );
+  
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const result = await exportQuery.refetch();
+      if (result.data) {
+        // Generate CSV
+        const headers = [
+          "ID", "E-Mail", "Vorname", "Nachname", "Geburtsdatum", "Telefon", "Steuernummer",
+          "Straße", "Hausnummer", "PLZ", "Ort", "Land",
+          "Firma", "Firmenname", "Handelsregister", "Firmen-Steuernummer",
+          "Firmen-Straße", "Firmen-Hausnummer", "Firmen-PLZ", "Firmen-Ort", "Firmen-Land",
+          "Kontoinhaber", "IBAN", "BIC", "Bank",
+          "Investortyp", "KYC-Status", "Rolle",
+          "Investiert (Gesamt)", "Wallet-Guthaben", "Anzahl Zeichnungen",
+          "Registriert am", "Letzter Login"
+        ];
+        
+        const rows = result.data.data.map((inv: any) => [
+          inv.id,
+          inv.email,
+          inv.firstName,
+          inv.lastName,
+          inv.dateOfBirth,
+          inv.phone,
+          inv.taxNumber,
+          inv.street,
+          inv.houseNumber,
+          inv.postalCode,
+          inv.city,
+          inv.country,
+          inv.isCompany,
+          inv.companyName,
+          inv.companyRegisterNumber,
+          inv.companyTaxNumber,
+          inv.companyStreet,
+          inv.companyHouseNumber,
+          inv.companyPostalCode,
+          inv.companyCity,
+          inv.companyCountry,
+          inv.bankAccountHolder,
+          inv.bankIban,
+          inv.bankBic,
+          inv.bankName,
+          inv.investorType,
+          inv.kycStatus,
+          inv.role,
+          inv.totalInvested,
+          inv.walletBalance,
+          inv.subscriptionCount,
+          inv.createdAt,
+          inv.lastSignedIn,
+        ]);
+        
+        // Escape CSV values
+        const escapeCSV = (value: any) => {
+          if (value === null || value === undefined) return "";
+          const str = String(value);
+          if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        
+        const csvContent = [
+          headers.map(escapeCSV).join(","),
+          ...rows.map((row: any[]) => row.map(escapeCSV).join(","))
+        ].join("\n");
+        
+        // Add BOM for Excel compatibility with German characters
+        const BOM = "\uFEFF";
+        const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `investoren_export_${new Date().toISOString().split("T")[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success(`${result.data.count} Investoren exportiert`);
+        setIsOpen(false);
+      }
+    } catch (error) {
+      toast.error("Export fehlgeschlagen");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Exportieren
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Investoren exportieren</DialogTitle>
+          <DialogDescription>
+            Exportieren Sie die Investorenliste als CSV-Datei für Ihre Buchhaltung
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>KYC-Status filtern</Label>
+            <Select value={kycFilter} onValueChange={(v: any) => setKycFilter(v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Status</SelectItem>
+                <SelectItem value="pending">Ausstehend</SelectItem>
+                <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                <SelectItem value="verified">Verifiziert</SelectItem>
+                <SelectItem value="rejected">Abgelehnt</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Investortyp filtern</Label>
+            <Select value={investorTypeFilter} onValueChange={(v: any) => setInvestorTypeFilter(v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Typen</SelectItem>
+                <SelectItem value="professional">Professionell</SelectItem>
+                <SelectItem value="entrepreneur">Unternehmer</SelectItem>
+                <SelectItem value="institutional">Institutionell</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-3 pt-2">
+            <Label>Zusätzliche Daten einschließen</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="includeSubscriptions"
+                checked={includeSubscriptions}
+                onCheckedChange={(v) => setIncludeSubscriptions(!!v)}
+              />
+              <Label htmlFor="includeSubscriptions" className="font-normal cursor-pointer">
+                Zeichnungen und Investitionsbeträge
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="includeWallets"
+                checked={includeWallets}
+                onCheckedChange={(v) => setIncludeWallets(!!v)}
+              />
+              <Label htmlFor="includeWallets" className="font-normal cursor-pointer">
+                Wallet-Guthaben
+              </Label>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Abbrechen
+          </Button>
+          <Button onClick={handleExport} disabled={isExporting}>
+            {isExporting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Exportiere...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                CSV exportieren
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
