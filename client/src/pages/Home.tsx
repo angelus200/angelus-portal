@@ -1,31 +1,401 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
-import { Streamdown } from 'streamdown';
+import { 
+  Shield, 
+  TrendingUp, 
+  Users, 
+  FileText, 
+  Wallet,
+  ArrowRight,
+  CheckCircle,
+  AlertTriangle
+} from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
 export default function Home() {
-  // The userAuth hooks provides authentication state
-  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      if (user.role === "admin") {
+        setLocation("/admin");
+      } else {
+        setLocation("/investor");
+      }
+    }
+  }, [loading, isAuthenticated, user, setLocation]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="container flex items-center justify-between h-16">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">A</span>
+            </div>
+            <span className="font-semibold text-xl">Angelus</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#investors" className="text-muted-foreground hover:text-foreground transition-colors">Für Investoren</a>
+            <a href="#risk" className="text-muted-foreground hover:text-foreground transition-colors">Risikohinweise</a>
+          </nav>
+          <div className="flex items-center gap-4">
+            {loading ? (
+              <div className="w-24 h-10 bg-muted animate-pulse rounded-lg" />
+            ) : isAuthenticated ? (
+              <Link href={user?.role === "admin" ? "/admin" : "/investor"}>
+                <Button>Dashboard</Button>
+              </Link>
+            ) : (
+              <a href={getLoginUrl()}>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  Anmelden
+                </Button>
+              </a>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 bg-gradient-to-b from-secondary to-secondary/95">
+        <div className="container">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary-foreground mb-6">
+              Anleiheportal der{" "}
+              <span className="text-primary">Angelus KG</span>
+            </h1>
+            <p className="text-lg md:text-xl text-secondary-foreground/80 mb-8">
+              Exklusive Investitionsmöglichkeiten für professionelle Investoren und Unternehmer. 
+              Qualifiziert nachrangige Schuldverschreibungen mit attraktiven Renditen.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {!isAuthenticated && (
+                <>
+                  <a href={getLoginUrl()}>
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                      Jetzt registrieren
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </a>
+                  <Button size="lg" variant="outline" className="border-primary/50 text-secondary-foreground hover:bg-primary/10">
+                    Mehr erfahren
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Indicators */}
+      <section className="py-12 bg-muted/50">
+        <div className="container">
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              <span>KYC-verifiziert</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              <span>Schweizer Recht</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              <span>Sichere Plattform</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              <span>Professionelle Investoren</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Ihre Vorteile auf einen Blick
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Unser Portal bietet Ihnen alle Werkzeuge für eine professionelle Anlageverwaltung.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Attraktive Anleihen</h3>
+                <p className="text-muted-foreground">
+                  Zugang zu exklusiven Anleihen mit überdurchschnittlichen Renditen für qualifizierte Investoren.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Wallet className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">E-Wallet System</h3>
+                <p className="text-muted-foreground">
+                  Verwalten Sie Ihre Einlagen in EUR und Kryptowährungen (BTC, ETH, USDT) an einem Ort.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Höchste Sicherheit</h3>
+                <p className="text-muted-foreground">
+                  KYC-Verifizierung, 2FA und modernste Verschlüsselung schützen Ihre Investitionen.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Dokumentenverwaltung</h3>
+                <p className="text-muted-foreground">
+                  Alle Verträge und Dokumente zentral verfügbar und jederzeit abrufbar.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Persönliches Dashboard</h3>
+                <p className="text-muted-foreground">
+                  Übersichtliche Darstellung Ihrer Investments, Zahlungspläne und Renditen.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:border-primary/50 transition-colors">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <CheckCircle className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Transparente Prozesse</h3>
+                <p className="text-muted-foreground">
+                  Klare Zahlungspläne und vollständige Nachverfolgbarkeit aller Transaktionen.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Investor Types Section */}
+      <section id="investors" className="py-20 bg-muted/30">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Für wen ist dieses Portal?
+            </h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4 text-green-800">Geeignet für</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Professionelle Investoren gemäß MiFID II</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Unternehmer und Business Angels</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Family Offices</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Institutionelle Investoren</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Erfahrene Anleger mit hoher Risikobereitschaft</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 bg-red-50/50">
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4 text-red-800">Nicht geeignet für</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span>Privatanleger / Verbraucher</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span>Sicherheitsorientierte Anleger</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span>Anleger ohne Erfahrung mit komplexen Finanzprodukten</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span>Personen, die kurzfristige Liquidität benötigen</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span>Anleger, die auf Kapitalerhalt angewiesen sind</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Risk Warning Section */}
+      <section id="risk" className="py-20 bg-secondary">
+        <div className="container">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <AlertTriangle className="w-8 h-8 text-primary" />
+              <h2 className="text-2xl md:text-3xl font-bold text-secondary-foreground">
+                Wichtiger Risikohinweis
+              </h2>
+            </div>
+            
+            <div className="space-y-4 text-secondary-foreground/80">
+              <p>
+                Die auf dieser Plattform angebotenen Beteiligungsformen sind mit <strong className="text-secondary-foreground">erheblichen Risiken</strong> verbunden 
+                und richten sich ausschließlich an Unternehmer und professionelle Investoren im Sinne der EU-Prospektverordnung.
+              </p>
+              <p>
+                Es besteht die Möglichkeit eines <strong className="text-secondary-foreground">vollständigen Verlustes des eingesetzten Kapitals</strong>. 
+                Eine Rückzahlung oder Zinszahlung ist nicht garantiert und kann im Insolvenz- oder Krisenfall dauerhaft ausgeschlossen sein.
+              </p>
+              <p>
+                <strong className="text-secondary-foreground">Mindestzeichnungssumme:</strong> 100.000 € — Aufgrund dieser Mindestzeichnungssumme 
+                greift die Prospektausnahme nach Art. 1 Abs. 4 lit. c EU-ProspektVO.
+              </p>
+              <p>
+                Jede Zeichnung unterliegt einem vollumfänglichen KYC/AML-Prüfprozess. 
+                Erst nach erfolgreicher Prüfung ist eine Investition möglich.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      {!isAuthenticated && (
+        <section className="py-20">
+          <div className="container">
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Bereit zu investieren?
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                Registrieren Sie sich jetzt und erhalten Sie Zugang zu exklusiven Anleihen nach erfolgreicher KYC-Verifizierung.
+              </p>
+              <a href={getLoginUrl()}>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                  Jetzt starten
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Footer */}
+      <footer className="py-12 bg-secondary border-t border-border">
+        <div className="container">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold">A</span>
+                </div>
+                <span className="font-semibold text-secondary-foreground">Angelus KG</span>
+              </div>
+              <p className="text-sm text-secondary-foreground/60">
+                Professionelle Anleihen für qualifizierte Investoren.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-secondary-foreground">Rechtliches</h4>
+              <ul className="space-y-2 text-sm text-secondary-foreground/60">
+                <li><a href="#" className="hover:text-primary">Impressum</a></li>
+                <li><a href="#" className="hover:text-primary">Datenschutz</a></li>
+                <li><a href="#" className="hover:text-primary">AGB</a></li>
+                <li><a href="#" className="hover:text-primary">Risikohinweise</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-secondary-foreground">Kontakt</h4>
+              <ul className="space-y-2 text-sm text-secondary-foreground/60">
+                <li>info@angelus-kg.com</li>
+                <li>+41 XX XXX XX XX</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-secondary-foreground">Compliance</h4>
+              <ul className="space-y-2 text-sm text-secondary-foreground/60">
+                <li>Schweizer Recht</li>
+                <li>KYC/AML-konform</li>
+                <li>DSGVO-konform</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-border/50 mt-8 pt-8 text-center text-sm text-secondary-foreground/60">
+            <p>© {new Date().getFullYear()} Angelus KG. Alle Rechte vorbehalten.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Chatbot Placeholder */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button 
+          size="lg" 
+          className="rounded-full w-14 h-14 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+          onClick={() => {
+            // Chatbot integration placeholder
+            alert("Chatbot wird in Kürze verfügbar sein.");
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </Button>
+      </div>
     </div>
   );
 }

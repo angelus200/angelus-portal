@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -21,15 +22,53 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  PanelLeft, 
+  Users, 
+  TrendingUp,
+  Wallet,
+  Shield,
+  FileText,
+  Newspaper,
+  Settings,
+  Home
+} from "lucide-react";
+import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
+import { useLocation, Link } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+// Icon mapping
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  LayoutDashboard,
+  Users,
+  TrendingUp,
+  Wallet,
+  Shield,
+  FileText,
+  Newspaper,
+  Settings,
+  Home,
+};
+
+// Default investor menu items
+const investorMenuItems = [
+  { icon: "LayoutDashboard", label: "Dashboard", path: "/investor" },
+  { icon: "TrendingUp", label: "Meine Investments", path: "/investor/investments" },
+  { icon: "Wallet", label: "Wallet", path: "/investor/wallet" },
+  { icon: "Shield", label: "Risikoprofil", path: "/investor/risk-profile" },
+];
+
+// Admin menu items
+const adminMenuItems = [
+  { icon: "LayoutDashboard", label: "Dashboard", path: "/admin" },
+  { icon: "TrendingUp", label: "Anleihen", path: "/admin/bonds" },
+  { icon: "Users", label: "Investoren", path: "/admin/investors" },
+  { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
+  { icon: "FileText", label: "Verträge", path: "/admin/contracts" },
+  { icon: "Newspaper", label: "News", path: "/admin/news" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -37,20 +76,34 @@ const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 
+interface DashboardLayoutProps {
+  children: ReactNode;
+  variant?: "investor" | "admin";
+}
+
 export default function DashboardLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  variant = "investor",
+}: DashboardLayoutProps) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  // Redirect to appropriate dashboard based on role
+  useEffect(() => {
+    if (!loading && user) {
+      if (variant === "admin" && user.role !== "admin") {
+        setLocation("/investor");
+      }
+    }
+  }, [loading, user, variant, setLocation]);
 
   if (loading) {
     return <DashboardLayoutSkeleton />
@@ -58,14 +111,17 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-2xl">A</span>
+          </div>
+          <div className="flex flex-col items-center gap-4">
             <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
+              Anmeldung erforderlich
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Bitte melden Sie sich an, um auf das Portal zuzugreifen.
             </p>
           </div>
           <Button
@@ -73,14 +129,21 @@ export default function DashboardLayout({
               window.location.href = getLoginUrl();
             }}
             size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            Sign in
+            Anmelden
           </Button>
+          <Link href="/">
+            <Button variant="ghost" size="sm">
+              Zurück zur Startseite
+            </Button>
+          </Link>
         </div>
       </div>
     );
   }
+
+  const menuItems = variant === "admin" ? adminMenuItems : investorMenuItems;
 
   return (
     <SidebarProvider
@@ -90,7 +153,11 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent 
+        setSidebarWidth={setSidebarWidth}
+        menuItems={menuItems}
+        variant={variant}
+      >
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -100,11 +167,15 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
+  menuItems: { icon: string; label: string; path: string }[];
+  variant: "investor" | "admin";
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
+  menuItems,
+  variant,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -112,7 +183,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = menuItems.find(item => location.startsWith(item.path));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -163,16 +234,24 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
+                <PanelLeft className="h-4 w-4 text-sidebar-foreground/70" />
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-sm">A</span>
+                  </div>
+                  <span className="font-semibold tracking-tight truncate text-sidebar-foreground">
+                    Angelus
                   </span>
+                  {variant === "admin" && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                      Admin
+                    </span>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -181,7 +260,9 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path;
+                const isActive = location === item.path || 
+                  (item.path !== "/investor" && item.path !== "/admin" && location.startsWith(item.path));
+                const IconComponent = iconMap[item.icon] || LayoutDashboard;
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -190,7 +271,7 @@ function DashboardLayoutContent({
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >
-                      <item.icon
+                      <IconComponent
                         className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
                       <span>{item.label}</span>
@@ -204,29 +285,61 @@ function DashboardLayoutContent({
           <SidebarFooter className="p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sidebar-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Avatar className="h-9 w-9 border border-sidebar-border shrink-0">
+                    <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                    <p className="text-sm font-medium truncate leading-none text-sidebar-foreground">
+                      {user?.name || "Benutzer"}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
+                    <p className="text-xs text-sidebar-foreground/60 truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                {user?.role === "admin" && variant === "investor" && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/admin")}
+                      className="cursor-pointer"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Admin-Bereich</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {variant === "admin" && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/investor")}
+                      className="cursor-pointer"
+                    >
+                      <Home className="mr-2 h-4 w-4" />
+                      <span>Investor-Bereich</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={() => setLocation("/")}
+                  className="cursor-pointer"
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Zur Startseite</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>Abmelden</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -250,14 +363,14 @@ function DashboardLayoutContent({
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "Menu"}
+                    {activeMenuItem?.label ?? "Menü"}
                   </span>
                 </div>
               </div>
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </SidebarInset>
     </>
   );
