@@ -85,3 +85,10 @@
 - [x] CSV-Export: Zeichnungen und Investitionsbeträge pro Investor
 - [x] CSV-Export: Export-Button in der Admin-Investoren-Übersicht
 - [x] CSV-Export: Filteroptionen (KYC-Status, Investortyp)
+
+## Landing Page Erweiterungen
+- [x] Presse & Auszeichnungen Sektion auf Landing Page
+- [x] Urkunde "Unternehmen der Zukunft" (diind) integriert
+- [x] Forbes Artikel "Markenaufbau im Amazon-Zeitalter" verlinkt
+- [x] Focus Online Artikel "Amazon Markenaufbau" verlinkt
+- [x] Navigation um "Presse" Link erweitert

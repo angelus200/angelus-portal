@@ -10,7 +10,10 @@ import {
   Wallet,
   ArrowRight,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Award,
+  Newspaper,
+  ExternalLink
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
@@ -46,6 +49,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#investors" className="text-muted-foreground hover:text-foreground transition-colors">Für Investoren</a>
+            <a href="#press" className="text-muted-foreground hover:text-foreground transition-colors">Presse</a>
             <a href="#risk" className="text-muted-foreground hover:text-foreground transition-colors">Risikohinweise</a>
           </nav>
           <div className="flex items-center gap-4">
@@ -203,6 +207,130 @@ export default function Home() {
                 <p className="text-muted-foreground">
                   Klare Zahlungspläne und vollständige Nachverfolgbarkeit aller Transaktionen.
                 </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Press & Awards Section */}
+      <section id="press" className="py-20 bg-gradient-to-b from-background to-muted/30">
+        <div className="container">
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Award className="w-8 h-8 text-primary" />
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Auszeichnungen & Presse
+              </h2>
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Die Angelus Group ist Teil eines innovativen Netzwerks für digitalen Markenaufbau und wurde für ihre zukunftsorientierte Unternehmensführung ausgezeichnet.
+            </p>
+          </div>
+
+          {/* Award Section */}
+          <div className="mb-16">
+            <Card className="max-w-4xl mx-auto border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="grid md:grid-cols-2 gap-0">
+                  <div className="p-8 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 text-primary mb-4">
+                      <Award className="w-6 h-6" />
+                      <span className="font-semibold uppercase tracking-wide text-sm">Auszeichnung</span>
+                    </div>
+                    <h3 className="text-2xl font-bold mb-4">Unternehmen der Zukunft</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Das Deutsche Innovationsinstitut für Nachhaltigkeit und Digitalisierung (diind) hat die 
+                      <strong className="text-foreground"> Angelus Managementberatung und Service KG</strong> als 
+                      "Unternehmen der Zukunft" ausgezeichnet.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">proaktiv</span>
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">engagiert</span>
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">zukunftsfähig</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      In Kooperation mit DUP UNTERNEHMER
+                    </p>
+                  </div>
+                  <div className="bg-white p-4 flex items-center justify-center">
+                    <img 
+                      src="/urkunde-unternehmen-zukunft.png" 
+                      alt="Urkunde - Unternehmen der Zukunft - Angelus Managementberatung und Service KG" 
+                      className="max-h-80 w-auto object-contain"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Press Articles */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <Newspaper className="w-6 h-6 text-primary" />
+              <h3 className="text-2xl font-semibold">Presseartikel</h3>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Forbes Article */}
+            <Card className="border-border hover:border-primary/50 transition-all hover:shadow-lg group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg italic">F</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-lg">Forbes Österreich</span>
+                    <p className="text-sm text-muted-foreground">25. August 2025</p>
+                  </div>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+                  Markenaufbau im Amazon-Zeitalter
+                </h4>
+                <p className="text-muted-foreground text-sm mb-4">
+                  "Das Netzwerk um commercehelden, digiPULS, Brands-Wanted und <strong className="text-foreground">Angelus Group</strong> nutzt Amazon nicht nur als Absatzkanal, sondern als systemische Infrastruktur für digitalen Markenaufbau."
+                </p>
+                <a 
+                  href="https://www.forbes.at/artikel/markenaufbau-im-amazon-zeitalter" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                >
+                  Artikel lesen
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Focus Article */}
+            <Card className="border-border hover:border-primary/50 transition-all hover:shadow-lg group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">F</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-lg">Focus Online</span>
+                    <p className="text-sm text-muted-foreground">2. September 2025</p>
+                  </div>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+                  Amazon Markenaufbau: Diese Firmen setzen auf datengetriebenes Wachstum
+                </h4>
+                <p className="text-muted-foreground text-sm mb-4">
+                  "Hinter diesen Marken stehen Unternehmen wie commercehelden, toolmacher und digiPULS – ergänzt durch die operative Betreuung durch die <strong className="text-foreground">Angelus Group</strong>."
+                </p>
+                <a 
+                  href="https://unternehmen.focus.de/amazon-markenaufbau.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                >
+                  Artikel lesen
+                  <ExternalLink className="w-4 h-4" />
+                </a>
               </CardContent>
             </Card>
           </div>
