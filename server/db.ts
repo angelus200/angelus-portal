@@ -426,3 +426,98 @@ export async function getDashboardStats() {
     pendingKyc: pendingKycCount?.count || 0
   };
 }
+
+// ==================== EMAIL/PASSWORD AUTH FUNCTIONS ====================
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithPassword(userData: {
+  email: string;
+  passwordHash: string;
+  name?: string;
+  emailVerificationToken?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Generate a unique openId for email users
+  const openId = `email_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  
+  const result = await db.insert(users).values({
+    openId,
+    email: userData.email,
+    passwordHash: userData.passwordHash,
+    name: userData.name,
+    loginMethod: "email",
+    emailVerified: false,
+    emailVerificationToken: userData.emailVerificationToken,
+    role: "user",
+    lastSignedIn: new Date(),
+  });
+  
+  return result[0].insertId;
+}
+
+export async function verifyUserEmail(token: string) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.select().from(users)
+    .where(eq(users.emailVerificationToken, token))
+    .limit(1);
+  
+  if (result.length === 0) return false;
+  
+  await db.update(users).set({
+    emailVerified: true,
+    emailVerificationToken: null,
+  }).where(eq(users.id, result[0].id));
+  
+  return true;
+}
+
+export async function setPasswordResetToken(email: string, token: string, expires: Date) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.update(users).set({
+    passwordResetToken: token,
+    passwordResetExpires: expires,
+  }).where(eq(users.email, email));
+  
+  return true;
+}
+
+export async function resetPassword(token: string, newPasswordHash: string) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const now = new Date();
+  const result = await db.select().from(users)
+    .where(and(
+      eq(users.passwordResetToken, token),
+      gte(users.passwordResetExpires, now)
+    ))
+    .limit(1);
+  
+  if (result.length === 0) return false;
+  
+  await db.update(users).set({
+    passwordHash: newPasswordHash,
+    passwordResetToken: null,
+    passwordResetExpires: null,
+  }).where(eq(users.id, result[0].id));
+  
+  return true;
+}
+
+export async function updateLastSignedIn(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
+}

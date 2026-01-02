@@ -1,0 +1,31 @@
+{
+  "query": "SELECT * FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute SELECT * FROM users;",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "adGLJU68Lxm3os7MKgyDtb",
+      "name": "Thomas Gross",
+      "email": "grossdigitalpartner@gmail.com",
+      "loginMethod": "google",
+      "role": "admin",
+      "createdAt": "2026-01-02 08:50:03",
+      "updatedAt": "2026-01-02 11:20:13",
+      "lastSignedIn": "2026-01-02 11:20:13",
+      "phone": "NULL",
+      "company": "NULL",
+      "address": "NULL",
+      "country": "NULL",
+      "kycStatus": "pending",
+      "kycVerifiedAt": "NULL",
+      "kycExternalId": "NULL",
+      "investorType": "NULL",
+      "isAccredited": "0",
+      "riskProfileId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\tloginMethod\trole\tcreatedAt\tupdatedAt\tlastSignedIn\tphone\tcompany\taddress\tcountry\tkycStatus\tkycVerifiedAt\tkycExternalId\tinvestorType\tisAccredited\triskProfileId\n1\tadGLJU68Lxm3os7MKgyDtb\tThomas Gross\tgrossdigitalpartner@gmail.com\tgoogle\tadmin\t2026-01-02 08:50:03\t2026-01-02 11:20:13\t2026-01-02 11:20:13\tNULL\tNULL\tNULL\tNULL\tpending\tNULL\tNULL\tNULL\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1640
+}

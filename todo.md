@@ -52,3 +52,11 @@
 - [ ] Full chatbot implementation
 - [ ] External KYC provider integration
 - [ ] Payment gateway integration
+
+## Bugs
+- [ ] Fix: "Unauthenticated - Missing Authorization Header" Fehler beim Zugriff auf geschützte Bereiche
+
+## New Features
+- [x] E-Mail/Passwort Login (zusätzlich zu Manus OAuth)
+- [x] Registrierung mit E-Mail-Verifizierung
+- [ ] Passwort-Reset Funktion
