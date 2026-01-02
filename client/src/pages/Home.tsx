@@ -273,7 +273,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Forbes Article */}
             <Card className="border-border hover:border-primary/50 transition-all hover:shadow-lg group">
               <CardContent className="p-6">
@@ -324,6 +324,36 @@ export default function Home() {
                 </p>
                 <a 
                   href="https://unternehmen.focus.de/amazon-markenaufbau.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                >
+                  Artikel lesen
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Scoredex Article */}
+            <Card className="border-border hover:border-primary/50 transition-all hover:shadow-lg group">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">S</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-lg">Scoredex</span>
+                    <p className="text-sm text-muted-foreground">24. September 2025</p>
+                  </div>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+                  Angelus Group – Start-up-Finanzierung
+                </h4>
+                <p className="text-muted-foreground text-sm mb-4">
+                  "Die <strong className="text-foreground">Angelus Group</strong> positioniert sich als vielseitiger Finanzpartner für Unternehmen und Start-ups mit maßgeschneiderten Lösungen jenseits klassischer Bankfinanzierungen."
+                </p>
+                <a 
+                  href="https://www.scoredex.com/blog/angelus-group-start-up-finanzierung/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-primary hover:underline font-medium"

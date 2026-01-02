@@ -92,3 +92,4 @@
 - [x] Forbes Artikel "Markenaufbau im Amazon-Zeitalter" verlinkt
 - [x] Focus Online Artikel "Amazon Markenaufbau" verlinkt
 - [x] Navigation um "Presse" Link erweitert
+- [x] Scoredex Artikel "Angelus Group - Start-up-Finanzierung" zur Presse-Sektion hinzufügen
