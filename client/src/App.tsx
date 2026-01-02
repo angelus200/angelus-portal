@@ -8,6 +8,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 // Public pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -32,6 +34,8 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
       {/* Investor routes */}
       <Route path="/investor" component={InvestorDashboard} />
