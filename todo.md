@@ -93,3 +93,6 @@
 - [x] Focus Online Artikel "Amazon Markenaufbau" verlinkt
 - [x] Navigation um "Presse" Link erweitert
 - [x] Scoredex Artikel "Angelus Group - Start-up-Finanzierung" zur Presse-Sektion hinzufügen
+- [x] FAQ-Bereich auf Landing Page für Investoren
+- [x] Accordion-Komponente für FAQ-Fragen
+- [x] Navigation um FAQ-Link erweitern

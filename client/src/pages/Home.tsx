@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getLoginUrl } from "@/const";
 import { 
   Shield, 
@@ -13,7 +14,8 @@ import {
   AlertTriangle,
   Award,
   Newspaper,
-  ExternalLink
+  ExternalLink,
+  HelpCircle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
@@ -50,6 +52,7 @@ export default function Home() {
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#investors" className="text-muted-foreground hover:text-foreground transition-colors">Für Investoren</a>
             <a href="#press" className="text-muted-foreground hover:text-foreground transition-colors">Presse</a>
+            <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
             <a href="#risk" className="text-muted-foreground hover:text-foreground transition-colors">Risikohinweise</a>
           </nav>
           <div className="flex items-center gap-4">
@@ -465,6 +468,107 @@ export default function Home() {
                 Erst nach erfolgreicher Prüfung ist eine Investition möglich.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-20 bg-muted/30">
+        <div className="container">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <HelpCircle className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Häufig gestellte Fragen
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Hier finden Sie Antworten auf die wichtigsten Fragen rund um Investitionen bei der Angelus KG.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Was ist die Mindestzeichnungssumme?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Die Mindestzeichnungssumme beträgt <strong className="text-foreground">100.000 €</strong>. Aufgrund dieser Mindestzeichnungssumme 
+                  greift die Prospektausnahme nach Art. 1 Abs. 4 lit. c EU-ProspektVO. Dies bedeutet, dass kein 
+                  von der BaFin gebilligter Wertpapierprospekt erforderlich ist.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-2" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Wer kann in die Anleihen investieren?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Unsere Anleihen richten sich ausschließlich an <strong className="text-foreground">qualifizierte Investoren</strong> und 
+                  <strong className="text-foreground"> professionelle Anleger</strong> im Sinne der EU-Prospektverordnung. Dazu zählen 
+                  institutionelle Investoren, vermögende Privatpersonen und Unternehmer mit entsprechender Erfahrung 
+                  im Finanzbereich.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-3" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Wie läuft der KYC-Prozess ab?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Nach der Registrierung durchlaufen Sie einen vollumfänglichen <strong className="text-foreground">KYC/AML-Prüfprozess</strong>. 
+                  Dieser umfasst die Verifizierung Ihrer Identität, die Prüfung Ihrer Investoreneigenschaft sowie 
+                  die Einhaltung aller regulatorischen Anforderungen. Erst nach erfolgreicher Prüfung ist eine 
+                  Investition möglich.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-4" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Welche Risiken bestehen bei der Investition?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Investitionen in Unternehmensanleihen sind mit <strong className="text-foreground">erheblichen Risiken</strong> verbunden. 
+                  Es besteht die Möglichkeit eines vollständigen Verlustes des eingesetzten Kapitals. Eine Rückzahlung 
+                  oder Zinszahlung ist nicht garantiert und kann im Insolvenz- oder Krisenfall dauerhaft ausgeschlossen sein. 
+                  Bitte lesen Sie die detaillierten Risikohinweise vor einer Investition sorgfältig.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-5" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Wie werden die Zinsen ausgezahlt?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Die Zinszahlungen erfolgen gemäß den jeweiligen <strong className="text-foreground">Anleihebedingungen</strong>. 
+                  In der Regel werden Zinsen jährlich oder halbjährlich auf Ihr hinterlegtes Bankkonto oder 
+                  in Ihr E-Wallet überwiesen. Den genauen Zahlungsplan finden Sie in Ihrem Investoren-Dashboard.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-6" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Welches Recht gilt für die Anleihen?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Alle Anleihen unterliegen dem <strong className="text-foreground">Schweizer Recht</strong>. Die Angelus KG 
+                  hat ihren Sitz in der Schweiz und alle Verträge werden nach Schweizer Recht geschlossen. 
+                  Gerichtsstand ist die Schweiz.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-7" className="border border-border rounded-lg px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Wie kann ich meine Investition überwachen?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Nach erfolgreicher Registrierung und KYC-Prüfung erhalten Sie Zugang zu Ihrem persönlichen 
+                  <strong className="text-foreground"> Investoren-Dashboard</strong>. Dort können Sie alle Ihre Investitionen, 
+                  Zinszahlungen, Dokumente und Transaktionen in Echtzeit einsehen und verwalten.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
       </section>
