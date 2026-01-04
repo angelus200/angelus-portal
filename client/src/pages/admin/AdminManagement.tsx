@@ -1,170 +1,291 @@
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import { Loader2, Shield, Trash2, Plus } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { trpc } from "@/lib/trpc";
-import { Plus, Shield, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
-export default function AdminManagement() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("admin");
-
-  // Queries
-  const { data: users } = trpc.admin.getUsers.useQuery();
-  const { data: adminUsers } = trpc.admin.getAdminUsers.useQuery();
-
-  // Mutations
-  const promoteToAdmin = trpc.admin.promoteToAdmin.useMutation({
-    onSuccess: () => {
-      toast.success("Benutzer zum Admin befördert");
-      setEmail("");
-      setIsDialogOpen(false);
-    },
-    onError: (error: any) => toast.error(error.message),
-  });
-
-  const demoteFromAdmin = trpc.admin.demoteFromAdmin.useMutation({
-    onSuccess: () => {
-      toast.success("Admin-Rechte entzogen");
-    },
-    onError: (error: any) => toast.error(error.message),
-  });
-
-  const handlePromoteToAdmin = () => {
-    if (!email) {
-      toast.error("E-Mail-Adresse erforderlich");
-      return;
-    }
-    promoteToAdmin.mutate({ email });
+function AdminManagementContent() {
+  const [emailInput, setEmailInput] = useState("");
+  const [isPromoting, setIsPromoting] = useState(false);
+  
+  const showToast = (title: string, description: string, variant?: string) => {
+    // Simple toast fallback - in production, use a toast library
+    alert(`${title}: ${description}`);
   };
 
+  // Fetch all users
+  const { data: allUsers, isLoading: isLoadingUsers, refetch: refetchUsers } = trpc.admin.getUsers.useQuery();
+
+  // Fetch admin users
+  const { data: adminUsers, isLoading: isLoadingAdmins } = trpc.admin.getAdminUsers.useQuery();
+
+  // Promote to admin mutation
+  const promoteToAdminMutation = trpc.admin.promoteToAdmin.useMutation({
+    onSuccess: () => {
+      showToast("Erfolg", "Benutzer wurde zum Admin befördert");
+      setEmailInput("");
+      refetchUsers();
+    },
+    onError: (error) => {
+      showToast("Fehler", error.message || "Fehler beim Befördern zum Admin", "destructive");
+    },
+  });
+
+  // Demote from admin mutation
+  const demoteFromAdminMutation = trpc.admin.demoteFromAdmin.useMutation({
+    onSuccess: () => {
+      showToast("Erfolg", "Admin-Rechte wurden entzogen");
+      refetchUsers();
+    },
+    onError: (error) => {
+      showToast("Fehler", error.message || "Fehler beim Entziehen der Admin-Rechte", "destructive");
+    },
+  });
+
+  const handlePromoteToAdmin = async () => {
+    if (!emailInput.trim()) {
+      showToast("Fehler", "Bitte geben Sie eine E-Mail-Adresse ein", "destructive");
+      return;
+    }
+
+    setIsPromoting(true);
+    try {
+      await promoteToAdminMutation.mutateAsync({ email: emailInput });
+    } finally {
+      setIsPromoting(false);
+    }
+  };
+
+  const handleDemoteFromAdmin = async (userId: number) => {
+    if (confirm("Möchten Sie diesen Benutzer wirklich zum Investor zurückstufen?")) {
+      await demoteFromAdminMutation.mutateAsync({ userId });
+    }
+  };
+
+  const regularUsers = allUsers?.filter((u) => u.role === "user") || [];
+
+  return (
+    <div className="space-y-6 max-w-6xl">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Admin-Verwaltung</h1>
+        <p className="text-muted-foreground mt-2">
+          Verwalten Sie Admin-Rechte und Benutzerkonten
+        </p>
+      </div>
+
+      {/* Promote to Admin Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            Benutzer zum Admin befördern
+          </CardTitle>
+          <CardDescription>
+            Geben Sie die E-Mail-Adresse eines Benutzers ein, um ihn zum Admin zu befördern
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder="E-Mail-Adresse eingeben..."
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  handlePromoteToAdmin();
+                }
+              }}
+              disabled={isPromoting}
+            />
+            <Button
+              onClick={handlePromoteToAdmin}
+              disabled={isPromoting || !emailInput.trim()}
+              className="gap-2"
+            >
+              {isPromoting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Wird bearbeitet...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Befördern
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Admin Users Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin-Benutzer ({adminUsers?.length || 0})</CardTitle>
+          <CardDescription>
+            Liste aller Benutzer mit Admin-Rechten
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingAdmins ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : adminUsers && adminUsers.length > 0 ? (
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>E-Mail</TableHead>
+                    <TableHead>Rolle</TableHead>
+                    <TableHead>Erstellt am</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {adminUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name || "-"}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="default" className="bg-primary">
+                          Admin
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("de-DE")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {user.email !== "grossdigitalpartner@gmail.com" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDemoteFromAdmin(user.id)}
+                            disabled={demoteFromAdminMutation.isPending}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            {demoteFromAdminMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Keine Admin-Benutzer gefunden
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Regular Users Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Investor-Benutzer ({regularUsers.length})</CardTitle>
+          <CardDescription>
+            Liste aller Benutzer mit Investor-Rechten
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingUsers ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : regularUsers.length > 0 ? (
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>E-Mail</TableHead>
+                    <TableHead>Rolle</TableHead>
+                    <TableHead>Erstellt am</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {regularUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name || "-"}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">Investor</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("de-DE")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm("Möchten Sie diesen Benutzer zum Admin befördern?")) {
+                              promoteToAdminMutation.mutate({ email: user.email });
+                            }
+                          }}
+                          disabled={promoteToAdminMutation.isPending}
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                        >
+                          {promoteToAdminMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Shield className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Keine Investor-Benutzer gefunden
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function AdminManagement() {
   return (
     <DashboardLayout variant="admin">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Admin-Verwaltung</h1>
-            <p className="text-muted-foreground mt-1">Verwalten Sie Admin-Rechte und Benutzer</p>
-          </div>
-        </div>
-
-        {/* Admin-Rechte vergeben */}
-        <div className="bg-card border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Admin-Rechte vergeben
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Fördern Sie Benutzer zu Admin-Status
-              </p>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Neuer Admin
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Admin-Rechte vergeben</DialogTitle>
-                  <DialogDescription>
-                    Geben Sie die E-Mail-Adresse des Benutzers ein, dem Sie Admin-Rechte gewähren möchten.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>E-Mail-Adresse</Label>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="z.B. benutzer@example.com"
-                    />
-                  </div>
-                  <Button
-                    onClick={handlePromoteToAdmin}
-                    disabled={promoteToAdmin.isPending}
-                    className="w-full"
-                  >
-                    {promoteToAdmin.isPending ? "Wird befördert..." : "Zum Admin befördern"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Admin-Liste */}
-          <div className="space-y-3">
-            {adminUsers && adminUsers.length > 0 ? (
-              adminUsers.map((admin: any) => (
-                <div key={admin.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{admin.name || admin.email}</p>
-                      <p className="text-sm text-muted-foreground truncate">{admin.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default">Admin</Badge>
-                    {admin.email !== "grossdigitalpartner@gmail.com" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => demoteFromAdmin.mutate({ userId: admin.id })}
-                        disabled={demoteFromAdmin.isPending}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Keine Admin-Benutzer gefunden</p>
-            )}
-          </div>
-        </div>
-
-        {/* Alle Benutzer */}
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Alle Benutzer</h2>
-          <div className="space-y-3">
-            {users && users.length > 0 ? (
-              users.map((user: any) => (
-                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0 font-medium">
-                      {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{user.name || user.email}</p>
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                    {user.role === "admin" ? "Admin" : "Investor"}
-                  </Badge>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Keine Benutzer gefunden</p>
-            )}
-          </div>
-        </div>
-      </div>
+      <AdminManagementContent />
     </DashboardLayout>
   );
 }
