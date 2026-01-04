@@ -194,8 +194,8 @@
 - [x] Überprüfen: Können Verträge als Consent-Typen abgebildet werden? (JA)
 - [x] Audit-Trail Tabelle erstellen (consent_logs mit Timestamp, User, IP, Browser-Info)
 - [x] tRPC Prozeduren für Consent-Logs (logConsentAction, getLogsForBond, getLogsForUser, exportLogs)
-- [ ] Consent-Typen Management im Admin-Interface
-- [ ] Consent-Logs Anzeige im Admin-Dashboard
-- [ ] Export-Funktion für Compliance-Nachweise (CSV/PDF)
-- [ ] Investor-Interface: Checkbox-Zustimmungen mit Audit-Logging
+- [x] Consent-Typen Management im Admin-Interface
+- [x] Consent-Logs Anzeige im Admin-Dashboard (mit Filteroptionen) - ConsentLogsTable Komponente erstellt
+- [x] Export-Funktion für Compliance-Nachweise (CSV/PDF) - exportLogs Prozedur
+- [x] Investor-Interface: Checkbox-Zustimmungen mit Audit-Logging
 - [x] Dokumentation: Consent-System und Audit-Trail beschreiben (CONSENT_AUDIT_SYSTEM.md)

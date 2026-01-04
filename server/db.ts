@@ -13,7 +13,8 @@ import {
   auditLogs, InsertAuditLog,
   investorNotes, InsertInvestorNote, InvestorNote,
   profileChecks, InsertProfileCheck, ProfileCheck,
-  consents, InsertConsent, Consent
+  consents, InsertConsent, Consent,
+  consentLogs, InsertConsentLog, ConsentLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -748,4 +749,71 @@ export async function getConsentsByUser(userId: number) {
   return db.select().from(consents)
     .where(eq(consents.userId, userId))
     .orderBy(desc(consents.createdAt));
+}
+
+
+// Admin Helper Functions
+export async function getAllUsers() {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.users.findMany();
+}
+
+export async function getAdminStats() {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  const totalUsers = await database.query.users.findMany();
+  const totalBonds = await database.query.bonds.findMany();
+  const totalSubscriptions = await database.query.subscriptions.findMany();
+  
+  return {
+    totalInvestors: totalUsers.length,
+    totalBonds: totalBonds.length,
+    totalSubscriptions: totalSubscriptions.length,
+    pendingKyc: totalUsers.filter((u: any) => u.kycStatus === 'pending').length,
+  };
+}
+
+// Consent Log Helpers
+export async function createConsentLog(data: {
+  userId: number;
+  bondId: number;
+  consentType: string;
+  action: string;
+  ipAddress?: string;
+  userAgent?: string;
+  consentVersion?: string;
+  metadata: any;
+}) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  const result = await database.insert(consentLogs).values(data);
+  return result;
+}
+
+export async function getConsentLogsByBond(bondId: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.consentLogs.findMany({
+    where: (logs: any, { eq }: any) => eq(logs.bondId, bondId),
+    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
+  });
+}
+
+export async function getConsentLogsByUser(userId: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.consentLogs.findMany({
+    where: (logs: any, { eq }: any) => eq(logs.userId, userId),
+    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
+  });
+}
+
+export async function getAllConsentLogs() {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.consentLogs.findMany({
+    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
+  });
 }
