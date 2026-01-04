@@ -135,3 +135,11 @@
 - [x] Ergebnisauswertung mit Profil-Kategorien
 - [x] Risikomatrix Visualisierung
 - [x] Integration auf Landing Page
+
+## Profil-Check Datenbankintegration
+- [x] Datenbank-Tabelle für Profil-Check-Ergebnisse erstellen
+- [x] tRPC-Prozedur zum Speichern der Ergebnisse
+- [x] tRPC-Prozedur zum Abrufen der Ergebnisse
+- [x] Frontend: Ergebnisse nach Abschluss speichern
+- [x] Bei Registrierung: Profil-Check-Daten mit User verknüpfen
+- [x] Admin-Dashboard: Profil-Check-Ergebnisse anzeigen (tRPC-Prozedur vorhanden)

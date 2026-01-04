@@ -1395,6 +1395,98 @@ export const appRouter = router({
         return { success: true, isPinned: !note.isPinned };
       }),
   }),
+  
+  // ==================== PROFILE CHECK ====================
+  profileCheck: router({
+    // Save profile check result (public - before registration)
+    save: publicProcedure
+      .input(z.object({
+        sessionId: z.string(),
+        profileCategory: z.enum(["conservative", "balanced", "growth", "professional"]),
+        riskScore: z.number(),
+        answers: z.array(z.object({
+          questionId: z.string(),
+          value: z.union([z.string(), z.array(z.string())]),
+        })),
+        // Individual answer fields
+        expectedReturn: z.string().optional(),
+        returnVsSecurity: z.string().optional(),
+        capitalAvailability: z.string().optional(),
+        investmentHorizon: z.string().optional(),
+        distributionPreference: z.string().optional(),
+        liquidityNeed: z.string().optional(),
+        lossToleranceMax: z.string().optional(),
+        lossReaction: z.string().optional(),
+        currentAssets: z.array(z.string()).optional(),
+        experienceLevel: z.string().optional(),
+        plannedVolume: z.string().optional(),
+        portfolioShare: z.string().optional(),
+        informationNeed: z.string().optional(),
+        decisionProcess: z.string().optional(),
+        interestedBusinessAreas: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createProfileCheck({
+          sessionId: input.sessionId,
+          profileCategory: input.profileCategory,
+          riskScore: input.riskScore,
+          answers: input.answers,
+          expectedReturn: input.expectedReturn,
+          returnVsSecurity: input.returnVsSecurity,
+          capitalAvailability: input.capitalAvailability,
+          investmentHorizon: input.investmentHorizon,
+          distributionPreference: input.distributionPreference,
+          liquidityNeed: input.liquidityNeed,
+          lossToleranceMax: input.lossToleranceMax,
+          lossReaction: input.lossReaction,
+          currentAssets: input.currentAssets,
+          experienceLevel: input.experienceLevel,
+          plannedVolume: input.plannedVolume,
+          portfolioShare: input.portfolioShare,
+          informationNeed: input.informationNeed,
+          decisionProcess: input.decisionProcess,
+          interestedBusinessAreas: input.interestedBusinessAreas,
+          ipAddress: ctx.req.ip,
+          userAgent: ctx.req.headers["user-agent"],
+        });
+        
+        return { success: true, id };
+      }),
+    
+    // Get profile check by session ID (public)
+    getBySession: publicProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .query(async ({ input }) => {
+        return db.getProfileCheckBySessionId(input.sessionId);
+      }),
+    
+    // Link profile check to user after registration
+    linkToUser: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.linkProfileCheckToUser(input.sessionId, ctx.user.id);
+        return { success: true };
+      }),
+    
+    // Get profile checks for current user
+    getMine: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getProfileChecksByUserId(ctx.user.id);
+      }),
+    
+    // Admin: Get all profile checks
+    getAll: adminProcedure
+      .query(async () => {
+        return db.getAllProfileChecks();
+      }),
+    
+    // Admin: Get profile check by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProfileCheckById(input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

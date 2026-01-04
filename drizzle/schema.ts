@@ -382,3 +382,61 @@ export const investorNotes = mysqlTable("investor_notes", {
 
 export type InvestorNote = typeof investorNotes.$inferSelect;
 export type InsertInvestorNote = typeof investorNotes.$inferInsert;
+
+
+/**
+ * Investor Profile Check results (pre-registration)
+ * Stores results from the "Bin ich geeignet?" self-assessment
+ */
+export const profileChecks = mysqlTable("profile_checks", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Session tracking (before user registration)
+  sessionId: varchar("sessionId", { length: 128 }).notNull(),
+  
+  // Link to user (after registration)
+  userId: int("userId"),
+  
+  // Profile result
+  profileCategory: mysqlEnum("profileCategory", ["conservative", "balanced", "growth", "professional"]).notNull(),
+  riskScore: int("riskScore").notNull(),
+  
+  // All answers stored as JSON
+  answers: json("answers").notNull(),
+  
+  // Renditeerwartungen
+  expectedReturn: varchar("expectedReturn", { length: 32 }),
+  returnVsSecurity: varchar("returnVsSecurity", { length: 32 }),
+  
+  // Kapital & Timing
+  capitalAvailability: varchar("capitalAvailability", { length: 32 }),
+  investmentHorizon: varchar("investmentHorizon", { length: 32 }),
+  distributionPreference: varchar("distributionPreference", { length: 32 }),
+  liquidityNeed: varchar("liquidityNeed", { length: 32 }),
+  
+  // Risiko
+  lossToleranceMax: varchar("lossToleranceMax", { length: 32 }),
+  lossReaction: varchar("lossReaction", { length: 32 }),
+  
+  // Portfolio & Erfahrung
+  currentAssets: json("currentAssets"),
+  experienceLevel: varchar("experienceLevel", { length: 32 }),
+  plannedVolume: varchar("plannedVolume", { length: 32 }),
+  portfolioShare: varchar("portfolioShare", { length: 32 }),
+  
+  // Zusammenarbeit
+  informationNeed: varchar("informationNeed", { length: 32 }),
+  decisionProcess: varchar("decisionProcess", { length: 32 }),
+  interestedBusinessAreas: json("interestedBusinessAreas"),
+  
+  // Meta
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProfileCheck = typeof profileChecks.$inferSelect;
+export type InsertProfileCheck = typeof profileChecks.$inferInsert;

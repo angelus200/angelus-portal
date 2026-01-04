@@ -1,7 +1,7 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -17,6 +17,10 @@ export function useAuth(options?: UseAuthOptions) {
     retry: false,
     refetchOnWindowFocus: false,
   });
+  
+  // Profile check linking mutation
+  const linkProfileCheck = trpc.profileCheck.linkToUser.useMutation();
+  const hasLinkedProfileCheck = useRef(false);
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -60,6 +64,29 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.isPending,
   ]);
 
+  // Link profile check to user after successful login
+  useEffect(() => {
+    if (!state.user || hasLinkedProfileCheck.current) return;
+    
+    const sessionId = localStorage.getItem('angelus_profile_check_session');
+    const completed = localStorage.getItem('angelus_profile_check_completed');
+    
+    if (sessionId && completed === 'true') {
+      hasLinkedProfileCheck.current = true;
+      linkProfileCheck.mutate({ sessionId }, {
+        onSuccess: () => {
+          // Clear the localStorage after successful linking
+          localStorage.removeItem('angelus_profile_check_session');
+          localStorage.removeItem('angelus_profile_check_completed');
+          console.log('[Auth] Profile check linked to user');
+        },
+        onError: (error) => {
+          console.error('[Auth] Failed to link profile check:', error);
+        }
+      });
+    }
+  }, [state.user, linkProfileCheck]);
+  
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;

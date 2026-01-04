@@ -11,7 +11,8 @@ import {
   news, InsertNews, News,
   riskProfiles, InsertRiskProfile, RiskProfile,
   auditLogs, InsertAuditLog,
-  investorNotes, InsertInvestorNote, InvestorNote
+  investorNotes, InsertInvestorNote, InvestorNote,
+  profileChecks, InsertProfileCheck, ProfileCheck
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -637,5 +638,54 @@ export async function getInvestorNoteById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(investorNotes).where(eq(investorNotes.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+
+// ==================== PROFILE CHECK FUNCTIONS ====================
+
+export async function createProfileCheck(data: InsertProfileCheck) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(profileChecks).values(data);
+  return result[0].insertId;
+}
+
+export async function getProfileCheckBySessionId(sessionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(profileChecks)
+    .where(eq(profileChecks.sessionId, sessionId))
+    .orderBy(desc(profileChecks.createdAt))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getProfileChecksByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(profileChecks)
+    .where(eq(profileChecks.userId, userId))
+    .orderBy(desc(profileChecks.createdAt));
+}
+
+export async function linkProfileCheckToUser(sessionId: string, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(profileChecks)
+    .set({ userId })
+    .where(eq(profileChecks.sessionId, sessionId));
+}
+
+export async function getAllProfileChecks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(profileChecks).orderBy(desc(profileChecks.createdAt));
+}
+
+export async function getProfileCheckById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(profileChecks).where(eq(profileChecks.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }

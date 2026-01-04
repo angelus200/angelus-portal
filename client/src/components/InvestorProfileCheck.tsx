@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
+import { getLoginUrl } from "@/const";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -358,12 +361,27 @@ interface InvestorProfileCheckProps {
   onClose?: () => void;
 }
 
+// Generate or retrieve session ID for tracking
+function getOrCreateSessionId(): string {
+  const storageKey = 'angelus_profile_check_session';
+  let sessionId = localStorage.getItem(storageKey);
+  if (!sessionId) {
+    sessionId = `pc_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(storageKey, sessionId);
+  }
+  return sessionId;
+}
+
 export default function InvestorProfileCheck({ onComplete, onClose }: InvestorProfileCheckProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [showEducational, setShowEducational] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<ProfileResult | null>(null);
+  const [sessionId] = useState(() => getOrCreateSessionId());
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const saveProfileCheck = trpc.profileCheck.save.useMutation();
   
   const currentQuestion = questions[currentQuestionIndex];
   const currentSection = sections.find(s => s.id === currentQuestion?.section);
@@ -411,7 +429,7 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
     return !!currentAnswer.value;
   };
   
-  const handleNext = () => {
+  const handleNext = async () => {
     setShowEducational(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -420,6 +438,50 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
       const profileResult = calculateProfile(answers);
       setResult(profileResult);
       setShowResult(true);
+      
+      // Save to database
+      setIsSaving(true);
+      try {
+        // Extract individual answers for structured storage
+        const getAnswer = (qId: string) => {
+          const a = answers.find(ans => ans.questionId === qId);
+          return typeof a?.value === 'string' ? a.value : undefined;
+        };
+        const getArrayAnswer = (qId: string) => {
+          const a = answers.find(ans => ans.questionId === qId);
+          return Array.isArray(a?.value) ? a.value : undefined;
+        };
+        
+        await saveProfileCheck.mutateAsync({
+          sessionId,
+          profileCategory: profileResult.category,
+          riskScore: profileResult.riskScore,
+          answers,
+          expectedReturn: getAnswer('rendite_erwartung'),
+          returnVsSecurity: getAnswer('rendite_sicherheit'),
+          capitalAvailability: getAnswer('kapital_verfuegbar'),
+          investmentHorizon: getAnswer('kapital_bindung'),
+          distributionPreference: getAnswer('ausschuettung'),
+          liquidityNeed: getAnswer('liquiditaet'),
+          lossToleranceMax: getAnswer('verlust_toleranz'),
+          lossReaction: getAnswer('verlust_reaktion'),
+          currentAssets: getArrayAnswer('aktuelle_anlagen'),
+          experienceLevel: getAnswer('erfahrung'),
+          plannedVolume: getAnswer('volumen'),
+          portfolioShare: getAnswer('anteil_vermoegen'),
+          informationNeed: getAnswer('information'),
+          decisionProcess: getAnswer('entscheidung'),
+          interestedBusinessAreas: getArrayAnswer('geschaeftsbereiche'),
+        });
+        
+        // Store session ID in localStorage for later linking
+        localStorage.setItem('angelus_profile_check_completed', 'true');
+      } catch (error) {
+        console.error('Failed to save profile check:', error);
+      } finally {
+        setIsSaving(false);
+      }
+      
       onComplete?.(profileResult);
     }
   };
@@ -525,14 +587,26 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
           
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button className="flex-1" onClick={() => window.location.href = "/register"}>
-              Jetzt registrieren
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={onClose}>
+            {isSaving ? (
+              <Button className="flex-1" disabled>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Profil wird gespeichert...
+              </Button>
+            ) : (
+              <Button className="flex-1" onClick={() => window.location.href = getLoginUrl()}>
+                Jetzt registrieren
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+            <Button variant="outline" className="flex-1" onClick={onClose} disabled={isSaving}>
               Später fortfahren
             </Button>
           </div>
+          
+          {/* Session info for debugging */}
+          <p className="text-xs text-muted-foreground text-center">
+            Ihr Profil wurde gespeichert und wird bei der Registrierung automatisch übernommen.
+          </p>
         </CardContent>
       </Card>
     );
