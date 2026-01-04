@@ -194,6 +194,7 @@ export const appRouter = router({
     create: adminProcedure
       .input(z.object({
         name: z.string().min(1),
+        bondNumber: z.string().min(1),
         description: z.string().optional(),
         isin: z.string().optional(),
         totalVolume: z.string(),
@@ -201,6 +202,12 @@ export const appRouter = router({
         minSubscription: z.string().default("100000"),
         interestRate: z.string(),
         termMonths: z.number(),
+        couponFrequency: z.string().optional(),
+        currency: z.string().optional(),
+        issuer: z.string().optional(),
+        sector: z.string().optional(),
+        noticePeriod: z.string().optional(),
+        noticeDate: z.date().optional(),
         issueDate: z.date().optional(),
         maturityDate: z.date().optional(),
         subscriptionStartDate: z.date().optional(),

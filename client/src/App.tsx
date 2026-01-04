@@ -25,11 +25,10 @@ import Subscribe from "./pages/investor/Subscribe";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
-import AdminBonds from "./pages/admin/Bonds";
 import AdminInvestors from "./pages/admin/Investors";
 import AdminNews from "./pages/admin/News";
 import AdminWallets from "./pages/admin/Wallets";
-import AdminContracts from "./pages/admin/Contracts";
+import ProductsAndContracts from "./pages/admin/ProductsAndContracts";
 import AdminProfileChecks from "./pages/admin/ProfileChecks";
 import AdminInvestorDetails from "./pages/admin/InvestorDetails";
 
@@ -56,11 +55,10 @@ function Router() {
       
       {/* Admin routes */}
       <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/bonds" component={AdminBonds} />
+      <Route path="/admin/products-and-contracts" component={ProductsAndContracts} />
       <Route path="/admin/investors" component={AdminInvestors} />
       <Route path="/admin/news" component={AdminNews} />
       <Route path="/admin/wallets" component={AdminWallets} />
-      <Route path="/admin/contracts" component={AdminContracts} />
       <Route path="/admin/profile-checks" component={AdminProfileChecks} />
       <Route path="/admin/investors/:id" component={AdminInvestorDetails} />
       

@@ -201,13 +201,13 @@
 - [x] Dokumentation: Consent-System und Audit-Trail beschreiben (CONSENT_AUDIT_SYSTEM.md)
 
 
-## Bond-Verwaltung & Vertragsvorlagen-System
-- [x] Bond-Schema erweitern (Nummer, Mindestanlage, Laufzeit, Kündigungsfristen, Kündigungstermine)
-- [x] Vertragsvorlagen-Tabelle erstellen (Name, Typ, Inhalt, Version, Gültig ab)
-- [x] Schritt 1: Admin-Interface für Bond-Verwaltung (Tabelle + Formular) - BondsManagement.tsx erstellt
-- [x] Schritt 2: Vertragsvorlagen-Editor (Rich-Text + Versionskontrolle) - ContractTemplates.tsx mit TipTap erstellt
-- [x] Schritt 3: Bond-Template-Zuordnung im Admin-Interface - BondTemplateAssignment.tsx mit Drag-and-Drop erstellt
+## Bond-Verwaltung & Vertragsvorlagen-System (VEREINFACHT)
+- [ ] Alte Komponenten bereinigen
+- [ ] Neues vereinigtes Admin-Interface: Produkte & Verträge
+- [ ] Tab 1: Produkte mit Vertragsvorlagen-Zuordnung
+- [ ] Tab 2: Vertragsvorlagen mit Rich-Text-Editor
 - [ ] tRPC Prozeduren für Bond-CRUD
 - [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
-- [x] Investor-Seite: Vertragsvorlagen anzeigen (mit Lesezugriff vor Checkbox-Zustimmung) - ContractTemplateViewer.tsx erstellt
-- [ ] Tests für Bond- und Vertragsvorlagen-Verwaltung
+- [ ] tRPC Prozeduren für Bond-Template-Zuordnung
+- [x] Investor-Seite: Vertragsvorlagen anzeigen
+- [ ] Tests für neues System
