@@ -262,3 +262,13 @@
 - [x] Transaktions-Historie mit Filterung
 - [x] Route /admin/wallets und Navigation integrieren
 - [x] Vitest Tests für Wallet-Management Prozeduren
+
+## Admin Zeichnungs-Detailseite
+- [x] tRPC-Prozeduren für Zeichnungs-Verwaltung (getSubscriptions, getSubscriptionDetails, updateSubscriptionStatus)
+- [x] Admin-Komponente Subscriptions.tsx mit Zeichnungs-Tabelle
+- [x] Zeichnungs-Detail-Modal mit vollständigen Informationen
+- [x] Zustimmungs-Status Anzeige (Vertragsvorlagen, KYC, etc.)
+- [x] Zahlungsstatus und Zahlungsplan Anzeige
+- [x] Filterung nach Status, Beteiligung, Investor
+- [x] Route /admin/subscriptions und Navigation integrieren
+- [x] Vitest Tests für Subscription-Prozeduren (8 Tests bestanden)

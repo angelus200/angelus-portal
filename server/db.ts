@@ -1101,3 +1101,136 @@ export async function getWalletTransactionsForAdmin(limit: number = 50) {
   .orderBy(desc(walletTransactions.createdAt))
   .limit(limit);
 }
+
+
+// ==================== ADMIN SUBSCRIPTION MANAGEMENT FUNCTIONS ====================
+
+export async function getSubscriptionsForAdmin(limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: subscriptions.id,
+    userId: subscriptions.userId,
+    email: users.email,
+    name: users.name,
+    bondId: subscriptions.bondId,
+    bondName: bonds.name,
+    amount: subscriptions.amount,
+    currency: subscriptions.currency,
+    status: subscriptions.status,
+    createdAt: subscriptions.createdAt,
+  })
+  .from(subscriptions)
+  .innerJoin(users, eq(subscriptions.userId, users.id))
+  .innerJoin(bonds, eq(subscriptions.bondId, bonds.id))
+  .orderBy(desc(subscriptions.createdAt))
+  .limit(limit);
+}
+
+export async function getSubscriptionDetailForAdmin(subscriptionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const subscription = await db.select({
+    id: subscriptions.id,
+    userId: subscriptions.userId,
+    email: users.email,
+    name: users.name,
+    phone: users.phone,
+    bondId: subscriptions.bondId,
+    bondName: bonds.name,
+    amount: subscriptions.amount,
+    currency: subscriptions.currency,
+    status: subscriptions.status,
+    createdAt: subscriptions.createdAt,
+    updatedAt: subscriptions.updatedAt,
+  })
+  .from(subscriptions)
+  .innerJoin(users, eq(subscriptions.userId, users.id))
+  .innerJoin(bonds, eq(subscriptions.bondId, bonds.id))
+  .where(eq(subscriptions.id, subscriptionId))
+  .limit(1);
+  
+  if (subscription.length === 0) return null;
+  
+  // Get consents (consent records)
+  const consentsList = await db.select({
+    id: consents.id,
+    consentType: consents.consentType,
+    accepted: consents.accepted,
+    acceptedAt: consents.acceptedAt,
+    createdAt: consents.createdAt,
+  })
+  .from(consents)
+  .where(eq(consents.bondId, subscription[0].bondId));
+  
+  // Get payment schedule
+  const paymentSchedule = await db.select()
+  .from(paymentSchedules)
+  .where(eq(paymentSchedules.subscriptionId, subscriptionId));
+  
+  // Get KYC status
+  const kycStatus = await db.select({
+    status: users.kycStatus,
+    verifiedAt: users.kycVerifiedAt,
+  })
+  .from(users)
+  .where(eq(users.id, subscription[0].userId))
+  .limit(1);
+  
+  return {
+    ...subscription[0],
+    consents: consentsList,
+    paymentSchedule,
+    kycStatus: kycStatus[0] || { status: "pending", verifiedAt: null },
+  };
+}
+
+export async function getSubscriptionsByStatus(status: string, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: subscriptions.id,
+    userId: subscriptions.userId,
+    email: users.email,
+    name: users.name,
+    bondId: subscriptions.bondId,
+    bondName: bonds.name,
+    amount: subscriptions.amount,
+    currency: subscriptions.currency,
+    status: subscriptions.status,
+    createdAt: subscriptions.createdAt,
+  })
+  .from(subscriptions)
+  .innerJoin(users, eq(subscriptions.userId, users.id))
+  .innerJoin(bonds, eq(subscriptions.bondId, bonds.id))
+  .where(eq(subscriptions.status, status as any))
+  .orderBy(desc(subscriptions.createdAt))
+  .limit(limit);
+}
+
+export async function getSubscriptionsByBondForAdmin(bondId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: subscriptions.id,
+    userId: subscriptions.userId,
+    email: users.email,
+    name: users.name,
+    bondId: subscriptions.bondId,
+    bondName: bonds.name,
+    amount: subscriptions.amount,
+    currency: subscriptions.currency,
+    status: subscriptions.status,
+    createdAt: subscriptions.createdAt,
+  })
+  .from(subscriptions)
+  .innerJoin(users, eq(subscriptions.userId, users.id))
+  .innerJoin(bonds, eq(subscriptions.bondId, bonds.id))
+  .where(eq(subscriptions.bondId, bondId))
+  .orderBy(desc(subscriptions.createdAt))
+  .limit(limit);
+}

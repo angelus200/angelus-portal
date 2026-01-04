@@ -152,4 +152,48 @@ export const adminRouter = router({
     .query(async ({ input }) => {
       return await db.getWalletTransactionsForAdmin(input.limit);
     }),
+
+  // Get all subscriptions
+  getSubscriptions: adminProcedure
+    .input(z.object({ limit: z.number().default(100) }))
+    .query(async ({ input }) => {
+      return await db.getSubscriptionsForAdmin(input.limit);
+    }),
+
+  // Get subscription details
+  getSubscriptionDetail: adminProcedure
+    .input(z.object({ subscriptionId: z.number() }))
+    .query(async ({ input }) => {
+      return await db.getSubscriptionDetailForAdmin(input.subscriptionId);
+    }),
+
+  // Get subscriptions by status
+  getSubscriptionsByStatus: adminProcedure
+    .input(z.object({
+      status: z.string(),
+      limit: z.number().default(100),
+    }))
+    .query(async ({ input }) => {
+      return await db.getSubscriptionsByStatus(input.status, input.limit);
+    }),
+
+  // Get subscriptions by bond
+  getSubscriptionsByBond: adminProcedure
+    .input(z.object({
+      bondId: z.number(),
+      limit: z.number().default(100),
+    }))
+    .query(async ({ input }) => {
+      return await db.getSubscriptionsByBondForAdmin(input.bondId, input.limit);
+    }),
+
+  // Update subscription status
+  updateSubscriptionStatus: adminProcedure
+    .input(z.object({
+      subscriptionId: z.number(),
+      status: z.enum(["pending", "confirmed", "active", "completed", "cancelled"]),
+    }))
+    .mutation(async ({ input }) => {
+      return await db.updateSubscriptionStatus(input.subscriptionId, input.status);
+    }),
 });
