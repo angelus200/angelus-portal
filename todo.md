@@ -205,7 +205,7 @@
 - [x] Bond-Schema erweitern (Nummer, Mindestanlage, Laufzeit, Kündigungsfristen, Kündigungstermine)
 - [x] Vertragsvorlagen-Tabelle erstellen (Name, Typ, Inhalt, Version, Gültig ab)
 - [x] Schritt 1: Admin-Interface für Bond-Verwaltung (Tabelle + Formular) - BondsManagement.tsx erstellt
-- [ ] Schritt 2: Vertragsvorlagen-Editor (Rich-Text + Versionskontrolle)
+- [x] Schritt 2: Vertragsvorlagen-Editor (Rich-Text + Versionskontrolle) - ContractTemplates.tsx mit TipTap erstellt
 - [ ] Schritt 3: Bond-Template-Zuordnung im Admin-Interface
 - [ ] tRPC Prozeduren für Bond-CRUD
 - [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
