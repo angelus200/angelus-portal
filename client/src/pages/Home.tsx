@@ -114,7 +114,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              <span>Reguliert</span>
+              <span>International tätig</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
@@ -559,14 +559,43 @@ export default function Home() {
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-7" className="border border-border rounded-lg px-6 bg-card">
+              <AccordionItem value="item-7" className="border border-border rounded-lg mb-4 px-6 bg-card">
                 <AccordionTrigger className="text-base font-semibold hover:no-underline">
                   Wie kann ich meine Investition überwachen?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   Nach erfolgreicher Registrierung und KYC-Prüfung erhalten Sie Zugang zu Ihrem persönlichen 
                   <strong className="text-foreground"> Investoren-Dashboard</strong>. Dort können Sie alle Ihre Investitionen, 
-                  Zinszahlungen, Dokumente und Transaktionen in Echtzeit einsehen und verwalten.
+                  Erträge, Dokumente und Transaktionen in Echtzeit einsehen und verwalten.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-8" className="border border-border rounded-lg mb-4 px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  In welchen Geschäftsbereichen ist die Angelus Group aktiv?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Die Angelus Group ist in verschiedenen Geschäftsbereichen tätig:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li><strong className="text-foreground">Unternehmensberatung</strong> – Strategische Beratung für Unternehmen</li>
+                    <li><strong className="text-foreground">Distressed Debt & Sanierungen</strong> – Restrukturierung und Turnaround-Management</li>
+                    <li><strong className="text-foreground">Immobilien</strong> – Immobilieninvestments und -entwicklung</li>
+                    <li><strong className="text-foreground">Spezialdienstleistungen</strong> – Prozessfinanzierungen und Mietgarantien</li>
+                    <li><strong className="text-foreground">Startup-Begleitung & Incubator</strong> – Förderung und Begleitung von Gründungen</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-9" className="border border-border rounded-lg px-6 bg-card">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Wie ist die Angelus Group strukturiert?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Die Angelus Group setzt sich aus <strong className="text-foreground">verschiedenen Unternehmen</strong> zusammen, 
+                  die je nach Projekt und Anforderung eingesetzt werden. Für bestimmte Investitionen arbeiten wir auch 
+                  über <strong className="text-foreground">Zweckgesellschaften (SPVs)</strong>. Die Gruppe wird von 
+                  <strong className="text-foreground"> diversen Banken und Finanzdienstleistern</strong> in verschiedenen 
+                  Jurisdiktionen betreut, um eine optimale Struktur für jedes Projekt zu gewährleisten.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

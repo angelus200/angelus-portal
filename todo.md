@@ -111,3 +111,8 @@
 - [x] FAQ-Fragen umformulieren (keine Anleihen-Begriffe)
 - [x] Hinweis auf prospektfreie Angebote und individuelle Vereinbarungen hinzufügen
 - [x] Feature-Karten anpassen ("Attraktive Anleihen" → neutraler)
+
+## FAQ Erweiterung & Trust Indicators
+- [x] "Reguliert" aus Trust Indicators entfernen (Aufsicht) → "International tätig"
+- [x] FAQ: Geschäftsbereiche der Angelus Group hinzufügen
+- [x] FAQ: Unternehmensstruktur erklären (verschiedene Unternehmen, SPVs, Banken, Jurisdiktionen)
