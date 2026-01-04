@@ -189,6 +189,7 @@
 
 ## Bugs
 - [x] Contracts-Seite: JavaScript-Fehler beim Laden der Seite - "An unexpected error occurred" (DashboardLayout Import fehlte)
+- [x] 404-Fehler bei /admin/bonds und /admin/contracts Routes - auf /admin/products-and-contracts umgeleitet
 
 ## Verträge & Produkte mit Consent-System & Audit-Trail
 - [x] Überprüfen: Können Verträge als Consent-Typen abgebildet werden? (JA)

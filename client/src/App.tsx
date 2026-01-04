@@ -56,6 +56,8 @@ function Router() {
       {/* Admin routes */}
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/products-and-contracts" component={ProductsAndContracts} />
+      <Route path="/admin/bonds" component={ProductsAndContracts} />
+      <Route path="/admin/contracts" component={ProductsAndContracts} />
       <Route path="/admin/investors" component={AdminInvestors} />
       <Route path="/admin/news" component={AdminNews} />
       <Route path="/admin/wallets" component={AdminWallets} />
