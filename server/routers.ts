@@ -1486,6 +1486,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getProfileCheckById(input.id);
       }),
+    
+    // User: Get own profile check
+    getMyProfileCheck: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getProfileCheckByUserId(ctx.user.id);
+      }),
   }),
 });
 

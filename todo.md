@@ -158,3 +158,9 @@
 - [x] Filter nach Kategorie, Datum, Investor
 - [x] Detailansicht fuer einzelne Profil-Checks
 - [x] Route und Navigation hinzufuegen
+## Investor-Dashboard Profil-Check Anzeige
+- [x] tRPC-Prozedur zum Abrufen des Profil-Checks des aktuellen Users
+- [x] Profil-Check Sektion im Investor Dashboard hinzufuegen
+- [x] Profil-Kategorie und Risiko-Score anzeigen
+- [x] Risikomatrix Visualisierung im Dashboard
+- [x] Option zum Erneut-Durchfuehren des Tests

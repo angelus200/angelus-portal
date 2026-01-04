@@ -9,7 +9,9 @@ import {
   Calendar, 
   FileText,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  RotateCcw
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -21,6 +23,7 @@ export default function InvestorDashboard() {
   const { data: subscriptions, isLoading: subscriptionsLoading } = trpc.subscriptions.mySubscriptions.useQuery();
   const { data: upcomingPayments, isLoading: paymentsLoading } = trpc.payments.upcoming.useQuery();
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
+  const { data: profileCheck } = trpc.profileCheck.getMyProfileCheck.useQuery();
   const { data: news } = trpc.news.published.useQuery();
 
   const totalBalance = wallets?.reduce((sum, w) => {
@@ -212,6 +215,44 @@ export default function InvestorDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Profil-Check Result */}
+        {profileCheck && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Ihr Investoren-Profil</span>
+                <CheckCircle2 className="w-5 h-5 text-primary" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Profil-Kategorie</p>
+                  <p className="font-semibold text-lg">
+                    {profileCheck.profileCategory === "conservative" && "Konservativ"}
+                    {profileCheck.profileCategory === "balanced" && "Ausgewogen"}
+                    {profileCheck.profileCategory === "growth" && "Wachstumsorientiert"}
+                    {profileCheck.profileCategory === "professional" && "Professionell"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Risiko-Score</p>
+                  <p className="font-semibold text-lg">{profileCheck.riskScore}%</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Risiko-Bewertung</p>
+                <div className="w-full bg-muted rounded-full h-3">
+                  <div
+                    className="bg-primary h-3 rounded-full transition-all"
+                    style={{ width: `${profileCheck.riskScore}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card>

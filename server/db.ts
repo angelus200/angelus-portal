@@ -689,3 +689,10 @@ export async function getProfileCheckById(id: number) {
   const result = await db.select().from(profileChecks).where(eq(profileChecks.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
+
+export async function getProfileCheckByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(profileChecks).where(eq(profileChecks.userId, userId)).orderBy(desc(profileChecks.createdAt)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
