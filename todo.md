@@ -186,3 +186,6 @@
 - [x] AML-Seite von https://kg.angelus.group/aml/ auslesen und im Portal erstellen
 - [x] Datenschutz-Seite von https://kg.angelus.group/datenschutz/ auslesen und im Portal erstellen
 - [x] Links im Footer hinzufügen
+
+## Bugs
+- [x] Contracts-Seite: JavaScript-Fehler beim Laden der Seite - "An unexpected error occurred" (DashboardLayout Import fehlte)
