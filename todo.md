@@ -104,3 +104,10 @@
 - [x] Impressum-Seite mit vollständigen rechtlichen Angaben erstellen
 - [x] Kontaktdaten aktualisieren (Telefon: 0800 175 077 0, E-Mail: office@angelus.group)
 - [x] Footer-Links zu Impressum verknüpfen
+
+## Begriffe neutralisieren (regulatorisch)
+- [x] "Anleihen" durch neutrale Begriffe ersetzen (Investitionsmöglichkeiten, Beteiligungen)
+- [x] "Einlagen" durch "Guthaben" oder "Vermögenswerte" ersetzen
+- [x] FAQ-Fragen umformulieren (keine Anleihen-Begriffe)
+- [x] Hinweis auf prospektfreie Angebote und individuelle Vereinbarungen hinzufügen
+- [x] Feature-Karten anpassen ("Attraktive Anleihen" → neutraler)

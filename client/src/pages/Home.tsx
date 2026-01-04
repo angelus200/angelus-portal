@@ -83,7 +83,7 @@ export default function Home() {
             </h1>
             <p className="text-lg md:text-xl text-secondary-foreground/80 mb-8">
               Exklusive Investitionsmöglichkeiten für professionelle Investoren und Unternehmer. 
-              Qualifiziert nachrangige Schuldverschreibungen mit attraktiven Renditen.
+              Prospektfreie Angebote und individuelle Vereinbarungen mit attraktiven Konditionen.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {!isAuthenticated && (
@@ -146,9 +146,9 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <TrendingUp className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Attraktive Anleihen</h3>
+                <h3 className="text-xl font-semibold mb-2">Attraktive Beteiligungen</h3>
                 <p className="text-muted-foreground">
-                  Zugang zu exklusiven Anleihen mit überdurchschnittlichen Renditen für qualifizierte Investoren.
+                  Zugang zu exklusiven Investitionsmöglichkeiten mit überdurchschnittlichen Renditen für qualifizierte Investoren.
                 </p>
               </CardContent>
             </Card>
@@ -160,7 +160,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">E-Wallet System</h3>
                 <p className="text-muted-foreground">
-                  Verwalten Sie Ihre Einlagen in EUR und Kryptowährungen (BTC, ETH, USDT) an einem Ort.
+                  Verwalten Sie Ihre Vermögenswerte in EUR und Kryptowährungen (BTC, ETH, USDT) an einem Ort.
                 </p>
               </CardContent>
             </Card>
@@ -491,21 +491,22 @@ export default function Home() {
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1" className="border border-border rounded-lg mb-4 px-6 bg-card">
                 <AccordionTrigger className="text-base font-semibold hover:no-underline">
-                  Was ist die Mindestzeichnungssumme?
+                  Was ist die Mindestinvestitionssumme?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Die Mindestzeichnungssumme beträgt <strong className="text-foreground">100.000 €</strong>. Aufgrund dieser Mindestzeichnungssumme 
-                  greift die Prospektausnahme nach Art. 1 Abs. 4 lit. c EU-ProspektVO. Dies bedeutet, dass kein 
-                  von der BaFin gebilligter Wertpapierprospekt erforderlich ist.
+                  Die Mindestinvestitionssumme beträgt in der Regel <strong className="text-foreground">100.000 €</strong>. 
+                  Wir bieten ausschließlich <strong className="text-foreground">prospektfreie Angebote</strong> oder 
+                  <strong className="text-foreground"> individuelle Vereinbarungen</strong> an. Die genauen Konditionen 
+                  werden für jedes Angebot separat festgelegt.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-2" className="border border-border rounded-lg mb-4 px-6 bg-card">
                 <AccordionTrigger className="text-base font-semibold hover:no-underline">
-                  Wer kann in die Anleihen investieren?
+                  Wer kann investieren?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Unsere Anleihen richten sich ausschließlich an <strong className="text-foreground">qualifizierte Investoren</strong> und 
+                  Unsere Investitionsmöglichkeiten richten sich ausschließlich an <strong className="text-foreground">qualifizierte Investoren</strong> und 
                   <strong className="text-foreground"> professionelle Anleger</strong> im Sinne der EU-Prospektverordnung. Dazu zählen 
                   institutionelle Investoren, vermögende Privatpersonen und Unternehmer mit entsprechender Erfahrung 
                   im Finanzbereich.
@@ -529,32 +530,32 @@ export default function Home() {
                   Welche Risiken bestehen bei der Investition?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Investitionen in Unternehmensanleihen sind mit <strong className="text-foreground">erheblichen Risiken</strong> verbunden. 
+                  Alle Investitionen sind mit <strong className="text-foreground">erheblichen Risiken</strong> verbunden. 
                   Es besteht die Möglichkeit eines vollständigen Verlustes des eingesetzten Kapitals. Eine Rückzahlung 
-                  oder Zinszahlung ist nicht garantiert und kann im Insolvenz- oder Krisenfall dauerhaft ausgeschlossen sein. 
+                  oder Rendite ist nicht garantiert und kann im Insolvenz- oder Krisenfall dauerhaft ausgeschlossen sein. 
                   Bitte lesen Sie die detaillierten Risikohinweise vor einer Investition sorgfältig.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-5" className="border border-border rounded-lg mb-4 px-6 bg-card">
                 <AccordionTrigger className="text-base font-semibold hover:no-underline">
-                  Wie werden die Zinsen ausgezahlt?
+                  Wie werden Erträge ausgezahlt?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Die Zinszahlungen erfolgen gemäß den jeweiligen <strong className="text-foreground">Anleihebedingungen</strong>. 
-                  In der Regel werden Zinsen jährlich oder halbjährlich auf Ihr hinterlegtes Bankkonto oder 
+                  Die Auszahlungen erfolgen gemäß den jeweiligen <strong className="text-foreground">Vertragsbedingungen</strong>. 
+                  In der Regel werden Erträge jährlich oder halbjährlich auf Ihr hinterlegtes Bankkonto oder 
                   in Ihr E-Wallet überwiesen. Den genauen Zahlungsplan finden Sie in Ihrem Investoren-Dashboard.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-6" className="border border-border rounded-lg mb-4 px-6 bg-card">
                 <AccordionTrigger className="text-base font-semibold hover:no-underline">
-                  Welches Recht gilt für die Anleihen?
+                  Welches Recht gilt für die Verträge?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Die Anleihen unterliegen dem jeweils in den Anleihebedingungen festgelegten Recht. 
-                  Neue Emissionen werden nach <strong className="text-foreground">Schweizer Recht</strong> begeben. 
-                  Die genauen rechtlichen Rahmenbedingungen entnehmen Sie bitte den jeweiligen Anleihedokumenten.
+                  Die Verträge unterliegen dem jeweils in den Vertragsbedingungen festgelegten Recht. 
+                  Neue Vereinbarungen werden nach <strong className="text-foreground">Schweizer Recht</strong> geschlossen. 
+                  Die genauen rechtlichen Rahmenbedingungen entnehmen Sie bitte den jeweiligen Vertragsdokumenten.
                 </AccordionContent>
               </AccordionItem>
 
@@ -582,7 +583,7 @@ export default function Home() {
                 Bereit zu investieren?
               </h2>
               <p className="text-muted-foreground mb-8">
-                Registrieren Sie sich jetzt und erhalten Sie Zugang zu exklusiven Anleihen nach erfolgreicher KYC-Verifizierung.
+                Registrieren Sie sich jetzt und erhalten Sie Zugang zu exklusiven Investitionsmöglichkeiten nach erfolgreicher KYC-Verifizierung.
               </p>
               <a href={getLoginUrl()}>
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
@@ -609,7 +610,7 @@ export default function Home() {
                 <span className="font-semibold text-secondary-foreground">Angelus Group</span>
               </div>
               <p className="text-sm text-secondary-foreground/60">
-                Professionelle Anleihen für qualifizierte Investoren.
+                Professionelle Investitionsmöglichkeiten für qualifizierte Investoren.
               </p>
             </div>
             
