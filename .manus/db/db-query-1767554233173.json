@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET kycStatus = 'verified' WHERE email = 'grossdigitalpartner@gmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute UPDATE users SET kycStatus = 'verified' WHERE email = 'grossdigitalpartner@gmail.com';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1534
+}

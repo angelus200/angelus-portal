@@ -1,0 +1,61 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "audit_logs"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "bond_contract_templates"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "bonds"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "consent_logs"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "consents"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "contract_templates"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "contracts"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "investor_notes"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "news"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "payment_schedules"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "profile_checks"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "risk_profiles"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "subscriptions"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "users"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "wallet_transactions"
+    },
+    {
+      "Tables_in_TN563UpDJCcuGULZGrQyaX": "wallets"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TN563UpDJCcuGULZGrQyaX\n__drizzle_migrations\naudit_logs\nbond_contract_templates\nbonds\nconsent_logs\nconsents\ncontract_templates\ncontracts\ninvestor_notes\nnews\npayment_schedules\nprofile_checks\nrisk_profiles\nsubscriptions\nusers\nwallet_transactions\nwallets\n",
+  "stderr": "",
+  "execution_time_ms": 1552
+}
