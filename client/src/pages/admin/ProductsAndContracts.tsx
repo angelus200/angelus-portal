@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { Plus, FileText, Package } from "lucide-react";
+import { Plus, FileText, Package, Copy } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
@@ -91,6 +91,18 @@ export default function ProductsAndContracts() {
     },
     onError: (error: any) => toast.error(error.message),
   });
+
+  const handleCopyTemplate = (template: any) => {
+    const newName = `${template.name} (Kopie)`;
+    setTemplateForm({
+      name: newName,
+      type: template.type,
+      content: template.content,
+      validFrom: new Date().toISOString().split("T")[0],
+    });
+    setIsTemplateDialogOpen(true);
+    toast.success(`Vorlage "${newName}" wird erstellt`);
+  };
 
   const handleCreateProduct = () => {
     if (!productForm.name || !productForm.bondNumber) {

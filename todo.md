@@ -211,3 +211,16 @@
 - [ ] tRPC Prozeduren für Bond-Template-Zuordnung
 - [x] Investor-Seite: Vertragsvorlagen anzeigen
 - [ ] Tests für neues System
+
+
+## Test-Anleihe "Angelus Bond 2026"
+- [ ] Vertragsdokumente als Vorlagen erstellen (Zeichnungsvereinbarung, Risikooffenlegung, AGB, KYC, Prospekt)
+- [ ] Test-Bond im Admin-Interface anlegen mit allen Details
+- [ ] Vertragsvorlagen zum Bond zuordnen
+- [ ] Investor-Onboarding testen (Zeichnung durchführen)
+
+## Vorlage-Wiederverwendung
+- [x] Copy-Funktion für Vertragsvorlagen hinzufügen - handleCopyTemplate implementiert
+- [x] Template-Bibliothek im Admin-Interface - Copy-Button in Tabelle
+- [ ] Schnelle Zuordnung von Vorlagen zu neuen Produkten
+- [ ] Versionskontrolle bei Vorlagen-Kopien
