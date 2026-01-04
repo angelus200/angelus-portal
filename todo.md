@@ -206,7 +206,7 @@
 - [x] Vertragsvorlagen-Tabelle erstellen (Name, Typ, Inhalt, Version, Gültig ab)
 - [x] Schritt 1: Admin-Interface für Bond-Verwaltung (Tabelle + Formular) - BondsManagement.tsx erstellt
 - [x] Schritt 2: Vertragsvorlagen-Editor (Rich-Text + Versionskontrolle) - ContractTemplates.tsx mit TipTap erstellt
-- [ ] Schritt 3: Bond-Template-Zuordnung im Admin-Interface
+- [x] Schritt 3: Bond-Template-Zuordnung im Admin-Interface - BondTemplateAssignment.tsx mit Drag-and-Drop erstellt
 - [ ] tRPC Prozeduren für Bond-CRUD
 - [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
 - [ ] Investor-Seite: Vertragsvorlagen anzeigen
