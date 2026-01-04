@@ -209,5 +209,5 @@
 - [x] Schritt 3: Bond-Template-Zuordnung im Admin-Interface - BondTemplateAssignment.tsx mit Drag-and-Drop erstellt
 - [ ] tRPC Prozeduren für Bond-CRUD
 - [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
-- [ ] Investor-Seite: Vertragsvorlagen anzeigen
+- [x] Investor-Seite: Vertragsvorlagen anzeigen (mit Lesezugriff vor Checkbox-Zustimmung) - ContractTemplateViewer.tsx erstellt
 - [ ] Tests für Bond- und Vertragsvorlagen-Verwaltung

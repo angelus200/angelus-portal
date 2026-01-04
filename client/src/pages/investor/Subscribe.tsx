@@ -73,8 +73,19 @@ export default function Subscribe() {
     [key: string]: boolean;
   }>({});
   
+  // Template acceptance state
+  const [templateAcceptances, setTemplateAcceptances] = useState<{
+    [key: number]: boolean;
+  }>({});
+  
   // Fetch consents for this bond
   const { data: consents } = trpc.consents.getByBond.useQuery(
+    { bondId },
+    { enabled: bondId > 0 }
+  );
+  
+  // Fetch bond templates
+  const { data: bondTemplates } = trpc.bondTemplates.getByBond.useQuery(
     { bondId },
     { enabled: bondId > 0 }
   );
@@ -89,6 +100,17 @@ export default function Subscribe() {
       setRequiredConsents(consentMap);
     }
   }, [consents]);
+  
+  // Initialize template acceptances from bond templates
+  useEffect(() => {
+    if (bondTemplates) {
+      const templateMap: { [key: number]: boolean } = {};
+      bondTemplates.forEach((bt: any) => {
+        templateMap[bt.contractTemplate.id] = false; // Start unchecked
+      });
+      setTemplateAcceptances(templateMap);
+    }
+  }, [bondTemplates]);
 
   // Check eligibility
   const isKycVerified = user?.kycStatus === "verified";
@@ -359,6 +381,35 @@ export default function Subscribe() {
                   <Separator />
                 </>
               )}
+              {/* Contract Templates */}
+              {bondTemplates && bondTemplates.length > 0 && (
+                <>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Vertragsvorlagen
+                    </h4>
+                    
+                    <div className="space-y-3 pl-6">
+                      {bondTemplates.map((bt: any) => (
+                        <ContractTemplateViewer
+                          key={bt.contractTemplate.id}
+                          template={bt.contractTemplate}
+                          isRequired={bt.isRequired}
+                          isAccepted={templateAcceptances[bt.contractTemplate.id] || false}
+                          onAccept={(accepted) => setTemplateAcceptances({
+                            ...templateAcceptances,
+                            [bt.contractTemplate.id]: accepted
+                          })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                </>
+              )}
+              
               {/* Risk Warnings */}
               <div className="space-y-4">
                 <h4 className="font-semibold flex items-center gap-2">
