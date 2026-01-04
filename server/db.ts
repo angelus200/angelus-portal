@@ -12,7 +12,8 @@ import {
   riskProfiles, InsertRiskProfile, RiskProfile,
   auditLogs, InsertAuditLog,
   investorNotes, InsertInvestorNote, InvestorNote,
-  profileChecks, InsertProfileCheck, ProfileCheck
+  profileChecks, InsertProfileCheck, ProfileCheck,
+  consents, InsertConsent, Consent
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -695,4 +696,56 @@ export async function getProfileCheckByUserId(userId: number) {
   if (!db) return undefined;
   const result = await db.select().from(profileChecks).where(eq(profileChecks.userId, userId)).orderBy(desc(profileChecks.createdAt)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+
+// ==================== CONSENT FUNCTIONS ====================
+
+export async function createConsent(data: InsertConsent) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(consents).values(data);
+  return result[0].insertId;
+}
+
+export async function getConsentsByUserAndBond(userId: number, bondId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(consents)
+    .where(and(eq(consents.userId, userId), eq(consents.bondId, bondId)));
+}
+
+export async function updateConsent(id: number, data: Partial<InsertConsent>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(consents).set(data).where(eq(consents.id, id));
+}
+
+export async function getConsentByUserBondAndType(userId: number, bondId: number, consentType: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(consents)
+    .where(and(
+      eq(consents.userId, userId),
+      eq(consents.bondId, bondId),
+      eq(consents.consentType, consentType as any)
+    ))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getConsentsByBond(bondId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(consents)
+    .where(eq(consents.bondId, bondId))
+    .orderBy(desc(consents.createdAt));
+}
+
+export async function getConsentsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(consents)
+    .where(eq(consents.userId, userId))
+    .orderBy(desc(consents.createdAt));
 }

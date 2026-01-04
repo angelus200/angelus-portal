@@ -174,3 +174,10 @@
 
 ## Verträge Fehler - Neuer Versuch
 - [x] Fehler beim Anlegen neuer Verträge - SelectItem value "terms_conditions" auf "terms" korrigiert
+
+## Consent-Management-System (Zustimmungen)
+- [x] Datenbank-Tabelle für Consents erstellen (bondId, userId, consentType, accepted, timestamp)
+- [x] tRPC-Prozeduren für Consent-Verwaltung (upsert, getByBond, getAllByBond)
+- [x] Admin Bonds: Consent-Checkboxen beim Erstellen/Bearbeiten
+- [x] Investor-Seite: Zustimmungs-Checkboxen bei Beteiligung anzeigen
+- [x] Admin-Dashboard: Übersicht der Zustimmungen pro Beteiligung

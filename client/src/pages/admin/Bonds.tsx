@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Plus, Edit, Trash2, TrendingUp } from "lucide-react";
+import { Plus, Edit, Trash2, TrendingUp, FileText, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
@@ -44,6 +44,13 @@ export default function AdminBonds() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingBond, setEditingBond] = useState<any>(null);
+  const [selectedBondForConsents, setSelectedBondForConsents] = useState<number | null>(null);
+  
+  // Fetch consents for selected bond
+  const { data: consents } = trpc.consents.getByBond.useQuery(
+    { bondId: selectedBondForConsents || 0 },
+    { enabled: selectedBondForConsents !== null }
+  );
 
   // Form state
   const [name, setName] = useState("");
@@ -56,6 +63,15 @@ export default function AdminBonds() {
   const [riskCategory, setRiskCategory] = useState("medium");
   const [governingLaw, setGoverningLaw] = useState("Swiss");
   const [status, setStatus] = useState("draft");
+  
+  // Consent state
+  const [requiredConsents, setRequiredConsents] = useState({
+    risk_disclosure: true,
+    terms_conditions: true,
+    subscription_agreement: true,
+    kyc_confirmation: false,
+    prospectus_acknowledgment: false,
+  });
 
   const resetForm = () => {
     setName("");
@@ -67,10 +83,17 @@ export default function AdminBonds() {
     setMinSubscription("100000");
     setRiskCategory("medium");
     setGoverningLaw("Swiss");
+    setRequiredConsents({
+      risk_disclosure: true,
+      terms_conditions: true,
+      subscription_agreement: true,
+      kyc_confirmation: false,
+      prospectus_acknowledgment: false,
+    });
   };
 
   const handleCreate = async () => {
-    await createBond.mutateAsync({
+    const newBond = await createBond.mutateAsync({
       name,
       isin: isin || undefined,
       description: description || undefined,
@@ -84,6 +107,9 @@ export default function AdminBonds() {
       hasSubordination: true,
       hasInsolvencyReservation: true,
     });
+    
+    resetForm();
+    setIsCreateOpen(false);
   };
 
   const handleEdit = (bond: any) => {
@@ -235,6 +261,88 @@ export default function AdminBonds() {
                     </Select>
                   </div>
                 </div>
+                
+                {/* Consent Requirements */}
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="font-semibold">Erforderliche Zustimmungen</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="risk_disclosure"
+                        checked={requiredConsents.risk_disclosure}
+                        onChange={(e) => setRequiredConsents({
+                          ...requiredConsents,
+                          risk_disclosure: e.target.checked
+                        })}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="risk_disclosure" className="font-normal cursor-pointer">
+                        Risikooffenlegung
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="terms_conditions"
+                        checked={requiredConsents.terms_conditions}
+                        onChange={(e) => setRequiredConsents({
+                          ...requiredConsents,
+                          terms_conditions: e.target.checked
+                        })}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="terms_conditions" className="font-normal cursor-pointer">
+                        Allgemeine Geschäftsbedingungen
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="subscription_agreement"
+                        checked={requiredConsents.subscription_agreement}
+                        onChange={(e) => setRequiredConsents({
+                          ...requiredConsents,
+                          subscription_agreement: e.target.checked
+                        })}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="subscription_agreement" className="font-normal cursor-pointer">
+                        Zeichnungsvereinbarung
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="kyc_confirmation"
+                        checked={requiredConsents.kyc_confirmation}
+                        onChange={(e) => setRequiredConsents({
+                          ...requiredConsents,
+                          kyc_confirmation: e.target.checked
+                        })}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="kyc_confirmation" className="font-normal cursor-pointer">
+                        KYC-Bestätigung
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="prospectus_acknowledgment"
+                        checked={requiredConsents.prospectus_acknowledgment}
+                        onChange={(e) => setRequiredConsents({
+                          ...requiredConsents,
+                          prospectus_acknowledgment: e.target.checked
+                        })}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="prospectus_acknowledgment" className="font-normal cursor-pointer">
+                        Prospekt-Bestätigung
+                      </Label>
+                    </div>
+                  </div>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -272,6 +380,7 @@ export default function AdminBonds() {
                     <TableHead>Verfügbar</TableHead>
                     <TableHead>Risiko</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Zustimmungen</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -306,6 +415,22 @@ export default function AdminBonds() {
                            bond.status === "closed" ? "Geschlossen" : "Entwurf"}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedBondForConsents(bond.id)}
+                          className="gap-2"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span className="text-xs">
+                            {selectedBondForConsents === bond.id && consents 
+                              ? `${consents.length} Typ${consents.length !== 1 ? 'en' : ''}`
+                              : 'Zeigen'
+                            }
+                          </span>
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
@@ -330,6 +455,57 @@ export default function AdminBonds() {
             )}
           </CardContent>
         </Card>
+
+        {/* Consents Detail Card */}
+        {selectedBondForConsents && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Erforderliche Zustimmungen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {consents && consents.length > 0 ? (
+                <div className="space-y-3">
+                  {consents.map((consent) => {
+                    const consentLabels: { [key: string]: string } = {
+                      risk_disclosure: "Risikooffenlegung",
+                      terms_conditions: "Allgemeine Geschäftsbedingungen",
+                      subscription_agreement: "Zeichnungsvereinbarung",
+                      kyc_confirmation: "KYC-Bestätigung",
+                      prospectus_acknowledgment: "Prospekt-Bestätigung",
+                    };
+                    
+                    return (
+                      <div key={consent.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="font-medium">{consentLabels[consent.consentType] || consent.consentType}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          Erstellt: {new Date(consent.createdAt).toLocaleDateString("de-DE")}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Keine Zustimmungen erforderlich</p>
+                </div>
+              )}
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full"
+                onClick={() => setSelectedBondForConsents(null)}
+              >
+                Schließen
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Edit Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

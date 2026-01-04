@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ import {
   Clock
 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -68,6 +68,28 @@ export default function Subscribe() {
     arbitration: false,
   });
 
+  // Consent state - will be populated from bond data
+  const [requiredConsents, setRequiredConsents] = useState<{
+    [key: string]: boolean;
+  }>({});
+  
+  // Fetch consents for this bond
+  const { data: consents } = trpc.consents.getByBond.useQuery(
+    { bondId },
+    { enabled: bondId > 0 }
+  );
+  
+  // Initialize required consents from bond
+  useEffect(() => {
+    if (consents) {
+      const consentMap: { [key: string]: boolean } = {};
+      consents.forEach(c => {
+        consentMap[c.consentType] = false; // Start unchecked
+      });
+      setRequiredConsents(consentMap);
+    }
+  }, [consents]);
+
   // Check eligibility
   const isKycVerified = user?.kycStatus === "verified";
   const hasRiskProfile = !!riskProfile;
@@ -85,7 +107,8 @@ export default function Subscribe() {
   const hasSufficientFunds = parsedAmount <= availableBalance;
   
   const allConfirmationsChecked = Object.values(confirmations).every(v => v);
-  const canSubmit = isEligible && isAmountValid && hasSufficientFunds && allConfirmationsChecked;
+  const allConsentsChecked = Object.values(requiredConsents).every(v => v);
+  const canSubmit = isEligible && isAmountValid && hasSufficientFunds && allConfirmationsChecked && allConsentsChecked;
 
   const handleConfirmationChange = (key: keyof typeof confirmations) => {
     setConfirmations(prev => ({ ...prev, [key]: !prev[key] }));
@@ -287,7 +310,7 @@ export default function Subscribe() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5" />
-                Rechtliche Bestätigungen
+                Zustimmungen & Bestätigungen
               </CardTitle>
               <CardDescription>
                 Gemäß Schweizer Recht und EU-Prospektverordnung müssen Sie folgende Punkte bestätigen.
@@ -295,6 +318,47 @@ export default function Subscribe() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Required Consents */}
+              {Object.keys(requiredConsents).length > 0 && (
+                <>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Erforderliche Zustimmungen
+                    </h4>
+                    
+                    <div className="space-y-3 pl-6">
+                      {Object.entries(requiredConsents).map(([type, checked]) => {
+                        const consentLabels: { [key: string]: string } = {
+                          risk_disclosure: "Ich bestätige die Risikooffenlegung gelesen zu haben",
+                          terms_conditions: "Ich akzeptiere die Allgemeinen Geschäftsbedingungen",
+                          subscription_agreement: "Ich akzeptiere die Zeichnungsvereinbarung",
+                          kyc_confirmation: "Ich bestätige die KYC-Anforderungen erfüllt zu haben",
+                          prospectus_acknowledgment: "Ich bestätige den Prospekt zur Kenntnis genommen zu haben",
+                        };
+                        
+                        return (
+                          <div key={type} className="flex items-start gap-3">
+                            <Checkbox
+                              id={`consent_${type}`}
+                              checked={checked}
+                              onCheckedChange={() => setRequiredConsents({
+                                ...requiredConsents,
+                                [type]: !checked
+                              })}
+                            />
+                            <Label htmlFor={`consent_${type}`} className="text-sm leading-relaxed cursor-pointer">
+                              {consentLabels[type] || type}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                </>
+              )}
               {/* Risk Warnings */}
               <div className="space-y-4">
                 <h4 className="font-semibold flex items-center gap-2">
@@ -475,13 +539,18 @@ export default function Subscribe() {
               {/* Progress indicator */}
               <div className="p-4 bg-muted/50 rounded-lg">
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Bestätigungen</span>
-                  <span>{Object.values(confirmations).filter(Boolean).length} / {Object.keys(confirmations).length}</span>
+                  <span>Zustimmungen & Bestätigungen</span>
+                  <span>
+                    {Object.values(confirmations).filter(Boolean).length + Object.values(requiredConsents).filter(Boolean).length} / 
+                    {Object.keys(confirmations).length + Object.keys(requiredConsents).length}
+                  </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div 
                     className="bg-primary h-2 rounded-full transition-all"
-                    style={{ width: `${(Object.values(confirmations).filter(Boolean).length / Object.keys(confirmations).length) * 100}%` }}
+                    style={{ 
+                      width: `${((Object.values(confirmations).filter(Boolean).length + Object.values(requiredConsents).filter(Boolean).length) / (Object.keys(confirmations).length + Object.keys(requiredConsents).length)) * 100}%` 
+                    }}
                   />
                 </div>
               </div>
@@ -493,7 +562,7 @@ export default function Subscribe() {
                 </Button>
                 <Button 
                   onClick={() => setStep(3)} 
-                  disabled={!allConfirmationsChecked}
+                  disabled={!allConfirmationsChecked || !allConsentsChecked}
                   className="gap-2"
                 >
                   Weiter

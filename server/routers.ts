@@ -8,6 +8,7 @@ import * as db from "./db";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { ENV } from "./_core/env";
+import { consentsRouter } from "./consentsRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -1493,6 +1494,8 @@ export const appRouter = router({
         return db.getProfileCheckByUserId(ctx.user.id);
       }),
   }),
+  
+  consents: consentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

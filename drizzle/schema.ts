@@ -440,3 +440,27 @@ export const profileChecks = mysqlTable("profile_checks", {
 
 export type ProfileCheck = typeof profileChecks.$inferSelect;
 export type InsertProfileCheck = typeof profileChecks.$inferInsert;
+
+/**
+ * Consents table for tracking investor approvals/confirmations
+ * (not signatures, just acknowledgments via checkbox)
+ */
+export const consents = mysqlTable("consents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  bondId: int("bondId").notNull(),
+  consentType: mysqlEnum("consentType", [
+    "risk_disclosure",
+    "terms_conditions",
+    "subscription_agreement",
+    "kyc_confirmation",
+    "prospectus_acknowledgment"
+  ]).notNull(),
+  accepted: boolean("accepted").default(false).notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").onUpdateNow().notNull(),
+});
+
+export type Consent = typeof consents.$inferSelect;
+export type InsertConsent = typeof consents.$inferInsert;
