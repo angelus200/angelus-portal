@@ -181,3 +181,8 @@
 - [x] Admin Bonds: Consent-Checkboxen beim Erstellen/Bearbeiten
 - [x] Investor-Seite: Zustimmungs-Checkboxen bei Beteiligung anzeigen
 - [x] Admin-Dashboard: Übersicht der Zustimmungen pro Beteiligung
+
+## AML und Datenschutz Seiten
+- [x] AML-Seite von https://kg.angelus.group/aml/ auslesen und im Portal erstellen
+- [x] Datenschutz-Seite von https://kg.angelus.group/datenschutz/ auslesen und im Portal erstellen
+- [x] Links im Footer hinzufügen

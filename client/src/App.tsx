@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Impressum from "./pages/Impressum";
+import AMLPolicy from "./pages/legal/AML";
+import PrivacyPolicy from "./pages/legal/Privacy";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/impressum" component={Impressum} />
+      <Route path="/aml" component={AMLPolicy} />
+      <Route path="/datenschutz" component={PrivacyPolicy} />
       
       {/* Investor routes */}
       <Route path="/investor" component={InvestorDashboard} />

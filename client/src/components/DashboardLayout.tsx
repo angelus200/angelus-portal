@@ -40,6 +40,7 @@ import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import Footer from "./Footer";
 
 // Icon mapping
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -383,7 +384,10 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <Footer />
+        </div>
       </SidebarInset>
     </>
   );
