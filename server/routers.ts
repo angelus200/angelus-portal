@@ -1510,7 +1510,7 @@ export const appRouter = router({
     create: adminProcedure
       .input(z.object({
         name: z.string().min(1),
-        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "prospectus", "other"]),
+        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "kyc_aml", "prospectus", "other"]),
         content: z.string(),
         validFrom: z.string(),
       }))
@@ -1540,7 +1540,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         name: z.string().min(1),
-        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "prospectus", "other"]),
+        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "kyc_aml", "prospectus", "other"]),
         content: z.string(),
         validFrom: z.string(),
       }))
