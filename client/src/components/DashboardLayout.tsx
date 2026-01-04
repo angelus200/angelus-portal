@@ -72,6 +72,7 @@ const adminMenuItems = [
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
+  { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
 ];
