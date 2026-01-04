@@ -214,19 +214,28 @@
 - [ ] Tests für neues System
 
 
+## Professionelle Vertragsvorlagen mit Schiedsgerichtsklausel
+- [x] 5 ausführliche Vertragsvorlagen schreiben (mit Schiedsgerichtsklausel):
+  - [x] Zeichnungsvereinbarung
+  - [x] Risikooffenlegung
+  - [x] Allgemeine Geschäftsbedingungen (AGB)
+  - [x] KYC/AML Vereinbarung
+  - [x] Prospekt
+- [x] Seed-Script zum Einfügen der Vorlagen erstellen
+- [x] Seed-Script ausführen und Vorlagen in DB laden
+- [ ] Vertragsvorlagen im Admin-Interface testen und manuell laden
+
 ## Test-Anleihe "Angelus Bond 2026"
-- [ ] Vertragsdokumente als Vorlagen erstellen (Zeichnungsvereinbarung, Risikooffenlegung, AGB, KYC, Prospekt)
 - [ ] Test-Bond im Admin-Interface anlegen mit allen Details
 - [ ] Vertragsvorlagen zum Bond zuordnen
 - [ ] Investor-Onboarding testen (Zeichnung durchführen)
-- [ ] Fehler in Subscribe.tsx und ProductsAndContracts.tsx beheben
 
-## Aktuelle Aufgabe: Fehlerbereinigung & Test-Anleihe Erstellung
-- [ ] TypeScript-Fehler in routers.ts beheben (consentVersion Feld)
-- [ ] 5 Vertragsdokumente als Vorlagen anlegen
-- [ ] Test-Bond "Angelus Bond 2026" mit allen Details anlegen
-- [ ] Vertragsvorlagen zum Bond zuordnen
-- [ ] Investor-Zeichnungsflow testen
+## Aktuelle Aufgabe: Professionelle Vertragsvorlagen mit Schiedsgerichtsklausel
+- [x] TypeScript-Fehler in routers.ts beheben (consentVersion Feld)
+- [x] Professionelle Vertragsvorlagen mit Schiedsgerichtsklausel schreiben
+- [x] Seed-Script zum Laden der Vorlagen erstellen
+- [x] Vertragsvorlagen in Datenbank laden (via Admin-Interface)
+- [ ] Test-Bond "Angelus Bond 2026" anlegen und Vorlagen zuordnen
 
 ## Vorlage-Wiederverwendung
 - [x] Copy-Funktion für Vertragsvorlagen hinzufügen - handleCopyTemplate implementiert
