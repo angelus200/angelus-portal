@@ -77,4 +77,26 @@ export const adminRouter = router({
 
       return await db.updateUserRole(input.userId, "user");
     }),
+
+  // Get dashboard statistics
+  stats: adminProcedure.query(async () => {
+    const totalInvestors = await db.getTotalInvestors();
+    const totalBonds = await db.getTotalBonds();
+    const totalSubscriptions = await db.getTotalSubscriptions();
+    const pendingKyc = await db.getPendingKycCount();
+
+    return {
+      totalInvestors,
+      totalBonds,
+      totalSubscriptions,
+      pendingKyc,
+    };
+  }),
+
+  // Get audit logs
+  auditLogs: adminProcedure
+    .input(z.object({ limit: z.number().default(10) }))
+    .query(async ({ input }) => {
+      return await db.getAuditLogs(input.limit);
+    }),
 });

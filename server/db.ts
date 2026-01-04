@@ -967,3 +967,52 @@ export async function unlinkBondTemplate(bondId: number, templateId: number) {
     )
   );
 }
+
+// ==================== ADMIN DASHBOARD FUNCTIONS ====================
+
+export async function getTotalInvestors() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(users)
+    .where(eq(users.role, "user"));
+  
+  return result[0]?.count || 0;
+}
+
+export async function getTotalBonds() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(bonds);
+  
+  return result[0]?.count || 0;
+}
+
+export async function getTotalSubscriptions() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(subscriptions);
+  
+  return result[0]?.count || 0;
+}
+
+export async function getPendingKycCount() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(users)
+    .where(eq(users.kycStatus, "pending"));
+  
+  return result[0]?.count || 0;
+}
+

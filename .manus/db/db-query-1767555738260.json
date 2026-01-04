@@ -1,0 +1,27 @@
+{
+  "query": "SELECT s.*, u.email, b.name as bond_name FROM subscriptions s JOIN users u ON s.userId = u.id JOIN bonds b ON s.bondId = b.id ORDER BY s.createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute SELECT s.*, u.email, b.name as bond_name FROM subscriptions s JOIN users u ON s.userId = u.id JOIN bonds b ON s.bondId = b.id ORDER BY s.createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "bondId": "1",
+      "amount": "100000.00",
+      "currency": "EUR",
+      "status": "pending",
+      "termsAccepted": "1",
+      "riskWarningAccepted": "1",
+      "consentTimestamp": "2026-01-04 19:39:23",
+      "consentIpAddress": "client-ip",
+      "contractId": "NULL",
+      "createdAt": "2026-01-04 19:39:23",
+      "updatedAt": "2026-01-04 19:39:23",
+      "email": "grossdigitalpartner@gmail.com",
+      "bond_name": "Angelus Bond 2026"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tbondId\tamount\tcurrency\tstatus\ttermsAccepted\triskWarningAccepted\tconsentTimestamp\tconsentIpAddress\tcontractId\tcreatedAt\tupdatedAt\temail\tbond_name\n1\t1\t1\t100000.00\tEUR\tpending\t1\t1\t2026-01-04 19:39:23\tclient-ip\tNULL\t2026-01-04 19:39:23\t2026-01-04 19:39:23\tgrossdigitalpartner@gmail.com\tAngelus Bond 2026\n",
+  "stderr": "",
+  "execution_time_ms": 1513
+}

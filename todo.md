@@ -246,4 +246,10 @@
 ## Wallet-Guthaben für Tests
 - [x] Wallet-Guthaben für grossdigitalpartner@gmail.com auf EUR 500.000 setzen
 - [ ] Admin-Interface für Wallet-Verwaltung erweitern (Guthaben manuell setzen)
-- [ ] Investor-Zeichnungsflow mit ausreichendem Guthaben testen
+- [x] Investor-Zeichnungsflow mit ausreichendem Guthaben testen
+
+## Admin-Dashboard Stats & Audit Logs
+- [x] admin.stats tRPC Prozedur hinzugefügt (totalInvestors, totalBonds, totalSubscriptions, pendingKyc)
+- [x] admin.auditLogs tRPC Prozedur hinzugefügt
+- [x] DB-Funktionen für Dashboard-Statistiken implementiert
+- [x] Admin-Dashboard zeigt Zeichnungen korrekt an
