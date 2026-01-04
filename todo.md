@@ -171,3 +171,6 @@
 - [x] Button Styling verbessern - besserer Kontrast und Sichtbarkeit
 - [x] Text-Farbe aufhellen oder Button-Hintergrund dunkler machen
 - [x] Icon besser sichtbar machen
+
+## Verträge Fehler - Neuer Versuch
+- [x] Fehler beim Anlegen neuer Verträge - SelectItem value "terms_conditions" auf "terms" korrigiert

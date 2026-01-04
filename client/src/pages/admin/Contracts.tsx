@@ -62,9 +62,8 @@ export default function AdminContracts() {
     const labels: Record<string, string> = {
       subscription_agreement: "Zeichnungsvereinbarung",
       risk_disclosure: "Risikohinweise",
-      terms_conditions: "AGB",
+      terms: "AGB",
       prospectus: "Prospekt",
-      kyc_form: "KYC-Formular",
       other: "Sonstiges",
     };
     return labels[type] || type;
@@ -112,7 +111,7 @@ export default function AdminContracts() {
                     <SelectContent>
                       <SelectItem value="subscription_agreement">Zeichnungsvereinbarung</SelectItem>
                       <SelectItem value="risk_disclosure">Risikohinweise</SelectItem>
-                      <SelectItem value="terms_conditions">AGB</SelectItem>
+                      <SelectItem value="terms">AGB</SelectItem>
                       <SelectItem value="prospectus">Prospekt</SelectItem>
                       <SelectItem value="kyc_form">KYC-Formular</SelectItem>
                       <SelectItem value="other">Sonstiges</SelectItem>
