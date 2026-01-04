@@ -67,10 +67,10 @@ const investorMenuItems = [
 // Admin menu items
 const adminMenuItems = [
   { icon: "LayoutDashboard", label: "Dashboard", path: "/admin" },
+  { icon: "FileText", label: "Produkte & Verträge", path: "/admin/products-and-contracts" },
   { icon: "TrendingUp", label: "Beteiligungen", path: "/admin/bonds" },
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
-  { icon: "FileText", label: "Vertraege", path: "/admin/contracts" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
 ];
@@ -187,7 +187,14 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => location.startsWith(item.path));
+  const activeMenuItem = menuItems.find(item => {
+    // Exact match for dashboard routes
+    if (item.path === "/admin" || item.path === "/investor") {
+      return location === item.path;
+    }
+    // Prefix match for other routes
+    return location.startsWith(item.path);
+  });
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -275,13 +282,14 @@ function DashboardLayoutContent({
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
                 const isActive = location === item.path || 
-                  (item.path !== "/investor" && item.path !== "/admin" && location.startsWith(item.path));
+                  (item.path !== "/investor" && item.path !== "/admin" && location.startsWith(item.path)) ||
+                  (item.path === "/admin/products-and-contracts" && (location.startsWith("/admin/products-and-contracts") || location.startsWith("/admin/contracts")));
                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
                 return (
                   <SidebarMenuItem key={item.path}>
+                    <Link href={item.path}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => setLocation(item.path)}
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >
@@ -290,6 +298,7 @@ function DashboardLayoutContent({
                       />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
+                  </Link>
                   </SidebarMenuItem>
                 );
               })}
