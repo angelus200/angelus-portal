@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,13 +41,13 @@ export default function ProductsAndContracts() {
 
   const [templateForm, setTemplateForm] = useState({
     name: "",
-    type: "subscription_agreement",
+    type: "subscription_agreement" as const,
     content: "",
     validFrom: new Date().toISOString().split("T")[0],
   });
 
   // Queries
-  const { data: products } = trpc.bonds.getAll.useQuery();
+  const { data: products } = trpc.bonds.list.useQuery();
   const { data: templates } = trpc.contractTemplates.getAll.useQuery();
 
   // Mutations
@@ -101,31 +100,27 @@ export default function ProductsAndContracts() {
       validFrom: new Date().toISOString().split("T")[0],
     });
     setIsTemplateDialogOpen(true);
-    toast.success(`Vorlage "${newName}" wird erstellt`);
   };
 
   const handleCreateProduct = () => {
     if (!productForm.name || !productForm.bondNumber) {
-      toast.error("Name und Bondnummer sind erforderlich");
+      toast.error("Name und Nummer sind erforderlich");
       return;
     }
-
     createProduct.mutate({
       name: productForm.name,
       bondNumber: productForm.bondNumber,
       description: productForm.description,
-      totalVolume: productForm.totalVolume,
-      availableVolume: productForm.availableVolume,
-      minSubscription: productForm.minSubscription,
-      interestRate: parseFloat(productForm.interestRate),
-      termMonths: parseInt(productForm.termMonths),
-      couponFrequency: productForm.couponFrequency,
+      totalVolume: parseFloat(productForm.totalVolume) || 0,
+      availableVolume: parseFloat(productForm.availableVolume) || 0,
+      minSubscription: parseFloat(productForm.minSubscription) || 0,
+      interestRate: parseFloat(productForm.interestRate) || 0,
+      termMonths: parseInt(productForm.termMonths) || 0,
+      couponFrequency: productForm.couponFrequency as any,
       currency: productForm.currency,
       issuer: productForm.issuer,
       sector: productForm.sector,
       status: productForm.status as any,
-      noticePeriod: productForm.noticePeriod,
-      noticeDate: productForm.noticeDate ? new Date(productForm.noticeDate) : undefined,
     });
   };
 
@@ -134,392 +129,312 @@ export default function ProductsAndContracts() {
       toast.error("Name und Inhalt sind erforderlich");
       return;
     }
-
     createTemplate.mutate({
       name: templateForm.name,
       type: templateForm.type,
       content: templateForm.content,
-      validFrom: new Date(templateForm.validFrom),
+      validFrom: templateForm.validFrom,
     });
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Produkte & Verträge</h1>
-          <p className="text-muted-foreground mt-2">
-            Verwalten Sie Anleiheprodukte und Vertragsvorlagen
-          </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="products" className="gap-2">
-              <Package className="h-4 w-4" />
-              Produkte (Bonds)
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Vertragsvorlagen
-            </TabsTrigger>
+            <TabsTrigger value="products">Produkte (Beteiligungen)</TabsTrigger>
+            <TabsTrigger value="templates">Vertragsvorlagen</TabsTrigger>
           </TabsList>
 
-          {/* Products Tab */}
+          {/* PRODUCTS TAB */}
           <TabsContent value="products" className="space-y-4">
-            <div className="flex justify-end">
-              <Dialog open={isProductDialogOpen} onValueChange={setIsProductDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Neues Produkt
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Neues Produkt erstellen</DialogTitle>
-                    <DialogDescription>
-                      Geben Sie die Produktdetails und erforderlichen Vertragsvorlagen ein
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Produktname *</Label>
-                        <Input
-                          value={productForm.name}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, name: e.target.value })
-                          }
-                          placeholder="z.B. Anleihe 2024"
-                        />
-                      </div>
-                      <div>
-                        <Label>Bondnummer *</Label>
-                        <Input
-                          value={productForm.bondNumber}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, bondNumber: e.target.value })
-                          }
-                          placeholder="z.B. BOND-2024-001"
-                        />
-                      </div>
-                    </div>
-
+            <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Neues Produkt
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Neues Produkt erstellen</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Beschreibung</Label>
-                      <Textarea
-                        value={productForm.description}
-                        onChange={(e) =>
-                          setProductForm({ ...productForm, description: e.target.value })
-                        }
-                        placeholder="Produktbeschreibung"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Gesamtvolumen (EUR)</Label>
-                        <Input
-                          type="number"
-                          value={productForm.totalVolume}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, totalVolume: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Verfügbares Volumen (EUR)</Label>
-                        <Input
-                          type="number"
-                          value={productForm.availableVolume}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, availableVolume: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Mindestanlage (EUR)</Label>
-                        <Input
-                          type="number"
-                          value={productForm.minSubscription}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, minSubscription: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Zinssatz (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={productForm.interestRate}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, interestRate: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Laufzeit (Monate)</Label>
-                        <Input
-                          type="number"
-                          value={productForm.termMonths}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, termMonths: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Coupon-Zahlungsfrequenz</Label>
-                        <Select
-                          value={productForm.couponFrequency}
-                          onValueChange={(value) =>
-                            setProductForm({ ...productForm, couponFrequency: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="annual">Jährlich</SelectItem>
-                            <SelectItem value="semi-annual">Halbjährlich</SelectItem>
-                            <SelectItem value="quarterly">Vierteljährlich</SelectItem>
-                            <SelectItem value="monthly">Monatlich</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Emittent</Label>
-                        <Input
-                          value={productForm.issuer}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, issuer: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Sektor</Label>
-                        <Input
-                          value={productForm.sector}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, sector: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Kündigungsfrist</Label>
-                        <Input
-                          value={productForm.noticePeriod}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, noticePeriod: e.target.value })
-                          }
-                          placeholder="z.B. 3 Monate"
-                        />
-                      </div>
-                      <div>
-                        <Label>Kündigungstermin</Label>
-                        <Input
-                          type="date"
-                          value={productForm.noticeDate}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, noticeDate: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {/* Template Selection */}
-                    <div>
-                      <Label className="mb-3 block">Erforderliche Vertragsvorlagen</Label>
-                      <div className="space-y-2 border rounded-lg p-3 max-h-40 overflow-y-auto">
-                        {templates?.map((template) => (
-                          <div key={template.id} className="flex items-center gap-2">
-                            <Checkbox
-                              id={`template-${template.id}`}
-                              checked={productForm.selectedTemplates.includes(template.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setProductForm({
-                                    ...productForm,
-                                    selectedTemplates: [
-                                      ...productForm.selectedTemplates,
-                                      template.id,
-                                    ],
-                                  });
-                                } else {
-                                  setProductForm({
-                                    ...productForm,
-                                    selectedTemplates: productForm.selectedTemplates.filter(
-                                      (id) => id !== template.id
-                                    ),
-                                  });
-                                }
-                              }}
-                            />
-                            <Label htmlFor={`template-${template.id}`} className="cursor-pointer">
-                              {template.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleCreateProduct}
-                      disabled={createProduct.isPending}
-                      className="w-full"
-                    >
-                      {createProduct.isPending ? "Wird erstellt..." : "Produkt erstellen"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="grid gap-4">
-              {products?.map((product) => (
-                <Card key={product.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{product.name}</CardTitle>
-                        <CardDescription>{product.bondNumber}</CardDescription>
-                      </div>
-                      <Badge>{product.status}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-muted-foreground">Zinssatz:</span>
-                        <p className="font-medium">{product.interestRate}% p.a.</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Laufzeit:</span>
-                        <p className="font-medium">{product.termMonths} Monate</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Templates Tab */}
-          <TabsContent value="templates" className="space-y-4">
-            <div className="flex justify-end">
-              <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Neue Vorlage
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Neue Vertragsvorlage erstellen</DialogTitle>
-                    <DialogDescription>
-                      Erstellen Sie eine neue Vertragsvorlage mit Rich-Text-Editor
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Vorlagenname *</Label>
+                      <Label>Name</Label>
                       <Input
-                        value={templateForm.name}
-                        onChange={(e) =>
-                          setTemplateForm({ ...templateForm, name: e.target.value })
-                        }
-                        placeholder="z.B. Zeichnungsvereinbarung"
+                        value={productForm.name}
+                        onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                        placeholder="z.B. Angelus Bond 2026"
                       />
                     </div>
-
                     <div>
-                      <Label>Typ</Label>
-                      <Select
-                        value={templateForm.type}
-                        onValueChange={(value) =>
-                          setTemplateForm({ ...templateForm, type: value })
-                        }
-                      >
+                      <Label>Nummer</Label>
+                      <Input
+                        value={productForm.bondNumber}
+                        onChange={(e) => setProductForm({ ...productForm, bondNumber: e.target.value })}
+                        placeholder="z.B. AB-2026-001"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Beschreibung</Label>
+                    <Textarea
+                      value={productForm.description}
+                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                      placeholder="Produktbeschreibung"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Gesamtvolumen (EUR)</Label>
+                      <Input
+                        type="number"
+                        value={productForm.totalVolume}
+                        onChange={(e) => setProductForm({ ...productForm, totalVolume: e.target.value })}
+                        placeholder="3000000"
+                      />
+                    </div>
+                    <div>
+                      <Label>Verfügbares Volumen (EUR)</Label>
+                      <Input
+                        type="number"
+                        value={productForm.availableVolume}
+                        onChange={(e) => setProductForm({ ...productForm, availableVolume: e.target.value })}
+                        placeholder="3000000"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Mindestzeichnung (EUR)</Label>
+                      <Input
+                        type="number"
+                        value={productForm.minSubscription}
+                        onChange={(e) => setProductForm({ ...productForm, minSubscription: e.target.value })}
+                        placeholder="100000"
+                      />
+                    </div>
+                    <div>
+                      <Label>Zinssatz (%)</Label>
+                      <Input
+                        type="number"
+                        value={productForm.interestRate}
+                        onChange={(e) => setProductForm({ ...productForm, interestRate: e.target.value })}
+                        placeholder="12"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Laufzeit (Monate)</Label>
+                      <Input
+                        type="number"
+                        value={productForm.termMonths}
+                        onChange={(e) => setProductForm({ ...productForm, termMonths: e.target.value })}
+                        placeholder="48"
+                      />
+                    </div>
+                    <div>
+                      <Label>Kuponfrequenz</Label>
+                      <Select value={productForm.couponFrequency} onValueChange={(v) => setProductForm({ ...productForm, couponFrequency: v })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="subscription_agreement">
-                            Zeichnungsvereinbarung
-                          </SelectItem>
-                          <SelectItem value="risk_disclosure">Risikooffenlegung</SelectItem>
-                          <SelectItem value="terms_conditions">AGB</SelectItem>
-                          <SelectItem value="kyc_confirmation">KYC-Bestätigung</SelectItem>
-                          <SelectItem value="prospectus_acknowledgment">
-                            Prospekt-Bestätigung
-                          </SelectItem>
+                          <SelectItem value="annual">Jährlich</SelectItem>
+                          <SelectItem value="semi_annual">Halbjährlich</SelectItem>
+                          <SelectItem value="quarterly">Vierteljährlich</SelectItem>
+                          <SelectItem value="monthly">Monatlich</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Gültig ab</Label>
+                      <Label>Währung</Label>
+                      <Input value={productForm.currency} disabled />
+                    </div>
+                    <div>
+                      <Label>Status</Label>
+                      <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Entwurf</SelectItem>
+                          <SelectItem value="active">Aktiv</SelectItem>
+                          <SelectItem value="closed">Geschlossen</SelectItem>
+                          <SelectItem value="matured">Fällig</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Emittent</Label>
                       <Input
-                        type="date"
-                        value={templateForm.validFrom}
-                        onChange={(e) =>
-                          setTemplateForm({ ...templateForm, validFrom: e.target.value })
-                        }
+                        value={productForm.issuer}
+                        onChange={(e) => setProductForm({ ...productForm, issuer: e.target.value })}
+                        placeholder="Angelus Group"
                       />
                     </div>
-
                     <div>
-                      <Label>Vertragstext *</Label>
-                      <RichTextEditor
-                        content={templateForm.content}
-                        onChange={(content) =>
-                          setTemplateForm({ ...templateForm, content })
-                        }
+                      <Label>Sektor</Label>
+                      <Input
+                        value={productForm.sector}
+                        onChange={(e) => setProductForm({ ...productForm, sector: e.target.value })}
+                        placeholder="Finanzdienstleistungen"
                       />
                     </div>
+                  </div>
 
+                  <Button onClick={handleCreateProduct} disabled={createProduct.isPending} className="w-full">
+                    {createProduct.isPending ? "Erstelle..." : "Produkt erstellen"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Products List */}
+            <div className="grid gap-4">
+              {products?.map((product: any) => (
+                <div key={product.id} className="p-4 border rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">{product.name}</h3>
+                      <p className="text-sm text-muted-foreground">{product.bondNumber}</p>
+                      {product.description && <p className="text-sm mt-2">{product.description}</p>}
+                    </div>
+                    <Badge>{product.status}</Badge>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mt-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Volumen</span>
+                      <p className="font-semibold">{product.totalVolume?.toLocaleString()} EUR</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Zinssatz</span>
+                      <p className="font-semibold">{product.interestRate}%</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Laufzeit</span>
+                      <p className="font-semibold">{product.termMonths} Monate</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Min. Zeichnung</span>
+                      <p className="font-semibold">{product.minSubscription?.toLocaleString()} EUR</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* TEMPLATES TAB */}
+          <TabsContent value="templates" className="space-y-4">
+            <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Neue Vorlage
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Vertragsvorlage erstellen</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={templateForm.name}
+                      onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                      placeholder="z.B. Zeichnungsvereinbarung"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Typ</Label>
+                    <Select value={templateForm.type} onValueChange={(v: any) => setTemplateForm({ ...templateForm, type: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="subscription_agreement">Zeichnungsvereinbarung</SelectItem>
+                        <SelectItem value="risk_disclosure">Risikooffenlegung</SelectItem>
+                        <SelectItem value="terms_conditions">AGB</SelectItem>
+                        <SelectItem value="prospectus">Prospekt</SelectItem>
+                        <SelectItem value="other">Sonstiges</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Gültig ab</Label>
+                    <Input
+                      type="date"
+                      value={templateForm.validFrom}
+                      onChange={(e) => setTemplateForm({ ...templateForm, validFrom: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Inhalt</Label>
+                    <RichTextEditor
+                      content={templateForm.content}
+                      onChange={(content) => setTemplateForm({ ...templateForm, content })}
+                    />
+                  </div>
+
+                  <Button onClick={handleCreateTemplate} disabled={createTemplate.isPending} className="w-full">
+                    {createTemplate.isPending ? "Erstelle..." : "Vorlage erstellen"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Templates List */}
+            <div className="grid gap-4">
+              {templates?.map((template: any) => (
+                <div key={template.id} className="p-4 border rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">{template.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {template.type === "subscription_agreement" && "Zeichnungsvereinbarung"}
+                        {template.type === "risk_disclosure" && "Risikooffenlegung"}
+                        {template.type === "terms_conditions" && "AGB"}
+                        {template.type === "prospectus" && "Prospekt"}
+                        {template.type === "other" && "Sonstiges"}
+                      </p>
+                    </div>
                     <Button
-                      onClick={handleCreateTemplate}
-                      disabled={createTemplate.isPending}
-                      className="w-full"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyTemplate(template)}
+                      className="gap-2"
                     >
-                      {createTemplate.isPending ? "Wird erstellt..." : "Vorlage erstellen"}
+                      <Copy className="w-4 h-4" />
+                      Kopieren
                     </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="grid gap-4">
-              {templates?.map((template) => (
-                <Card key={template.id}>
-                  <CardHeader>
-                    <CardTitle>{template.name}</CardTitle>
-                    <CardDescription>{template.type}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-sm">
-                    <p className="text-muted-foreground">
-                      Gültig ab: {new Date(template.validFrom).toLocaleDateString("de-DE")}
-                    </p>
-                  </CardContent>
-                </Card>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Gültig ab: {new Date(template.validFrom).toLocaleDateString("de-DE")}
+                  </div>
+                </div>
               ))}
             </div>
           </TabsContent>

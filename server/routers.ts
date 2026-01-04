@@ -1503,6 +1503,92 @@ export const appRouter = router({
   }),
   
   consents: consentsRouter,
+  
+  // ==================== CONTRACT TEMPLATES ====================
+  contractTemplates: router({
+    getAll: adminProcedure.query(async () => {
+      return db.getAllContractTemplates();
+    }),
+    
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getContractTemplate(input.id);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "prospectus", "other"]),
+        content: z.string(),
+        validFrom: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createContractTemplate({
+          name: input.name,
+          type: input.type as any,
+          content: input.content,
+          validFrom: new Date(input.validFrom),
+          version: "1.0",
+          createdBy: ctx.user.id,
+        });
+        const insertId = typeof id === 'number' ? id : (id as any).insertId;
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "contractTemplate.create",
+          entityType: "contractTemplate",
+          entityId: insertId,
+          details: { name: input.name, type: input.type },
+          ipAddress: ctx.req.ip,
+        });
+        return { id: insertId };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1),
+        type: z.enum(["subscription_agreement", "risk_disclosure", "terms_conditions", "prospectus", "other"]),
+        content: z.string(),
+        validFrom: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateContractTemplate(input.id, {
+          name: input.name,
+          type: input.type as any,
+          content: input.content,
+          validFrom: new Date(input.validFrom),
+          updatedBy: ctx.user.id,
+        });
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "contractTemplate.update",
+          entityType: "contractTemplate",
+          entityId: input.id,
+          details: { name: input.name },
+          ipAddress: ctx.req.ip,
+        });
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteContractTemplate(input.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "contractTemplate.delete",
+          entityType: "contractTemplate",
+          entityId: input.id,
+          details: {},
+          ipAddress: ctx.req.ip,
+        });
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

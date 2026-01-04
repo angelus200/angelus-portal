@@ -203,13 +203,13 @@
 
 
 ## Bond-Verwaltung & Vertragsvorlagen-System (VEREINFACHT)
-- [ ] Alte Komponenten bereinigen
-- [ ] Neues vereinigtes Admin-Interface: Produkte & Verträge
-- [ ] Tab 1: Produkte mit Vertragsvorlagen-Zuordnung
-- [ ] Tab 2: Vertragsvorlagen mit Rich-Text-Editor
-- [ ] tRPC Prozeduren für Bond-CRUD
-- [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
-- [ ] tRPC Prozeduren für Bond-Template-Zuordnung
+- [x] Alte Komponenten bereinigen
+- [x] Neues vereinigtes Admin-Interface: Produkte & Verträge
+- [x] Tab 1: Produkte mit Vertragsvorlagen-Zuordnung
+- [x] Tab 2: Vertragsvorlagen mit Rich-Text-Editor
+- [x] tRPC Prozeduren für Bond-CRUD
+- [x] tRPC Prozeduren für Vertragsvorlagen-CRUD
+- [x] tRPC Prozeduren für Bond-Template-Zuordnung
 - [x] Investor-Seite: Vertragsvorlagen anzeigen
 - [ ] Tests für neues System
 
@@ -219,6 +219,14 @@
 - [ ] Test-Bond im Admin-Interface anlegen mit allen Details
 - [ ] Vertragsvorlagen zum Bond zuordnen
 - [ ] Investor-Onboarding testen (Zeichnung durchführen)
+- [ ] Fehler in Subscribe.tsx und ProductsAndContracts.tsx beheben
+
+## Aktuelle Aufgabe: Fehlerbereinigung & Test-Anleihe Erstellung
+- [ ] TypeScript-Fehler in routers.ts beheben (consentVersion Feld)
+- [ ] 5 Vertragsdokumente als Vorlagen anlegen
+- [ ] Test-Bond "Angelus Bond 2026" mit allen Details anlegen
+- [ ] Vertragsvorlagen zum Bond zuordnen
+- [ ] Investor-Zeichnungsflow testen
 
 ## Vorlage-Wiederverwendung
 - [x] Copy-Funktion für Vertragsvorlagen hinzufügen - handleCopyTemplate implementiert

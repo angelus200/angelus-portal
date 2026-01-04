@@ -784,7 +784,8 @@ export async function createContractTemplate(data: InsertContractTemplate) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
   const result = await database.insert(contractTemplates).values(data);
-  return result;
+  // Return the inserted ID (MySQL returns insertId)
+  return (result as any).insertId || result;
 }
 
 export async function getContractTemplate(id: number) {
@@ -834,20 +835,21 @@ export async function linkTemplateToBond(bondId: number, templateId: number, isR
 export async function getTemplatesForBond(bondId: number) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
-  return database.query.bondContractTemplates.findMany({
-    where: (bt: any, { eq }: any) => eq(bt.bondId, bondId),
-    orderBy: (bt: any, { asc }: any) => [asc(bt.displayOrder)],
-  });
+  const { eq } = require('drizzle-orm');
+  return database.select().from(bondContractTemplates)
+    .where(eq(bondContractTemplates.bondId, bondId))
+    .orderBy(bondContractTemplates.displayOrder);
 }
 
 export async function removeTemplateFromBond(bondId: number, templateId: number) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
+  const { and, eq } = require('drizzle-orm');
   return database.delete(bondContractTemplates)
-    .where((bt: any, { and, eq }: any) => and(
-      eq(bt.bondId, bondId),
-      eq(bt.templateId, templateId)
-    ));
+    .where(and(
+      eq(bondContractTemplates.bondId, bondId),
+      eq(bondContractTemplates.templateId, templateId)
+    ) as any);
 }
 
 // Consent Log Helpers
@@ -863,32 +865,41 @@ export async function createConsentLog(data: {
 }) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
-  const result = await database.insert(consentLogs).values(data);
+  const result = await database.insert(consentLogs).values({
+    userId: data.userId,
+    bondId: data.bondId,
+    consentType: data.consentType as any,
+    action: data.action as any,
+    ipAddress: data.ipAddress,
+    userAgent: data.userAgent,
+    consentVersion: data.consentVersion,
+    metadata: data.metadata,
+  });
   return result;
 }
 
 export async function getConsentLogsByBond(bondId: number) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
-  return database.query.consentLogs.findMany({
-    where: (logs: any, { eq }: any) => eq(logs.bondId, bondId),
-    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
-  });
+  const { eq, desc } = require('drizzle-orm');
+  return database.select().from(consentLogs)
+    .where(eq(consentLogs.bondId, bondId))
+    .orderBy(desc(consentLogs.createdAt));
 }
 
 export async function getConsentLogsByUser(userId: number) {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
-  return database.query.consentLogs.findMany({
-    where: (logs: any, { eq }: any) => eq(logs.userId, userId),
-    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
-  });
+  const { eq, desc } = require('drizzle-orm');
+  return database.select().from(consentLogs)
+    .where(eq(consentLogs.userId, userId))
+    .orderBy(desc(consentLogs.createdAt));
 }
 
 export async function getAllConsentLogs() {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
-  return database.query.consentLogs.findMany({
-    orderBy: (logs: any, { desc }: any) => [desc(logs.createdAt)],
-  });
+  const { desc } = require('drizzle-orm');
+  return database.select().from(consentLogs)
+    .orderBy(desc(consentLogs.createdAt));
 }
