@@ -464,3 +464,34 @@ export const consents = mysqlTable("consents", {
 
 export type Consent = typeof consents.$inferSelect;
 export type InsertConsent = typeof consents.$inferInsert;
+/**
+ * Consent audit trail for compliance and documentation
+ * Tracks every consent action with timestamp, user info, and metadata
+ */
+export const consentLogs = mysqlTable("consent_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  bondId: int("bondId").notNull(),
+  consentType: mysqlEnum("consentType", [
+    "risk_disclosure",
+    "terms_conditions",
+    "subscription_agreement",
+    "kyc_confirmation",
+    "prospectus_acknowledgment"
+  ]).notNull(),
+  action: mysqlEnum("action", ["accepted", "rejected", "revoked"]).notNull(),
+  
+  // Audit information
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  consentVersion: varchar("consentVersion", { length: 16 }),
+  
+  // Metadata
+  metadata: json("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ConsentLog = typeof consentLogs.$inferSelect;
+export type InsertConsentLog = typeof consentLogs.$inferInsert;
+
