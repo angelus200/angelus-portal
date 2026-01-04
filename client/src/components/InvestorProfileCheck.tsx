@@ -36,11 +36,11 @@ interface ProfileResult {
 }
 
 const sections = [
-  { id: "rendite", title: "Renditeerwartungen", icon: TrendingUp },
-  { id: "kapital", title: "Kapital & Timing", icon: Wallet },
-  { id: "risiko", title: "Risiko-Check", icon: Shield },
-  { id: "portfolio", title: "Portfolio & Erfahrung", icon: BarChart3 },
-  { id: "zusammenarbeit", title: "Zusammenarbeit", icon: Users },
+  { id: "rendite", title: "Renditeerwartungen", shortTitle: "Rendite", icon: TrendingUp },
+  { id: "kapital", title: "Kapital & Timing", shortTitle: "Kapital", icon: Wallet },
+  { id: "risiko", title: "Risiko-Check", shortTitle: "Risiko", icon: Shield },
+  { id: "portfolio", title: "Portfolio & Erfahrung", shortTitle: "Portfolio", icon: BarChart3 },
+  { id: "zusammenarbeit", title: "Zusammenarbeit", shortTitle: "Ziele", icon: Users },
 ];
 
 const questions = [
@@ -631,7 +631,7 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
         <Progress value={progress} className="h-2" />
         
         {/* Section indicators */}
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-between mt-4 gap-1">
           {sections.map((section, idx) => {
             const sectionQuestions = questions.filter(q => q.section === section.id);
             const firstQuestionIdx = questions.findIndex(q => q.section === section.id);
@@ -640,16 +640,21 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
             const isCompleted = currentQuestionIndex > lastQuestionIdx;
             
             return (
-              <div key={section.id} className="flex flex-col items-center">
+              <div key={section.id} className="flex flex-col items-center flex-1 min-w-0">
                 <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
                   isCompleted ? "bg-primary text-primary-foreground" :
                   isActive ? "bg-primary/20 text-primary" :
                   "bg-muted text-muted-foreground"
                 )}>
                   {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <section.icon className="w-4 h-4" />}
                 </div>
-                <span className="text-xs mt-1 hidden sm:block">{section.title}</span>
+                <span className={cn(
+                  "text-[10px] sm:text-xs mt-1 text-center truncate w-full px-1",
+                  isActive ? "text-primary font-medium" : "text-muted-foreground"
+                )}>
+                  {section.shortTitle}
+                </span>
               </div>
             );
           })}

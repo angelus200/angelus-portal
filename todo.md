@@ -143,3 +143,11 @@
 - [x] Frontend: Ergebnisse nach Abschluss speichern
 - [x] Bei Registrierung: Profil-Check-Daten mit User verknüpfen
 - [x] Admin-Dashboard: Profil-Check-Ergebnisse anzeigen (tRPC-Prozedur vorhanden)
+
+## Profil-Check Bug-Fixes
+- [x] Optik des Dialogs verbessern (Abschnitt-Icons überlappen, Layout)
+- [x] "Später fortfahren" Button funktioniert nicht (onClose Handler hinzugefügt)
+- [x] "Jetzt registrieren" verwendet getLoginUrl() für OAuth-Registrierung
+
+## Admin Verträge Bug-Fix
+- [x] Fehler beim Anlegen eines neuen Vertrags beheben (unexpected error)

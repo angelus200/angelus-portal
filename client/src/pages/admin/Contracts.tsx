@@ -46,6 +46,10 @@ export default function AdminContracts() {
   };
 
   const handleCreate = async () => {
+    if (!name) {
+      toast.error("Name ist erforderlich");
+      return;
+    }
     await uploadContract.mutateAsync({
       name,
       bondId: bondId ? parseInt(bondId) : undefined,
@@ -198,7 +202,7 @@ export default function AdminContracts() {
                       <TableCell>
                         {contract.bondId ? `Bond #${contract.bondId}` : "-"}
                       </TableCell>
-                      <TableCell>-</TableCell>
+                      <TableCell>{contract.version || 1}</TableCell>
                       <TableCell>
                         <Badge className="bg-green-100 text-green-800">
                           Aktiv

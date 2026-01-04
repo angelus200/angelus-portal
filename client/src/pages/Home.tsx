@@ -26,6 +26,7 @@ import InvestorProfileCheck from "@/components/InvestorProfileCheck";
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [profileCheckOpen, setProfileCheckOpen] = useState(false);
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -97,15 +98,15 @@ export default function Home() {
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </a>
-                  <Dialog>
+<Dialog open={profileCheckOpen} onOpenChange={setProfileCheckOpen}>
                     <DialogTrigger asChild>
-                      <Button size="lg" variant="outline" className="border-primary/50 text-secondary-foreground hover:bg-primary/10 gap-2">
+                      <Button variant="outline" className="border-primary/50 hover:bg-primary/10">
                         <Target className="w-4 h-4" />
                         Bin ich geeignet?
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-                      <InvestorProfileCheck />
+                      <InvestorProfileCheck onClose={() => setProfileCheckOpen(false)} />
                     </DialogContent>
                   </Dialog>
                 </>
