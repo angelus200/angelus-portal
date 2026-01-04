@@ -924,3 +924,46 @@ export async function getAllConsentLogs() {
   return database.select().from(consentLogs)
     .orderBy(desc(consentLogs.createdAt));
 }
+
+
+// ==================== BOND-TEMPLATE LINKING ====================
+export async function getBondTemplates(bondId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select()
+    .from(bondContractTemplates)
+    .where(eq(bondContractTemplates.bondId, bondId));
+  return result;
+}
+
+
+export async function linkBondTemplates(bondId: number, templateIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // First, delete all existing links
+  await db.delete(bondContractTemplates).where(eq(bondContractTemplates.bondId, bondId));
+  
+  // Then insert new links
+  for (const templateId of templateIds) {
+    await db.insert(bondContractTemplates).values({
+      bondId,
+      templateId,
+      createdAt: new Date(),
+    });
+  }
+}
+
+export async function unlinkBondTemplate(bondId: number, templateId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(bondContractTemplates).where(
+    and(
+      eq(bondContractTemplates.bondId, bondId),
+      eq(bondContractTemplates.templateId, templateId)
+    )
+  );
+}

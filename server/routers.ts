@@ -257,6 +257,50 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    
+    getBondTemplates: adminProcedure
+      .input(z.object({ bondId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBondTemplates(input.bondId);
+      }),
+    
+    linkTemplates: adminProcedure
+      .input(z.object({
+        bondId: z.number(),
+        templateIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.linkBondTemplates(input.bondId, input.templateIds);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "bond.linkTemplates",
+          entityType: "bond",
+          entityId: input.bondId,
+          details: { templateIds: input.templateIds },
+          ipAddress: ctx.req.ip,
+        });
+        return { success: true };
+      }),
+    
+    unlinkTemplate: adminProcedure
+      .input(z.object({
+        bondId: z.number(),
+        templateId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.unlinkBondTemplate(input.bondId, input.templateId);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "bond.unlinkTemplate",
+          entityType: "bond",
+          entityId: input.bondId,
+          details: { templateId: input.templateId },
+          ipAddress: ctx.req.ip,
+        });
+        return { success: true };
+      }),
   }),
 
   // ==================== SUBSCRIPTION ROUTES ====================

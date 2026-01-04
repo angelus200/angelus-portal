@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { Plus, FileText, Package, Copy } from "lucide-react";
+import { Plus, Edit2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -18,8 +18,10 @@ export default function ProductsAndContracts() {
   const [activeTab, setActiveTab] = useState("products");
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [editingTemplateIds, setEditingTemplateIds] = useState<number[]>([]);
 
-  // Form states
   const [productForm, setProductForm] = useState({
     name: "",
     bondNumber: "",
@@ -34,9 +36,6 @@ export default function ProductsAndContracts() {
     issuer: "",
     sector: "",
     status: "draft",
-    noticePeriod: "",
-    noticeDate: "",
-    selectedTemplates: [] as number[],
   });
 
   const [templateForm, setTemplateForm] = useState({
@@ -46,11 +45,13 @@ export default function ProductsAndContracts() {
     validFrom: new Date().toISOString().split("T")[0],
   });
 
-  // Queries
-  const { data: products } = trpc.bonds.list.useQuery();
+  const { data: products, refetch: refetchProducts } = trpc.bonds.listAll.useQuery();
   const { data: templates } = trpc.contractTemplates.getAll.useQuery();
+  const { data: bondTemplates } = trpc.bonds.getBondTemplates.useQuery(
+    { bondId: editingProductId || 0 },
+    { enabled: !!editingProductId }
+  );
 
-  // Mutations
   const createProduct = trpc.bonds.create.useMutation({
     onSuccess: () => {
       toast.success("Produkt erstellt");
@@ -69,10 +70,17 @@ export default function ProductsAndContracts() {
         issuer: "",
         sector: "",
         status: "draft",
-        noticePeriod: "",
-        noticeDate: "",
-        selectedTemplates: [],
       });
+      refetchProducts();
+    },
+    onError: (error: any) => toast.error(error.message),
+  });
+
+  const linkTemplates = trpc.bonds.linkTemplates.useMutation({
+    onSuccess: () => {
+      toast.success("Vertragsvorlagen verknüpft");
+      setIsEditDialogOpen(false);
+      refetchProducts();
     },
     onError: (error: any) => toast.error(error.message),
   });
@@ -91,32 +99,17 @@ export default function ProductsAndContracts() {
     onError: (error: any) => toast.error(error.message),
   });
 
-  const handleCopyTemplate = (template: any) => {
-    const newName = `${template.name} (Kopie)`;
-    setTemplateForm({
-      name: newName,
-      type: template.type,
-      content: template.content,
-      validFrom: new Date().toISOString().split("T")[0],
-    });
-    setIsTemplateDialogOpen(true);
-  };
-
   const handleCreateProduct = () => {
-    if (!productForm.name || !productForm.bondNumber) {
-      toast.error("Name und Nummer sind erforderlich");
-      return;
-    }
     createProduct.mutate({
       name: productForm.name,
       bondNumber: productForm.bondNumber,
       description: productForm.description,
-      totalVolume: parseFloat(productForm.totalVolume) || 0,
-      availableVolume: parseFloat(productForm.availableVolume) || 0,
-      minSubscription: parseFloat(productForm.minSubscription) || 0,
-      interestRate: parseFloat(productForm.interestRate) || 0,
-      termMonths: parseInt(productForm.termMonths) || 0,
-      couponFrequency: productForm.couponFrequency as any,
+      totalVolume: productForm.totalVolume,
+      availableVolume: productForm.availableVolume,
+      minSubscription: productForm.minSubscription,
+      interestRate: productForm.interestRate,
+      termMonths: parseInt(productForm.termMonths),
+      couponFrequency: productForm.couponFrequency,
       currency: productForm.currency,
       issuer: productForm.issuer,
       sector: productForm.sector,
@@ -124,11 +117,21 @@ export default function ProductsAndContracts() {
     });
   };
 
+  const handleEditProduct = (product: any) => {
+    setEditingProductId(product.id);
+    setEditingTemplateIds(bondTemplates?.map((t: any) => t.templateId) || []);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveTemplateLinks = () => {
+    if (!editingProductId) return;
+    linkTemplates.mutate({
+      bondId: editingProductId,
+      templateIds: editingTemplateIds,
+    });
+  };
+
   const handleCreateTemplate = () => {
-    if (!templateForm.name || !templateForm.content) {
-      toast.error("Name und Inhalt sind erforderlich");
-      return;
-    }
     createTemplate.mutate({
       name: templateForm.name,
       type: templateForm.type,
@@ -140,8 +143,9 @@ export default function ProductsAndContracts() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div>
           <h1 className="text-3xl font-bold">Produkte & Verträge</h1>
+          <p className="text-muted-foreground">Verwaltung von Beteiligungen und Vertragsvorlagen</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -150,7 +154,6 @@ export default function ProductsAndContracts() {
             <TabsTrigger value="templates">Vertragsvorlagen</TabsTrigger>
           </TabsList>
 
-          {/* PRODUCTS TAB */}
           <TabsContent value="products" className="space-y-4">
             <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
               <DialogTrigger asChild>
@@ -159,7 +162,7 @@ export default function ProductsAndContracts() {
                   Neues Produkt
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Neues Produkt erstellen</DialogTitle>
                 </DialogHeader>
@@ -308,7 +311,6 @@ export default function ProductsAndContracts() {
               </DialogContent>
             </Dialog>
 
-            {/* Products List */}
             <div className="grid gap-4">
               {products?.map((product: any) => (
                 <div key={product.id} className="p-4 border rounded-lg">
@@ -318,7 +320,18 @@ export default function ProductsAndContracts() {
                       <p className="text-sm text-muted-foreground">{product.bondNumber}</p>
                       {product.description && <p className="text-sm mt-2">{product.description}</p>}
                     </div>
-                    <Badge>{product.status}</Badge>
+                    <div className="flex gap-2">
+                      <Badge>{product.status}</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditProduct(product)}
+                        className="gap-2"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Bearbeiten
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 gap-4 mt-4 text-sm">
                     <div>
@@ -343,7 +356,6 @@ export default function ProductsAndContracts() {
             </div>
           </TabsContent>
 
-          {/* TEMPLATES TAB */}
           <TabsContent value="templates" className="space-y-4">
             <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
               <DialogTrigger asChild>
@@ -352,7 +364,7 @@ export default function ProductsAndContracts() {
                   Neue Vorlage
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Vertragsvorlage erstellen</DialogTitle>
                 </DialogHeader>
@@ -366,37 +378,39 @@ export default function ProductsAndContracts() {
                     />
                   </div>
 
-                  <div>
-                    <Label>Typ</Label>
-                    <Select value={templateForm.type} onValueChange={(v: any) => setTemplateForm({ ...templateForm, type: v })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="subscription_agreement">Zeichnungsvereinbarung</SelectItem>
-                        <SelectItem value="risk_disclosure">Risikooffenlegung</SelectItem>
-                        <SelectItem value="terms_conditions">AGB</SelectItem>
-                        <SelectItem value="kyc_aml">KYC/AML-Vereinbarung</SelectItem>
-                        <SelectItem value="prospectus">Prospekt</SelectItem>
-                        <SelectItem value="other">Sonstiges</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Gültig ab</Label>
-                    <Input
-                      type="date"
-                      value={templateForm.validFrom}
-                      onChange={(e) => setTemplateForm({ ...templateForm, validFrom: e.target.value })}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Typ</Label>
+                      <Select value={templateForm.type} onValueChange={(v: any) => setTemplateForm({ ...templateForm, type: v })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="subscription_agreement">Zeichnungsvereinbarung</SelectItem>
+                          <SelectItem value="risk_disclosure">Risikooffenlegung</SelectItem>
+                          <SelectItem value="terms_conditions">AGB</SelectItem>
+                          <SelectItem value="kyc_aml">KYC/AML-Vereinbarung</SelectItem>
+                          <SelectItem value="prospectus">Prospekt</SelectItem>
+                          <SelectItem value="other">Sonstiges</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Gültig ab</Label>
+                      <Input
+                        type="date"
+                        value={templateForm.validFrom}
+                        onChange={(e) => setTemplateForm({ ...templateForm, validFrom: e.target.value })}
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <Label>Inhalt</Label>
                     <RichTextEditor
-                      content={templateForm.content}
+                      value={templateForm.content}
                       onChange={(content) => setTemplateForm({ ...templateForm, content })}
+                      placeholder="Vertragstext eingeben..."
                     />
                   </div>
 
@@ -407,40 +421,55 @@ export default function ProductsAndContracts() {
               </DialogContent>
             </Dialog>
 
-            {/* Templates List */}
             <div className="grid gap-4">
               {templates?.map((template: any) => (
                 <div key={template.id} className="p-4 border rounded-lg">
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-semibold">{template.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {template.type === "subscription_agreement" && "Zeichnungsvereinbarung"}
-                        {template.type === "risk_disclosure" && "Risikooffenlegung"}
-                        {template.type === "terms_conditions" && "AGB"}
-                        {template.type === "kyc_aml" && "KYC/AML-Vereinbarung"}
-                        {template.type === "prospectus" && "Prospekt"}
-                        {template.type === "other" && "Sonstiges"}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{template.type}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyTemplate(template)}
-                      className="gap-2"
-                    >
-                      <Copy className="w-4 h-4" />
-                      Kopieren
-                    </Button>
-                  </div>
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Gültig ab: {new Date(template.validFrom).toLocaleDateString("de-DE")}
+                    <Badge variant="outline">{template.type}</Badge>
                   </div>
                 </div>
               ))}
             </div>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Vertragsvorlagen verknüpfen</DialogTitle>
+              <DialogDescription>Wählen Sie die Vertragsvorlagen für dieses Produkt aus</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid gap-3">
+                {templates?.map((template: any) => (
+                  <div key={template.id} className="flex items-center gap-3 p-3 border rounded">
+                    <Checkbox
+                      checked={editingTemplateIds.includes(template.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setEditingTemplateIds([...editingTemplateIds, template.id]);
+                        } else {
+                          setEditingTemplateIds(editingTemplateIds.filter((id) => id !== template.id));
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{template.name}</p>
+                      <p className="text-sm text-muted-foreground">{template.type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button onClick={handleSaveTemplateLinks} disabled={linkTemplates.isPending} className="w-full">
+                {linkTemplates.isPending ? "Speichern..." : "Vertragsvorlagen verknüpfen"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
