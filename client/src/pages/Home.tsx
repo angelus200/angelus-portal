@@ -15,10 +15,13 @@ import {
   Award,
   Newspaper,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Target
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import InvestorProfileCheck from "@/components/InvestorProfileCheck";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -94,9 +97,17 @@ export default function Home() {
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </a>
-                  <Button size="lg" variant="outline" className="border-primary/50 text-secondary-foreground hover:bg-primary/10">
-                    Mehr erfahren
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="lg" variant="outline" className="border-primary/50 text-secondary-foreground hover:bg-primary/10 gap-2">
+                        <Target className="w-4 h-4" />
+                        Bin ich geeignet?
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+                      <InvestorProfileCheck />
+                    </DialogContent>
+                  </Dialog>
                 </>
               )}
             </div>

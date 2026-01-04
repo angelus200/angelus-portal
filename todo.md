@@ -123,3 +123,15 @@
 - [x] Dashboard-Karten und Statistiken anpassen
 - [x] Investor Dashboard ebenfalls prüfen und anpassen
 - [x] Admin Bonds.tsx: Alle Anleihe-Begriffe durch Angebot/Beteiligung ersetzen
+
+## Investoren-Profil Check
+- [x] InvestorProfileCheck Komponente erstellen
+- [x] Multi-Step Wizard mit Fortschrittsanzeige
+- [x] Abschnitt 1: Renditeerwartungen (2 Fragen)
+- [x] Abschnitt 2: Kapitalverfügbarkeit & Timing (4 Fragen)
+- [x] Abschnitt 3: Risiko-Realitätscheck mit Quiz (4 Fragen)
+- [x] Abschnitt 4: Portfolio & Erfahrung (4 Fragen)
+- [x] Abschnitt 5: Zusammenarbeit & Erwartungen (3 Fragen)
+- [x] Ergebnisauswertung mit Profil-Kategorien
+- [x] Risikomatrix Visualisierung
+- [x] Integration auf Landing Page
