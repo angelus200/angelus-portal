@@ -52,8 +52,8 @@ export default function InvestorDashboard() {
                   <h3 className="font-semibold mb-1">Onboarding abschließen</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {user?.kycStatus !== "verified" 
-                      ? "Bitte vervollständigen Sie Ihre KYC-Verifizierung, um Anleihen zeichnen zu können."
-                      : "Bitte füllen Sie Ihr Risikoprofil aus, um Anleihen zeichnen zu können."}
+                      ? "Bitte vervollständigen Sie Ihre KYC-Verifizierung, um investieren zu können."
+                      : "Bitte füllen Sie Ihr Risikoprofil aus, um investieren zu können."}
                   </p>
                   <Link href="/investor/onboarding">
                     <Button size="sm" className="gap-2">
@@ -101,7 +101,7 @@ export default function InvestorDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Anleihen</CardTitle>
+              <CardTitle className="text-sm font-medium">Beteiligungen</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -224,7 +224,7 @@ export default function InvestorDashboard() {
                 <Button variant="outline" className="w-full justify-start gap-2 h-auto py-4">
                   <TrendingUp className="w-5 h-5" />
                   <div className="text-left">
-                    <p className="font-medium">Anleihen ansehen</p>
+                    <p className="font-medium">Angebote ansehen</p>
                     <p className="text-xs text-muted-foreground">Verfügbare Investments</p>
                   </div>
                 </Button>

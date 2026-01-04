@@ -16,7 +16,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">
-            Übersicht und Verwaltung des Anleihenportals
+            Übersicht und Verwaltung des Investorenportals
           </p>
         </div>
 
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Anleihen</CardTitle>
+              <CardTitle className="text-sm font-medium">Beteiligungen</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
                 {statsLoading ? "..." : stats?.totalBonds || 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                Aktive Anleihen
+                Aktive Angebote
               </p>
             </CardContent>
           </Card>
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
             <div className="grid gap-4 md:grid-cols-4">
               <a href="/admin/bonds" className="p-4 border rounded-lg hover:bg-muted/50 transition-colors text-center">
                 <TrendingUp className="w-8 h-8 mx-auto mb-2 text-primary" />
-                <p className="font-medium">Anleihen verwalten</p>
+                <p className="font-medium">Angebote verwalten</p>
               </a>
               <a href="/admin/investors" className="p-4 border rounded-lg hover:bg-muted/50 transition-colors text-center">
                 <Users className="w-8 h-8 mx-auto mb-2 text-primary" />

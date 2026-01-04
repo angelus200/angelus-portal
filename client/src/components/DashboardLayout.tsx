@@ -64,7 +64,7 @@ const investorMenuItems = [
 // Admin menu items
 const adminMenuItems = [
   { icon: "LayoutDashboard", label: "Dashboard", path: "/admin" },
-  { icon: "TrendingUp", label: "Anleihen", path: "/admin/bonds" },
+  { icon: "TrendingUp", label: "Beteiligungen", path: "/admin/bonds" },
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "FileText", label: "Verträge", path: "/admin/contracts" },

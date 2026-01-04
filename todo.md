@@ -116,3 +116,10 @@
 - [x] "Reguliert" aus Trust Indicators entfernen (Aufsicht) → "International tätig"
 - [x] FAQ: Geschäftsbereiche der Angelus Group hinzufügen
 - [x] FAQ: Unternehmensstruktur erklären (verschiedene Unternehmen, SPVs, Banken, Jurisdiktionen)
+
+## Dashboard Begriffe neutralisieren
+- [x] Admin Dashboard: "Anleihenportal" durch "Investorenportal" ersetzen
+- [x] Sidebar Navigation: "Anleihen" durch "Beteiligungen" ersetzen
+- [x] Dashboard-Karten und Statistiken anpassen
+- [x] Investor Dashboard ebenfalls prüfen und anpassen
+- [x] Admin Bonds.tsx: Alle Anleihe-Begriffe durch Angebot/Beteiligung ersetzen

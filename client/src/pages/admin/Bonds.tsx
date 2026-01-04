@@ -20,7 +20,7 @@ export default function AdminBonds() {
   
   const createBond = trpc.bonds.create.useMutation({
     onSuccess: () => {
-      toast.success("Anleihe erstellt");
+      toast.success("Beteiligung erstellt");
       refetch();
       setIsCreateOpen(false);
       resetForm();
@@ -32,7 +32,7 @@ export default function AdminBonds() {
 
   const updateBond = trpc.bonds.update.useMutation({
     onSuccess: () => {
-      toast.success("Anleihe aktualisiert");
+      toast.success("Beteiligung aktualisiert");
       refetch();
       setIsEditOpen(false);
     },
@@ -119,23 +119,23 @@ export default function AdminBonds() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Anleihen verwalten</h1>
+            <h1 className="text-2xl font-bold">Beteiligungen verwalten</h1>
             <p className="text-muted-foreground">
-              Erstellen und verwalten Sie Anleihenangebote
+              Erstellen und verwalten Sie Investitionsangebote
             </p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
-                Neue Anleihe
+                Neues Angebot
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Neue Anleihe erstellen</DialogTitle>
+                <DialogTitle>Neues Angebot erstellen</DialogTitle>
                 <DialogDescription>
-                  Erstellen Sie ein neues Anleihenangebot für Investoren.
+                  Erstellen Sie ein neues Investitionsangebot für Investoren.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -160,7 +160,7 @@ export default function AdminBonds() {
                 <div className="space-y-2">
                   <Label>Beschreibung</Label>
                   <Textarea
-                    placeholder="Beschreibung der Anleihe..."
+                    placeholder="Beschreibung des Angebots..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
@@ -244,7 +244,7 @@ export default function AdminBonds() {
                   onClick={handleCreate}
                   disabled={!name || !interestRate || !termMonths || !totalVolume || createBond.isPending}
                 >
-                  {createBond.isPending ? "Wird erstellt..." : "Anleihe erstellen"}
+                  {createBond.isPending ? "Wird erstellt..." : "Angebot erstellen"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -322,9 +322,9 @@ export default function AdminBonds() {
             ) : (
               <div className="text-center py-12">
                 <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Keine Anleihen vorhanden</h3>
+                <h3 className="font-semibold mb-2">Keine Angebote vorhanden</h3>
                 <p className="text-muted-foreground mb-4">
-                  Erstellen Sie Ihre erste Anleihe.
+                  Erstellen Sie Ihr erstes Angebot.
                 </p>
               </div>
             )}
@@ -335,7 +335,7 @@ export default function AdminBonds() {
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Anleihe bearbeiten</DialogTitle>
+              <DialogTitle>Angebot bearbeiten</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
