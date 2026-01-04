@@ -242,3 +242,8 @@
 - [x] Template-Bibliothek im Admin-Interface - Copy-Button in Tabelle
 - [ ] Schnelle Zuordnung von Vorlagen zu neuen Produkten
 - [ ] Versionskontrolle bei Vorlagen-Kopien
+
+## Wallet-Guthaben für Tests
+- [x] Wallet-Guthaben für grossdigitalpartner@gmail.com auf EUR 500.000 setzen
+- [ ] Admin-Interface für Wallet-Verwaltung erweitern (Guthaben manuell setzen)
+- [ ] Investor-Zeichnungsflow mit ausreichendem Guthaben testen

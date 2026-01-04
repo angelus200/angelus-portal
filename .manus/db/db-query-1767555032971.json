@@ -1,0 +1,34 @@
+{
+  "query": "SELECT w.*, u.email FROM wallets w JOIN users u ON w.userId = u.id WHERE u.email = 'grossdigitalpartner@gmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute SELECT w.*, u.email FROM wallets w JOIN users u ON w.userId = u.id WHERE u.email = 'grossdigitalpartner@gmail.com';",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "currency": "EUR",
+      "currencyType": "fiat",
+      "balance": "0.00000000",
+      "availableBalance": "0.00000000",
+      "depositAddress": "NULL",
+      "createdAt": "2026-01-02 09:02:07",
+      "updatedAt": "2026-01-02 09:02:07",
+      "email": "grossdigitalpartner@gmail.com"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "currency": "BTC",
+      "currencyType": "crypto",
+      "balance": "0.00000000",
+      "availableBalance": "0.00000000",
+      "depositAddress": "NULL",
+      "createdAt": "2026-01-02 09:02:35",
+      "updatedAt": "2026-01-02 09:02:35",
+      "email": "grossdigitalpartner@gmail.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tcurrency\tcurrencyType\tbalance\tavailableBalance\tdepositAddress\tcreatedAt\tupdatedAt\temail\n1\t1\tEUR\tfiat\t0.00000000\t0.00000000\tNULL\t2026-01-02 09:02:07\t2026-01-02 09:02:07\tgrossdigitalpartner@gmail.com\n2\t1\tBTC\tcrypto\t0.00000000\t0.00000000\tNULL\t2026-01-02 09:02:35\t2026-01-02 09:02:35\tgrossdigitalpartner@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 1530
+}
