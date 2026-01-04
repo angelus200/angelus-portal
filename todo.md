@@ -199,3 +199,14 @@
 - [x] Export-Funktion für Compliance-Nachweise (CSV/PDF) - exportLogs Prozedur
 - [x] Investor-Interface: Checkbox-Zustimmungen mit Audit-Logging
 - [x] Dokumentation: Consent-System und Audit-Trail beschreiben (CONSENT_AUDIT_SYSTEM.md)
+
+
+## Bond-Verwaltung & Vertragsvorlagen-System
+- [x] Bond-Schema erweitern (Nummer, Mindestanlage, Laufzeit, Kündigungsfristen, Kündigungstermine)
+- [x] Vertragsvorlagen-Tabelle erstellen (Name, Typ, Inhalt, Version, Gültig ab)
+- [ ] Admin-Interface für Bond-Verwaltung erweitern
+- [ ] Vertragsvorlagen-Editor im Admin-Interface
+- [ ] tRPC Prozeduren für Bond-CRUD
+- [ ] tRPC Prozeduren für Vertragsvorlagen-CRUD
+- [ ] Investor-Seite: Vertragsvorlagen anzeigen
+- [ ] Tests für Bond- und Vertragsvorlagen-Verwaltung

@@ -14,7 +14,9 @@ import {
   investorNotes, InsertInvestorNote, InvestorNote,
   profileChecks, InsertProfileCheck, ProfileCheck,
   consents, InsertConsent, Consent,
-  consentLogs, InsertConsentLog, ConsentLog
+  consentLogs, InsertConsentLog, ConsentLog,
+  contractTemplates, InsertContractTemplate, ContractTemplate,
+  bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -773,6 +775,79 @@ export async function getAdminStats() {
     totalSubscriptions: totalSubscriptions.length,
     pendingKyc: totalUsers.filter((u: any) => u.kycStatus === 'pending').length,
   };
+}
+
+
+// ==================== CONTRACT TEMPLATE FUNCTIONS ====================
+
+export async function createContractTemplate(data: InsertContractTemplate) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  const result = await database.insert(contractTemplates).values(data);
+  return result;
+}
+
+export async function getContractTemplate(id: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.contractTemplates.findFirst({
+    where: (templates: any, { eq }: any) => eq(templates.id, id),
+  });
+}
+
+export async function getAllContractTemplates() {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.contractTemplates.findMany({
+    where: (templates: any, { eq }: any) => eq(templates.isActive, true),
+    orderBy: (templates: any, { desc }: any) => [desc(templates.createdAt)],
+  });
+}
+
+export async function updateContractTemplate(id: number, data: Partial<InsertContractTemplate>) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.update(contractTemplates)
+    .set({ ...data, updatedAt: new Date() })
+    .where((t: any, { eq }: any) => eq(t.id, id));
+}
+
+export async function deleteContractTemplate(id: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.delete(contractTemplates)
+    .where((t: any, { eq }: any) => eq(t.id, id));
+}
+
+// Bond-Template associations
+export async function linkTemplateToBond(bondId: number, templateId: number, isRequired: boolean = true, displayOrder: number = 0) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.insert(bondContractTemplates).values({
+    bondId,
+    templateId,
+    isRequired,
+    displayOrder,
+  });
+}
+
+export async function getTemplatesForBond(bondId: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.query.bondContractTemplates.findMany({
+    where: (bt: any, { eq }: any) => eq(bt.bondId, bondId),
+    orderBy: (bt: any, { asc }: any) => [asc(bt.displayOrder)],
+  });
+}
+
+export async function removeTemplateFromBond(bondId: number, templateId: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database.delete(bondContractTemplates)
+    .where((bt: any, { and, eq }: any) => and(
+      eq(bt.bondId, bondId),
+      eq(bt.templateId, templateId)
+    ));
 }
 
 // Consent Log Helpers

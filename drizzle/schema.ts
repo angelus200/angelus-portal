@@ -139,6 +139,34 @@ export const bonds = mysqlTable("bonds", {
   hasSubordination: boolean("hasSubordination").default(true),
   hasInsolvencyReservation: boolean("hasInsolvencyReservation").default(true),
   
+
+  // Bond identification
+  bondNumber: varchar("bondNumber", { length: 64 }).notNull().unique(),
+  
+  // Termination/Cancellation terms
+  cancellationNoticeMonths: int("cancellationNoticeMonths").default(3),
+  cancellationNoticeDay: int("cancellationNoticeDay").default(31), // Day of month for notice
+  nextCancellationDate: timestamp("nextCancellationDate"),
+  
+  // Tenure details
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  
+  // Additional financial terms
+  couponPaymentFrequency: mysqlEnum("couponPaymentFrequency", ["monthly", "quarterly", "semi-annual", "annual"]).default("annual"),
+  couponPaymentDates: json("couponPaymentDates"), // Array of dates
+  
+  // Investor limits
+  maxSubscription: decimal("maxSubscription", { precision: 18, scale: 2 }),
+  
+  // Currency
+  currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
+  
+  // Additional info
+  issuer: varchar("issuer", { length: 255 }),
+  sector: varchar("sector", { length: 128 }),
+  country: varchar("country", { length: 64 }),
+
   // Documents
   prospectusUrl: text("prospectusUrl"),
   termsUrl: text("termsUrl"),
@@ -149,6 +177,62 @@ export const bonds = mysqlTable("bonds", {
 
 export type Bond = typeof bonds.$inferSelect;
 export type InsertBond = typeof bonds.$inferInsert;
+
+/**
+ * Contract templates for bonds
+ * Stores versioned contract templates that can be used for multiple bonds
+ */
+export const contractTemplates = mysqlTable("contract_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Template identification
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["subscription_agreement", "risk_disclosure", "terms_conditions", "prospectus", "other"]).notNull(),
+  
+  // Template content
+  content: text("content").notNull(), // HTML or Markdown content
+  version: varchar("version", { length: 32 }).default("1.0").notNull(),
+  
+  // Metadata
+  description: text("description"),
+  validFrom: timestamp("validFrom").defaultNow().notNull(),
+  validUntil: timestamp("validUntil"),
+  
+  // Status
+  isActive: boolean("isActive").default(true).notNull(),
+  
+  // Audit
+  createdBy: int("createdBy").notNull(), // Admin user ID
+  updatedBy: int("updatedBy"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContractTemplate = typeof contractTemplates.$inferSelect;
+export type InsertContractTemplate = typeof contractTemplates.$inferInsert;
+
+/**
+ * Bond-Template associations
+ * Links which contract templates are required for each bond
+ */
+export const bondContractTemplates = mysqlTable("bond_contract_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  bondId: int("bondId").notNull(),
+  templateId: int("templateId").notNull(),
+  
+  // Whether this template is required for this bond
+  isRequired: boolean("isRequired").default(true).notNull(),
+  
+  // Order of presentation
+  displayOrder: int("displayOrder").default(0).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BondContractTemplate = typeof bondContractTemplates.$inferSelect;
+export type InsertBondContractTemplate = typeof bondContractTemplates.$inferInsert;
+
 
 /**
  * Subscriptions - Links investors to bonds
