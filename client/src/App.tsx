@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Impressum from "./pages/Impressum";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/impressum" component={Impressum} />
       
       {/* Investor routes */}
       <Route path="/investor" component={InvestorDashboard} />

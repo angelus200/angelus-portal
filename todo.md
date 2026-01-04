@@ -96,3 +96,11 @@
 - [x] FAQ-Bereich auf Landing Page für Investoren
 - [x] Accordion-Komponente für FAQ-Fragen
 - [x] Navigation um FAQ-Link erweitern
+
+## Rebranding & Rechtliche Anpassungen
+- [x] Landing Page: "Investorenportal der Angelus Group" statt "Anleihenportal der Angelus KG"
+- [x] Alle Texte: "Angelus Group" statt "Angelus KG" verwenden
+- [x] FAQ/Risikohinweise: Neutraler formulieren bezüglich anwendbarem Recht
+- [x] Impressum-Seite mit vollständigen rechtlichen Angaben erstellen
+- [x] Kontaktdaten aktualisieren (Telefon: 0800 175 077 0, E-Mail: office@angelus.group)
+- [x] Footer-Links zu Impressum verknüpfen

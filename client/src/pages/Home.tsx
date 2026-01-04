@@ -78,8 +78,8 @@ export default function Home() {
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary-foreground mb-6">
-              Anleiheportal der{" "}
-              <span className="text-primary">Angelus KG</span>
+              Investorenportal der{" "}
+              <span className="text-primary">Angelus Group</span>
             </h1>
             <p className="text-lg md:text-xl text-secondary-foreground/80 mb-8">
               Exklusive Investitionsmöglichkeiten für professionelle Investoren und Unternehmer. 
@@ -114,7 +114,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              <span>Schweizer Recht</span>
+              <span>Reguliert</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
@@ -483,7 +483,7 @@ export default function Home() {
               Häufig gestellte Fragen
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Hier finden Sie Antworten auf die wichtigsten Fragen rund um Investitionen bei der Angelus KG.
+              Hier finden Sie Antworten auf die wichtigsten Fragen rund um Investitionen bei der Angelus Group.
             </p>
           </div>
 
@@ -552,9 +552,9 @@ export default function Home() {
                   Welches Recht gilt für die Anleihen?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Alle Anleihen unterliegen dem <strong className="text-foreground">Schweizer Recht</strong>. Die Angelus KG 
-                  hat ihren Sitz in der Schweiz und alle Verträge werden nach Schweizer Recht geschlossen. 
-                  Gerichtsstand ist die Schweiz.
+                  Die Anleihen unterliegen dem jeweils in den Anleihebedingungen festgelegten Recht. 
+                  Neue Emissionen werden nach <strong className="text-foreground">Schweizer Recht</strong> begeben. 
+                  Die genauen rechtlichen Rahmenbedingungen entnehmen Sie bitte den jeweiligen Anleihedokumenten.
                 </AccordionContent>
               </AccordionItem>
 
@@ -606,7 +606,7 @@ export default function Home() {
                   alt="Angelus" 
                   className="w-8 h-8 object-contain"
                 />
-                <span className="font-semibold text-secondary-foreground">Angelus KG</span>
+                <span className="font-semibold text-secondary-foreground">Angelus Group</span>
               </div>
               <p className="text-sm text-secondary-foreground/60">
                 Professionelle Anleihen für qualifizierte Investoren.
@@ -616,7 +616,7 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4 text-secondary-foreground">Rechtliches</h4>
               <ul className="space-y-2 text-sm text-secondary-foreground/60">
-                <li><a href="#" className="hover:text-primary">Impressum</a></li>
+                <li><Link href="/impressum" className="hover:text-primary">Impressum</Link></li>
                 <li><a href="#" className="hover:text-primary">Datenschutz</a></li>
                 <li><a href="#" className="hover:text-primary">AGB</a></li>
                 <li><a href="#" className="hover:text-primary">Risikohinweise</a></li>
@@ -626,15 +626,15 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4 text-secondary-foreground">Kontakt</h4>
               <ul className="space-y-2 text-sm text-secondary-foreground/60">
-                <li>info@angelus-kg.com</li>
-                <li>+41 XX XXX XX XX</li>
+                <li><a href="mailto:office@angelus.group" className="hover:text-primary">office@angelus.group</a></li>
+                <li><a href="tel:08001750770" className="hover:text-primary">0800 175 077 0</a></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4 text-secondary-foreground">Compliance</h4>
               <ul className="space-y-2 text-sm text-secondary-foreground/60">
-                <li>Schweizer Recht</li>
+                <li>Deutsches Recht (KG)</li>
                 <li>KYC/AML-konform</li>
                 <li>DSGVO-konform</li>
               </ul>
@@ -642,7 +642,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-border/50 mt-8 pt-8 text-center text-sm text-secondary-foreground/60">
-            <p>© {new Date().getFullYear()} Angelus KG. Alle Rechte vorbehalten.</p>
+            <p>© {new Date().getFullYear()} Angelus Group. Alle Rechte vorbehalten.</p>
           </div>
         </div>
       </footer>
