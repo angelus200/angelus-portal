@@ -166,3 +166,8 @@
 - [x] Option zum Erneut-Durchfuehren des Tests
 ## Verträge Fehler-Behebung
 - [x] Fehler beim Anlegen neuer Verträge beheben (unexpected error) - type enum korrigiert
+
+## Button "Bin ich geeignet?" Verbesserung
+- [x] Button Styling verbessern - besserer Kontrast und Sichtbarkeit
+- [x] Text-Farbe aufhellen oder Button-Hintergrund dunkler machen
+- [x] Icon besser sichtbar machen

@@ -100,7 +100,7 @@ export default function Home() {
                   </a>
 <Dialog open={profileCheckOpen} onOpenChange={setProfileCheckOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="border-primary/50 hover:bg-primary/10">
+                      <Button className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50 gap-2 font-semibold">
                         <Target className="w-4 h-4" />
                         Bin ich geeignet?
                       </Button>
