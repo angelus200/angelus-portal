@@ -1,0 +1,347 @@
+================================================================================
+ALLGEMEINE GESCHÄFTSBEDINGUNGEN (AGB)
+================================================================================
+
+FÜR UNTERNEHMENSANLEIHEN
+
+ANGELUS MANAGEMENT BERATUNGS UND SERVICE KG
+
+
+================================================================================
+1. GELTUNGSBEREICH
+================================================================================
+
+1.1 Diese AGB gelten für alle Zeichnungen von Unternehmensanleihen der Angelus 
+    Management Beratungs und Service KG.
+
+1.2 Abweichungen von diesen AGB bedürfen der schriftlichen Zustimmung der Angelus 
+    Management Beratungs und Service KG.
+
+1.3 Diese AGB gelten auch für alle zukünftigen Geschäftsbeziehungen zwischen dem 
+    Anleihegläubiger und der Angelus Management Beratungs und Service KG.
+
+1.4 Durch die Bestätigung via Checkpoint akzeptiert der Anleihegläubiger diese AGB 
+    in vollem Umfang.
+
+
+================================================================================
+2. DEFINITIONEN
+================================================================================
+
+2.1 UNTERNEHMENSANLEIHEN
+    Schuldverschreibungen, die von der Angelus Management Beratungs und Service KG 
+    ausgegeben werden und Ansprüche auf Rückzahlung des Nennwerts und Zinszahlungen 
+    verbriefen.
+
+2.2 ANLEIHEGLÄUBIGER
+    Eine natürliche oder juristische Person, die Unternehmensanleihen zeichnet.
+
+2.3 EMITTENT
+    Die Angelus Management Beratungs und Service KG, die die Unternehmensanleihen 
+    ausgibt.
+
+2.4 ANLEIHEKAPITAL
+    Der von dem Anleihegläubiger gezahlte Betrag für die Unternehmensanleihen.
+
+2.5 CHECKPOINT
+    Ein digitales Bestätigungsverfahren im Online-Portal, durch das der 
+    Anleihegläubiger seine Zustimmung zu den Bedingungen erteilt.
+
+
+================================================================================
+3. ANLEIHEDETAILS
+================================================================================
+
+3.1 ANLEIHESTRUKTUR
+    • Anleihebezeichnung: Angelus Unternehmensanleihe 2026-2030
+    • Gesamtvolumen: EUR 3.000.000,00
+    • Mindestzeichnung: EUR 100.000,00
+    • Nennwert pro Anleihe: EUR 1.000,00
+    • Zeichnungspreis: 100% des Nennwerts
+
+3.2 ZINSEN UND LAUFZEIT
+    • Zinssatz: 12,00% pro Jahr (fix)
+    • Zinszahlung: Jährlich am 01. Januar
+    • Fälligkeitsdatum: 21. Januar 2030
+    • Laufzeit: Circa 4 Jahre
+
+
+================================================================================
+4. ZEICHNUNG UND KAUF
+================================================================================
+
+4.1 Die Zeichnung von Unternehmensanleihen erfolgt durch Abschluss einer 
+    Zeichnungsvereinbarung im Online-Portal.
+
+4.2 Die Zeichnung ist unwiderruflich und verbindlich. Eine Rückgängigmachung ist 
+    ausgeschlossen.
+
+4.3 Der Anleihegläubiger erklärt, dass er volljährig und geschäftsfähig ist.
+
+4.4 Der Anleihegläubiger erklärt, dass er die erforderlichen Mittel zur Zahlung des 
+    Zeichnungspreises hat.
+
+4.5 Der Anleihegläubiger erklärt, dass er die Risikooffenlegung und diese AGB gelesen 
+    und verstanden hat.
+
+4.6 Die Bestätigung dieser Bedingungen erfolgt durch einen Checkpoint im Online-Portal. 
+    Dies ersetzt die handschriftliche Unterschrift.
+
+
+================================================================================
+5. ZAHLUNGSBEDINGUNGEN
+================================================================================
+
+5.1 Der Zeichnungspreis ist innerhalb von 5 Tagen nach Unterzeichnung zu zahlen.
+
+5.2 Zahlungen müssen auf das von der Angelus Management Beratungs und Service KG 
+    angegebene Konto erfolgen.
+
+5.3 Eine Zahlung gilt als geleistet, wenn der Betrag auf dem Konto des Emittenten 
+    eingegangen ist.
+
+5.4 Verspätete Zahlungen können zur Stornierung der Zeichnung führen.
+
+5.5 Die Angelus Management Beratungs und Service KG kann Zahlungen in Raten akzeptieren, 
+    sofern dies schriftlich vereinbart wurde.
+
+5.6 Alle Zahlungen erfolgen über das Online-Portal oder auf das angegebene Bankkonto.
+
+
+================================================================================
+6. ZINSZAHLUNGEN UND RÜCKZAHLUNG
+================================================================================
+
+6.1 Der Anleihegläubiger hat Anspruch auf Zinszahlungen nach Maßgabe der 
+    Zeichnungsvereinbarung.
+
+6.2 Zinsen werden jährlich am 01. Januar gezahlt (12,00% pro Jahr).
+
+6.3 Die Zinsberechnung erfolgt auf Basis Actual/365.
+
+6.4 Zinszahlungen erfolgen auf das vom Anleihegläubiger angegebene Konto.
+
+6.5 Der Nennwert wird am 21. Januar 2030 in vollem Umfang zurückgezahlt.
+
+6.6 Rückzahlungen erfolgen auf das vom Anleihegläubiger angegebene Konto.
+
+6.7 Rückzahlungen sind unter dem Vorbehalt der Insolvenzfreiheit des Emittenten 
+    gestellt.
+
+
+================================================================================
+7. RANGRÜCKTRITT UND INSOLVENZVORBEHALT
+================================================================================
+
+7.1 Die Anleihen sind nachrangig gegenüber ALLEN anderen Schulden der Angelus 
+    Management Beratungs und Service KG.
+
+7.2 Im Falle einer Insolvenz oder Liquidation werden Anleihegläubiger erst nach 
+    Begleichung aller anderen Schulden bedient.
+
+7.3 Der Anleihegläubiger erklärt sich mit diesem Rangrücktritt ausdrücklich einverstanden.
+
+7.4 Die Rückzahlung von Nennwert und Zinsen ist unter dem Vorbehalt der 
+    Insolvenzfreiheit der Angelus Management Beratungs und Service KG gestellt.
+
+7.5 Im Falle einer Insolvenz können Rückzahlungen verzögert, reduziert oder 
+    vollständig ausfallen.
+
+7.6 Der Anleihegläubiger hat keinen Anspruch auf Entschädigung für Ausfälle.
+
+7.7 TOTALVERLUSTRISIKO: Der Anleihegläubiger muss sich bewusst sein, dass aufgrund 
+    des Rangrücktritts und des Insolvenzvorbehalts ein Risiko des Totalverlusts seiner 
+    Investition besteht. Im Insolvenzfall können Anleihegläubiger ihre gesamte 
+    Investition verlieren.
+
+
+================================================================================
+8. KÜNDIGUNG UND VORFÄLLIGKEIT
+================================================================================
+
+8.1 Der Emittent kann die Anleihen kündigen, jedoch frühestens nach Ablauf von 
+    24 Monaten ab Ausgabedatum.
+
+8.2 Nach Ablauf von 24 Monaten kann der Emittent die Anleihen mit einer 
+    Kündigungsfrist von 12 Monaten kündigen.
+
+8.3 Bei Kündigung werden bis zum Kündigungstag fällige Zinsen gezahlt.
+
+8.4 Der Emittent kann die Anleihe vorzeitig kündigen und wird dabei 20% der 
+    ursprünglichen Zeichnungssumme als Vorfälligkeitsentschädigung berechnen und 
+    vom Rückzahlungsbetrag abziehen.
+
+8.5 Der Anleihegläubiger hat kein ordentliches Kündigungsrecht.
+
+8.6 Der Anleihegläubiger kann die Anleihe nur im Falle eines Zahlungsausfalls oder 
+    einer wesentlichen Verletzung dieser Vereinbarung kündigen.
+
+
+================================================================================
+9. ABTRETUNG UND ÜBERTRAGUNG
+================================================================================
+
+9.1 Der Anleihegläubiger darf die Anleihe nicht ohne vorherige schriftliche 
+    Zustimmung der Angelus Management Beratungs und Service KG abtreten oder 
+    übertragen.
+
+9.2 Die Angelus Management Beratungs und Service KG kann die Zustimmung nach eigenem 
+    Ermessen verweigern.
+
+9.3 Eine Abtretung ohne Zustimmung ist unwirksam.
+
+9.4 Die Angelus Management Beratungs und Service KG hat ein Vorkaufsrecht bei einer 
+    beabsichtigten Abtretung.
+
+
+================================================================================
+10. ANLEGERKONTO UND VERWALTUNG
+================================================================================
+
+10.1 Der Anleihegläubiger hat ein Anlegerkonto im Online-Portal.
+
+10.2 Der Anleihegläubiger kann sein Anlegerkonto jederzeit einsehen und verwalten.
+
+10.3 Der Anleihegläubiger kann sein Zahlungskonto im Online-Portal aktualisieren.
+
+10.4 Der Anleihegläubiger erhält regelmäßige Kontoauszüge und Berichte über seine 
+    Anleihen.
+
+10.5 Der Anleihegläubiger ist verantwortlich für die Sicherheit seiner 
+    Anmeldedaten und seines Passworts.
+
+
+================================================================================
+11. INFORMATIONSRECHTE
+================================================================================
+
+11.1 Der Anleihegläubiger hat das Recht, Informationen über die Geschäftstätigkeit 
+     der Angelus Management Beratungs und Service KG zu erhalten.
+
+11.2 Die Angelus Management Beratungs und Service KG stellt regelmäßig 
+     Geschäftsberichte und Finanzberichte zur Verfügung.
+
+11.3 Der Anleihegläubiger kann Informationen über seine Anleihen im Online-Portal 
+     abrufen.
+
+11.4 Die Angelus Management Beratungs und Service KG kann Geschäftsinformationen 
+     als vertraulich kennzeichnen.
+
+
+================================================================================
+12. PFLICHTEN DES ANLEIHEGLÄUBIGERS
+================================================================================
+
+11.1 Der Anleihegläubiger verpflichtet sich, die Anleihe nicht ohne Zustimmung 
+     abzutreten.
+
+11.2 Der Anleihegläubiger verpflichtet sich, die Angelus Management Beratungs und 
+     Service KG unverzüglich über Änderungen seiner persönlichen oder wirtschaftlichen 
+     Verhältnisse zu informieren.
+
+11.3 Der Anleihegläubiger verpflichtet sich, alle erforderlichen Compliance- und 
+     KYC-Anforderungen zu erfüllen.
+
+11.4 Der Anleihegläubiger verpflichtet sich, die Anmeldedaten und Passwörter sicher 
+     zu verwahren.
+
+
+================================================================================
+12. HAFTUNG
+================================================================================
+
+12.1 Die Angelus Management Beratungs und Service KG haftet nicht für Verluste oder 
+     Schäden, die durch die Investition entstehen.
+
+12.2 Der Anleihegläubiger trägt das volle Risiko seiner Investition.
+
+12.3 Die Angelus Management Beratungs und Service KG haftet nur für Schäden, die 
+     durch vorsätzliches Verhalten oder grobe Fahrlässigkeit entstehen.
+
+12.4 Die Haftung ist auf den Betrag des Anleihekapitals begrenzt.
+
+
+================================================================================
+13. SCHIEDSGERICHTSBARKEIT
+================================================================================
+
+13.1 Alle Streitigkeiten werden durch Schiedsverfahren nach Schweizer Recht 
+     beigelegt.
+
+13.2 Der ordentliche Rechtsweg ist ausgeschlossen.
+
+13.3 Der Schiedsspruch ist endgültig und verbindlich.
+
+13.4 Die Parteien verzichten auf das Recht, vor ordentlichen Gerichten Klage zu 
+     erheben.
+
+
+================================================================================
+14. DATENSCHUTZ
+================================================================================
+
+14.1 Die Angelus Management Beratungs und Service KG verarbeitet personenbezogene 
+     Daten des Anleihegläubigers gemäß der Datenschutzerklärung.
+
+14.2 Der Anleihegläubiger erklärt sich damit einverstanden, dass seine Daten 
+     verarbeitet werden.
+
+14.3 Der Anleihegläubiger hat das Recht, Zugang zu seinen Daten zu erhalten.
+
+14.4 Die Daten werden nicht an Dritte weitergegeben, außer wenn dies gesetzlich 
+     erforderlich ist.
+
+
+================================================================================
+15. ÄNDERUNGEN DER AGB
+================================================================================
+
+15.1 Die Angelus Management Beratungs und Service KG behält sich das Recht vor, 
+     diese AGB zu ändern.
+
+15.2 Änderungen werden dem Anleihegläubiger schriftlich mitgeteilt.
+
+15.3 Der Anleihegläubiger hat das Recht, die Anleihe zu beenden, wenn er mit 
+     Änderungen nicht einverstanden ist.
+
+15.4 Wesentliche Änderungen erfordern eine neue Checkpoint-Bestätigung.
+
+
+================================================================================
+16. SALVATORISCHE KLAUSEL
+================================================================================
+
+16.1 Sollte eine Bestimmung dieser AGB unwirksam sein, bleibt die Gültigkeit der 
+     übrigen Bestimmungen unberührt.
+
+16.2 Die Parteien verpflichten sich, die unwirksame Bestimmung durch eine wirksame 
+     Bestimmung zu ersetzen.
+
+
+================================================================================
+17. ANWENDBARES RECHT
+================================================================================
+
+17.1 Diese AGB unterliegen Schweizer Recht (Kanton Zürich).
+
+17.2 Die Kollisionsnormen sind ausgeschlossen.
+
+17.3 Das Übereinkommen der Vereinten Nationen über Verträge über den internationalen 
+     Warenkauf findet keine Anwendung.
+
+
+================================================================================
+18. CHECKPOINT-BESTÄTIGUNG
+================================================================================
+
+18.1 Der Anleihegläubiger bestätigt diese AGB durch einen Checkpoint im Online-Portal.
+
+18.2 Die Checkpoint-Bestätigung ersetzt die handschriftliche Unterschrift.
+
+18.3 Der Anleihegläubiger erklärt, dass er diese AGB gelesen, verstanden und 
+     akzeptiert.
+
+18.4 Die Bestätigung ist bindend und kann nicht widerrufen werden.
+
+18.5 Der Anleihegläubiger erhält eine Bestätigung der Checkpoint-Akzeptanz per 
+     E-Mail.

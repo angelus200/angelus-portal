@@ -1,0 +1,221 @@
+================================================================================
+ZEICHNUNGSVEREINBARUNG
+================================================================================
+
+zwischen
+
+ANGELUS GROUP, vertreten durch ihre Geschäftsführung,
+Adresse: [Angelus Group Adresse]
+(nachfolgend „Emittent" genannt)
+
+und
+
+[Investor Name], [Adresse]
+(nachfolgend „Zeichner" genannt)
+
+
+================================================================================
+1. VERTRAGSGEGENSTAND
+================================================================================
+
+1.1 Der Zeichner erklärt hiermit verbindlich, dass er die nachfolgend beschriebenen 
+    Beteiligungspapiere zeichnet und kauft.
+
+1.2 Gegenstand dieser Vereinbarung ist die Zeichnung von [Anzahl] Beteiligungsanteilen 
+    der Angelus Group zum Zeichnungspreis von [Betrag] EUR pro Anteil, insgesamt 
+    [Gesamtbetrag] EUR.
+
+1.3 Die Beteiligungspapiere werden gemäß den Bedingungen dieser Zeichnungsvereinbarung 
+    und den Allgemeinen Geschäftsbedingungen ausgegeben.
+
+
+================================================================================
+2. ZEICHNUNGSBEDINGUNGEN
+================================================================================
+
+2.1 Der Zeichner erklärt, dass er volljährig und geschäftsfähig ist.
+
+2.2 Der Zeichner bestätigt, dass er die Risikooffenlegung gelesen und verstanden hat.
+
+2.3 Der Zeichner erklärt, dass er die wirtschaftlichen Verhältnisse dieser Beteiligung 
+    versteht und die damit verbundenen Risiken akzeptiert.
+
+2.4 Der Zeichner bestätigt, dass er die erforderlichen Mittel zur Zahlung des 
+    Zeichnungspreises zur Verfügung hat.
+
+2.5 Die Zeichnung ist unwiderruflich. Eine Rückgängigmachung ist ausgeschlossen.
+
+
+================================================================================
+3. ZAHLUNGSBEDINGUNGEN
+================================================================================
+
+3.1 Der Zeichnungspreis ist innerhalb von [X] Tagen nach Unterzeichnung dieser 
+    Vereinbarung auf folgendes Konto zu zahlen:
+
+    Kontoinhaber: [Angelus Group]
+    IBAN: [IBAN]
+    BIC: [BIC]
+    Verwendungszweck: Zeichnung [Beteiligungsname]
+
+3.2 Eine Zahlung gilt als geleistet, wenn der Betrag auf dem Konto des Emittenten 
+    eingegangen ist.
+
+3.3 Sollte die Zahlung nicht fristgerecht erfolgen, behält sich der Emittent das Recht 
+    vor, die Zeichnung zu stornieren.
+
+
+================================================================================
+4. BETEILIGUNGSRECHTE UND PFLICHTEN
+================================================================================
+
+4.1 Mit der Zahlung des Zeichnungspreises erwirbt der Zeichner die Beteiligungsrechte 
+    gemäß den Bedingungen dieser Vereinbarung.
+
+4.2 Der Zeichner hat Anspruch auf anteilige Gewinnbeteiligung nach Maßgabe der 
+    Geschäftsbedingungen.
+
+4.3 Der Zeichner verpflichtet sich, die Beteiligungspapiere nicht ohne vorherige 
+    schriftliche Zustimmung des Emittenten abzutreten.
+
+4.4 Der Zeichner erklärt sich damit einverstanden, dass seine Beteiligungsdaten in 
+    einem Beteiligungsregister erfasst werden.
+
+
+================================================================================
+5. LAUFZEIT UND RÜCKZAHLUNG
+================================================================================
+
+5.1 Die Beteiligung hat eine Laufzeit von [X] Monaten ab dem Datum der Kapitalzuführung.
+
+5.2 Die Rückzahlung des Beteiligungskapitals erfolgt am Ende der Laufzeit oder bei 
+    vorzeitiger Beendigung nach Maßgabe der Geschäftsbedingungen.
+
+5.3 Der Emittent behält sich das Recht vor, die Laufzeit unter bestimmten Bedingungen 
+    zu verlängern oder zu verkürzen.
+
+
+================================================================================
+6. RISIKOHINWEISE
+================================================================================
+
+6.1 Der Zeichner erklärt, dass er die mit dieser Beteiligung verbundenen Risiken 
+    versteht und akzeptiert.
+
+6.2 Die Beteiligung ist mit erheblichen Risiken verbunden, einschließlich des Risikos 
+    des Totalverlusts des eingesetzten Kapitals.
+
+6.3 Der Zeichner bestätigt, dass er die Risikooffenlegung vollständig gelesen und 
+    verstanden hat.
+
+
+================================================================================
+7. DATENSCHUTZ UND COMPLIANCE
+================================================================================
+
+7.1 Der Zeichner erklärt sich damit einverstanden, dass seine personenbezogenen Daten 
+    gemäß der Datenschutzerklärung des Emittenten verarbeitet werden.
+
+7.2 Der Zeichner erklärt, dass er alle erforderlichen KYC- und AML-Überprüfungen 
+    durchlaufen hat und diese bestanden hat.
+
+7.3 Der Zeichner verpflichtet sich, den Emittenten unverzüglich über Änderungen seiner 
+    persönlichen oder wirtschaftlichen Verhältnisse zu informieren.
+
+
+================================================================================
+8. SCHIEDSGERICHTSBARKEIT - AUSSCHLUSS DES ORDENTLICHEN RECHTSWEGS
+================================================================================
+
+8.1 ALLE STREITIGKEITEN, DIE SICH AUS DIESER VEREINBARUNG ODER IN ZUSAMMENHANG MIT 
+    DIESER VEREINBARUNG ERGEBEN, WERDEN ENDGÜLTIG DURCH EIN SCHIEDSVERFAHREN BEIGELEGT.
+
+8.2 Das Schiedsverfahren wird nach den Regeln der Deutschen Institution für 
+    Schiedsgerichtsbarkeit (DIS) durchgeführt. Die geltende Fassung der DIS-Regeln 
+    ist maßgeblich.
+
+8.3 Das Schiedsverfahren findet in [Ort, z.B. München] statt. Die Verhandlungssprache 
+    ist Deutsch.
+
+8.4 Das Schiedsverfahren wird von einem einzelnen Schiedsrichter entschieden, sofern 
+    die Parteien nicht etwas anderes vereinbaren. Die Schiedsrichter müssen unabhängig 
+    und unparteiisch sein.
+
+8.5 Die Kosten des Schiedsverfahrens werden nach Maßgabe der DIS-Regeln verteilt. 
+    Jede Partei trägt ihre eigenen Anwaltskosten, sofern der Schiedsrichter nicht 
+    etwas anderes entscheidet.
+
+8.6 DER AUSSCHLUSS DES ORDENTLICHEN RECHTSWEGS IST VEREINBART. JEDE PARTEI VERZICHTET 
+    AUF DAS RECHT, VOR EINEM ORDENTLICHEN GERICHT KLAGE ZU ERHEBEN. DIES GILT AUCH FÜR 
+    EINSTWEILIGE MASSNAHMEN UND VORSORGLICHE PFÄNDUNGEN.
+
+8.7 Der Schiedsspruch ist endgültig und verbindlich und kann nur unter den in den 
+    DIS-Regeln vorgesehenen Bedingungen angefochten werden. Eine Berufung oder 
+    Revision ist ausgeschlossen.
+
+8.8 Der Schiedsspruch ist in vollem Umfang vollstreckbar. Die Parteien verpflichten 
+    sich, den Schiedsspruch ohne Vorbehalt anzuerkennen und zu erfüllen.
+
+8.9 Sollte eine Partei die Durchführung des Schiedsverfahrens verweigern oder den 
+    Schiedsspruch nicht erfüllen, kann die andere Partei die Vollstreckung des 
+    Schiedsspruchs vor den zuständigen Gerichten beantragen.
+
+
+================================================================================
+9. SALVATORISCHE KLAUSEL
+================================================================================
+
+9.1 Sollte eine Bestimmung dieser Vereinbarung ganz oder teilweise unwirksam sein, 
+    bleibt die Gültigkeit der übrigen Bestimmungen unberührt.
+
+9.2 Die Parteien verpflichten sich, die unwirksame Bestimmung durch eine wirksame 
+    Bestimmung zu ersetzen, die dem wirtschaftlichen Zweck der unwirksamen Bestimmung 
+    entspricht.
+
+
+================================================================================
+10. SCHLUSSBESTIMMUNGEN
+================================================================================
+
+10.1 Diese Vereinbarung unterliegt deutschem Recht, mit Ausnahme der Kollisionsnormen. 
+     Das Übereinkommen der Vereinten Nationen über Verträge über den internationalen 
+     Warenkauf findet keine Anwendung.
+
+10.2 Änderungen und Ergänzungen dieser Vereinbarung bedürfen der Schriftform. 
+     Elektronische Unterschriften sind zulässig.
+
+10.3 Diese Vereinbarung stellt die gesamte Vereinbarung zwischen den Parteien dar und 
+     ersetzt alle vorherigen Vereinbarungen und Absprachen.
+
+10.4 Sollte eine Bestimmung dieser Vereinbarung unwirksam sein, bleibt die Gültigkeit 
+     der übrigen Bestimmungen unberührt.
+
+
+================================================================================
+11. UNTERSCHRIFT
+================================================================================
+
+Der Zeichner erklärt hiermit, dass er diese Zeichnungsvereinbarung gelesen hat, alle 
+Bedingungen versteht und akzeptiert, und dass er diese Vereinbarung freiwillig 
+unterzeichnet.
+
+
+EMITTENT:
+
+_____________________________
+Angelus Group
+Geschäftsführer/in
+Datum: _______________
+
+
+ZEICHNER:
+
+_____________________________
+[Investor Name]
+Unterschrift
+Datum: _______________
+
+
+_____________________________
+[Investor Name]
+Name in Druckbuchstaben

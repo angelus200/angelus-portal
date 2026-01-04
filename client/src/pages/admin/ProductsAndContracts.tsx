@@ -376,6 +376,7 @@ export default function ProductsAndContracts() {
                         <SelectItem value="subscription_agreement">Zeichnungsvereinbarung</SelectItem>
                         <SelectItem value="risk_disclosure">Risikooffenlegung</SelectItem>
                         <SelectItem value="terms_conditions">AGB</SelectItem>
+                        <SelectItem value="kyc_aml">KYC/AML-Vereinbarung</SelectItem>
                         <SelectItem value="prospectus">Prospekt</SelectItem>
                         <SelectItem value="other">Sonstiges</SelectItem>
                       </SelectContent>
@@ -417,6 +418,7 @@ export default function ProductsAndContracts() {
                         {template.type === "subscription_agreement" && "Zeichnungsvereinbarung"}
                         {template.type === "risk_disclosure" && "Risikooffenlegung"}
                         {template.type === "terms_conditions" && "AGB"}
+                        {template.type === "kyc_aml" && "KYC/AML-Vereinbarung"}
                         {template.type === "prospectus" && "Prospekt"}
                         {template.type === "other" && "Sonstiges"}
                       </p>

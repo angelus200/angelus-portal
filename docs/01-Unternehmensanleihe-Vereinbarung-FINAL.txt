@@ -1,0 +1,473 @@
+================================================================================
+UNTERNEHMENSANLEIHE-VEREINBARUNG
+================================================================================
+
+PROSPEKTFREIE UNTERNEHMENSANLEIHE
+
+Angelus Management Beratungs und Service KG
+Anleihe 2026-2030
+
+
+================================================================================
+VEREINBARUNGSDATEN
+================================================================================
+
+Emittent:                    Angelus Management Beratungs und Service KG
+Anleihebezeichnung:          Angelus Unternehmensanleihe 2026-2030
+ISIN:                        [ISIN-Nummer wird nach Registrierung zugeteilt]
+WKN/Wertpapiernummer:        [wird nach Registrierung zugeteilt]
+Anleihenummer:               ANGELUS-2026-001
+Gesamtvolumen:               EUR 3.000.000,00
+Mindestzeichnung:            EUR 100.000,00
+Nennwert pro Anleihe:        EUR 1.000,00
+Anzahl der Anleihen:         3.000 Stück
+Zeichnungspreis:             100% des Nennwerts
+Währung:                     EUR (Euro)
+Prospektausnahme:            Gemäß Schweizer Finanzmarktgesetz (FMG) und 
+                             Europäischer Prospektausnahmeverordnung
+Anwendbares Recht:           Schweizer Recht (Kanton Zürich)
+Gerichtsbarkeit:             Schiedsgerichtsbarkeit nach Schweizer Recht
+
+
+================================================================================
+1. VERTRAGSPARTEIEN
+================================================================================
+
+1.1 EMITTENT (Schuldner)
+    Name:                    Angelus Management Beratungs und Service KG
+    Rechtsform:              Kommanditgesellschaft (KG)
+    Sitz:                    München
+    Handelsregister:         HRA 102 679
+    Geschäftsführung:        Thomas Gross
+    Geschäftsadresse:        [Adresse]
+    
+1.2 ANLEIHEGLÄUBIGER (Zeichner)
+    Name:                    [Investor Name]
+    Adresse:                 [Investor Adresse]
+    Nationalität:            [Nationalität]
+    
+1.3 ZAHLSTELLE UND VERWALTUNGSSTELLE
+    Die aktuelle Zahlstelle wird im Online-Portal im Bereich Euro Wallet hinterlegt 
+    und kann jederzeit aktualisiert werden. Der Anleihegläubiger wird über Änderungen 
+    der Zahlstelle schriftlich informiert.
+
+
+================================================================================
+2. ANLEIHEBEDINGUNGEN
+================================================================================
+
+2.1 NENNWERT UND ZEICHNUNG
+    2.1.1 Der Anleihegläubiger zeichnet Unternehmensanleihen im Nennwert von 
+          EUR [Betrag] zum Zeichnungspreis von 100% des Nennwerts.
+    
+    2.1.2 Die Zeichnung ist unwiderruflich und verbindlich. Eine Rückgängigmachung 
+          oder Stornierung ist ausgeschlossen.
+    
+    2.1.3 Die Mindestzeichnung beträgt EUR 100.000,00. Zeichnungen unter diesem 
+          Betrag werden nicht akzeptiert.
+    
+    2.1.4 Der Anleihegläubiger erklärt, dass er volljährig, geschäftsfähig und 
+          berechtigt ist, diese Vereinbarung einzugehen.
+
+2.2 LAUFZEIT
+    2.2.1 Ausgabedatum:       [Ausgabedatum]
+    2.2.2 Fälligkeitsdatum:   21. Januar 2030
+    2.2.3 Laufzeit:           Circa 4 Jahre ab Ausgabedatum
+    
+2.3 ZINSSATZ UND ZINSZAHLUNG
+    2.3.1 Zinssatz:           12,00% pro Jahr (fix, nicht variabel)
+    2.3.2 Zinszahlungstage:   01. Januar eines jeden Jahres
+    2.3.3 Erste Zinszahlung:  01. Januar 2026
+    2.3.4 Letzte Zinszahlung: 21. Januar 2030 (zusammen mit Rückzahlung des Nennwerts)
+    2.3.5 Zinsberechnung:     Actual/365-Tage-Basis (tatsächliche Tage/365 Tage)
+    2.3.6 Zinsrückstand:      Zinsrückstände werden nicht verzinst
+    2.3.7 Zinsauszahlung:     Zinsen werden auf das vom Anleihegläubiger angegebene 
+                              Konto überwiesen
+    
+2.4 RÜCKZAHLUNG DES NENNWERTS
+    2.4.1 Der Nennwert wird am Fälligkeitsdatum (21. Januar 2030) in vollem Umfang 
+          zurückgezahlt.
+    
+    2.4.2 Rückzahlungen erfolgen auf das vom Anleihegläubiger angegebene Konto.
+    
+    2.4.3 Rückzahlungen sind endgültig. Eine Rückgängigmachung ist ausgeschlossen.
+    
+    2.4.4 Die Rückzahlung erfolgt unter Vorbehalt der Insolvenzfreiheit des Emittenten 
+          (siehe Abschnitt 3).
+
+
+================================================================================
+3. RANGRÜCKTRITT UND INSOLVENZVORBEHALT
+================================================================================
+
+3.1 RANGRÜCKTRITT
+    3.1.1 Die Anleihen sind nachrangig gegenüber ALLEN anderen Schulden der Angelus 
+          Management Beratungs und Service KG, insbesondere:
+          • Darlehen von Kreditinstituten
+          • Lieferantenkredite
+          • Arbeitnehmerforderungen
+          • Steuerforderungen
+          • Alle anderen Gläubigerforderungen
+    
+    3.1.2 Im Falle einer Insolvenz oder Liquidation werden Anleihegläubiger erst nach 
+          vollständiger Begleichung aller anderen Schulden bedient.
+    
+    3.1.3 Der Anleihegläubiger erklärt sich mit diesem Rangrücktritt ausdrücklich 
+          und unwiderruflich einverstanden.
+    
+    3.1.4 Der Anleihegläubiger verzichtet auf alle Einwände gegen den Rangrücktritt.
+
+3.2 INSOLVENZVORBEHALT
+    3.2.1 Die Rückzahlung von Nennwert und Zinsen ist unter dem Vorbehalt der 
+          Insolvenzfreiheit der Angelus Management Beratungs und Service KG gestellt.
+    
+    3.2.2 Im Falle einer Insolvenz, Konkurs, Liquidation oder eines ähnlichen 
+          Verfahrens können Rückzahlungen verzögert, reduziert oder vollständig 
+          ausfallen.
+    
+    3.2.3 Der Anleihegläubiger hat keinen Anspruch auf Entschädigung für Ausfälle 
+          oder Verzögerungen.
+    
+    3.2.4 Im Insolvenzverfahren werden Anleihegläubiger als nachrangige Gläubiger 
+          (Subordinated Creditors) behandelt.
+    
+    3.2.5 Der Anleihegläubiger akzeptiert das Risiko des Totalverlusts seiner 
+          Investition.
+
+
+================================================================================
+4. KÜNDIGUNG UND VORFÄLLIGKEIT
+================================================================================
+
+4.1 KÜNDIGUNGSRECHT DES EMITTENTEN
+    4.1.1 Der Emittent kann die Anleihen kündigen, jedoch frühestens nach Ablauf von 
+          24 Monaten ab Ausgabedatum (Sperrfrist).
+    
+    4.1.2 Nach Ablauf von 24 Monaten kann der Emittent die Anleihen mit einer 
+          Kündigungsfrist von 12 Monaten kündigen.
+    
+    4.1.3 Die Kündigung muss schriftlich erfolgen und dem Anleihegläubiger per 
+          Einschreiben oder per E-Mail mitgeteilt werden.
+    
+    4.1.4 Bei Kündigung werden bis zum Kündigungstag fällige Zinsen in vollem Umfang 
+          gezahlt.
+    
+    4.1.5 Der Kündigungstag muss auf einen Zinszahlungstag fallen.
+
+4.2 VORFÄLLIGKEITSENTSCHÄDIGUNG BEI VORZEITIGER KÜNDIGUNG
+    4.2.1 Der Emittent kann die Anleihe vorzeitig kündigen und wird dabei 20% der 
+          ursprünglichen Zeichnungssumme als Vorfälligkeitsentschädigung berechnen 
+          und vom Rückzahlungsbetrag abziehen.
+    
+    4.2.2 Vorfällige Rückzahlungen erfolgen zum Nennwert, abzüglich der 
+          Vorfälligkeitsentschädigung (20%), plus aufgelaufene Zinsen bis zum 
+          Rückzahlungstag.
+    
+    4.2.3 Beispiel: Bei einer Zeichnung von EUR 100.000,00 beträgt die 
+          Vorfälligkeitsentschädigung EUR 20.000,00. Der Rückzahlungsbetrag beträgt 
+          EUR 80.000,00 plus aufgelaufene Zinsen.
+    
+    4.2.4 Der Emittent muss eine vorzeitige Kündigung mindestens 12 Monate vorher 
+          ankündigen.
+    
+    4.2.5 Der Anleihegläubiger hat kein Recht, eine vorzeitige Kündigung zu fordern.
+
+4.3 KÜNDIGUNGSRECHT DES ANLEIHEGLÄUBIGERS
+    4.3.1 Der Anleihegläubiger hat kein ordentliches Kündigungsrecht.
+    
+    4.3.2 Der Anleihegläubiger kann die Anleihe nur im Falle eines Zahlungsausfalls 
+          oder einer wesentlichen Verletzung dieser Vereinbarung durch den Emittenten 
+          kündigen.
+    
+    4.3.3 Zahlungsausfälle müssen mindestens 60 Tage überfällig sein, bevor eine 
+          Kündigung möglich ist.
+
+
+================================================================================
+5. ZAHLUNGSBEDINGUNGEN
+================================================================================
+
+5.1 ZEICHNUNGSPREIS
+    5.1.1 Der Zeichnungspreis beträgt 100% des Nennwerts.
+    
+    5.1.2 Der Zeichnungspreis ist innerhalb von 5 Tagen nach Unterzeichnung dieser 
+          Vereinbarung zu zahlen.
+    
+    5.1.3 Zahlungen erfolgen auf folgendes Konto:
+          Kontoinhaber: Angelus Management Beratungs und Service KG
+          IBAN: [IBAN]
+          BIC: [BIC]
+          Verwendungszweck: Zeichnung Anleihe 2026-2030 - [Investor Name]
+    
+    5.1.4 Eine Zahlung gilt als geleistet, wenn der Betrag auf dem Konto des 
+          Emittenten eingegangen ist.
+    
+    5.1.5 Sollte die Zahlung nicht fristgerecht erfolgen, behält sich der Emittent 
+          das Recht vor, die Zeichnung zu stornieren und die Vereinbarung für 
+          ungültig zu erklären.
+
+5.2 ZINSZAHLUNGEN
+    5.2.1 Zinsen werden jährlich am 01. Januar gezahlt.
+    
+    5.2.2 Die Zinsberechnung erfolgt auf Basis Actual/365 (tatsächliche Tage/365 Tage).
+    
+    5.2.3 Zinszahlungen erfolgen auf das vom Anleihegläubiger angegebene Konto.
+    
+    5.2.4 Zinsrückstände werden nicht verzinst.
+    
+    5.2.5 Der Anleihegläubiger muss sein Zahlungskonto schriftlich mitteilen.
+
+5.3 RÜCKZAHLUNG DES NENNWERTS
+    5.3.1 Der Nennwert wird am 21. Januar 2030 in vollem Umfang zurückgezahlt.
+    
+    5.3.2 Die Rückzahlung erfolgt auf das vom Anleihegläubiger angegebene Konto.
+    
+    5.3.3 Die Rückzahlung erfolgt unter Vorbehalt der Insolvenzfreiheit des Emittenten.
+    
+    5.3.4 Rückzahlungen erfolgen ohne Abzug von Gebühren oder Steuern (brutto).
+
+5.4 ZAHLUNGSVERZUG
+    5.4.1 Bei Zahlungsverzug werden Verzugszinsen in Höhe von 0% pro Jahr berechnet.
+    
+    5.4.2 Der Emittent verpflichtet sich, alle Zahlungen pünktlich zu leisten.
+    
+    5.4.3 Bei Zahlungsverzug von mehr als 60 Tagen kann der Anleihegläubiger die 
+          Anleihe kündigen und sofortige Rückzahlung verlangen.
+
+
+================================================================================
+6. PROSPEKTAUSNAHME UND REGULIERUNG
+================================================================================
+
+6.1 PROSPEKTAUSNAHME
+    6.1.1 Diese Anleihe ist prospektfrei gemäß Schweizer Finanzmarktgesetz (FMG) 
+          und der Europäischen Prospektausnahmeverordnung.
+    
+    6.1.2 Die Prospektausnahme gilt für Zeichnungen mit einer Mindestzeichnung von 
+          EUR 100.000,00.
+    
+    6.1.3 Kein Prospekt ist erforderlich, da die Anleihe nicht öffentlich angeboten 
+          wird und eine Mindestzeichnung von EUR 100.000,00 verlangt wird.
+    
+    6.1.4 Diese Vereinbarung ersetzt den Prospekt und enthält alle wesentlichen 
+          Informationen.
+
+6.2 ANWENDBARES RECHT
+    6.2.1 Diese Vereinbarung unterliegt Schweizer Recht, insbesondere dem Recht des 
+          Kantons Zürich.
+    
+    6.2.2 Die Kollisionsnormen des Schweizer Rechts sind ausgeschlossen.
+    
+    6.2.3 Internationale Übereinkünfte (wie UNCITRAL oder andere internationale 
+          Konventionen) finden keine Anwendung.
+
+6.3 REGULATORISCHE COMPLIANCE
+    6.3.1 Der Emittent erklärt, dass er alle geltenden Schweizer Gesetze und 
+          Vorschriften einhält.
+    
+    6.3.2 Der Emittent hat alle erforderlichen Genehmigungen erhalten, sofern 
+          notwendig.
+    
+    6.3.3 Der Emittent wird die Anleihegläubiger über wesentliche Änderungen, 
+          Insolvenzverfahren oder andere materielle Ereignisse unverzüglich 
+          informieren.
+
+
+================================================================================
+7. SCHIEDSGERICHTSBARKEIT - AUSSCHLUSS DES ORDENTLICHEN RECHTSWEGS
+================================================================================
+
+7.1 SCHIEDSVERFAHREN
+    7.1.1 ALLE STREITIGKEITEN, DIE SICH AUS DIESER VEREINBARUNG ODER IN ZUSAMMENHANG 
+          MIT DIESER VEREINBARUNG ERGEBEN, WERDEN ENDGÜLTIG DURCH EIN 
+          SCHIEDSVERFAHREN BEIGELEGT.
+    
+    7.1.2 Das Schiedsverfahren wird nach den Schweizer Schiedsregeln durchgeführt 
+          (Schweizerische Schiedsregeln der UNCITRAL oder Regeln der Schweizer 
+          Handelskammer).
+    
+    7.1.3 Das Schiedsverfahren findet in Zürich, Schweiz statt.
+    
+    7.1.4 Die Verhandlungssprache ist Deutsch, alternativ Englisch.
+    
+    7.1.5 Das Schiedsverfahren ist vertraulich. Alle Informationen sind 
+          vertraulich zu behandeln.
+
+7.2 SCHIEDSRICHTER
+    7.2.1 Das Schiedsverfahren wird von einem einzelnen Schiedsrichter entschieden, 
+          sofern die Parteien nicht etwas anderes vereinbaren.
+    
+    7.2.2 Der Schiedsrichter muss unabhängig und unparteiisch sein.
+    
+    7.2.3 Der Schiedsrichter wird nach den Schweizer Schiedsregeln ernannt.
+    
+    7.2.4 Der Schiedsrichter muss Erfahrung in Finanzrecht und Schiedsverfahren haben.
+
+7.3 KOSTEN DES SCHIEDSVERFAHRENS
+    7.3.1 Die Kosten des Schiedsverfahrens werden nach Maßgabe der Schweizer 
+          Schiedsregeln verteilt.
+    
+    7.3.2 Jede Partei trägt ihre eigenen Anwaltskosten, sofern der Schiedsrichter 
+          nicht etwas anderes entscheidet.
+    
+    7.3.3 Die Verwaltungskosten des Schiedsverfahrens werden zwischen den Parteien 
+          aufgeteilt.
+    
+    7.3.4 Die Kosten können erheblich sein. Der Anleihegläubiger akzeptiert dieses 
+          Kostenrisiko.
+
+7.4 AUSSCHLUSS DES ORDENTLICHEN RECHTSWEGS
+    7.4.1 DER AUSSCHLUSS DES ORDENTLICHEN RECHTSWEGS IST VEREINBART.
+    
+    7.4.2 JEDE PARTEI VERZICHTET AUF DAS RECHT, VOR EINEM ORDENTLICHEN GERICHT 
+          KLAGE ZU ERHEBEN.
+    
+    7.4.3 DIES GILT AUCH FÜR EINSTWEILIGE MASSNAHMEN UND VORSORGLICHE PFÄNDUNGEN.
+    
+    7.4.4 Ausnahme: Der Emittent kann einstweilige Massnahmen vor ordentlichen 
+          Gerichten beantragen, um Vermögenswerte zu sichern.
+    
+    7.4.5 Der Anleihegläubiger verzichtet auf alle Einwände gegen die 
+          Schiedsgerichtsbarkeit.
+
+7.5 SCHIEDSSPRUCH
+    7.5.1 Der Schiedsspruch ist endgültig und verbindlich.
+    
+    7.5.2 Der Schiedsspruch kann nur unter den in den Schweizer Schiedsregeln 
+          vorgesehenen Bedingungen angefochten werden.
+    
+    7.5.3 Eine Berufung oder Revision ist ausgeschlossen.
+    
+    7.5.4 Der Schiedsspruch ist in vollem Umfang vollstreckbar.
+    
+    7.5.5 Der Schiedsspruch ist bindend für beide Parteien.
+
+7.6 VOLLSTRECKUNG
+    7.6.1 Die Parteien verpflichten sich, den Schiedsspruch ohne Vorbehalt anzuerkennen 
+          und zu erfüllen.
+    
+    7.6.2 Sollte eine Partei die Vollstreckung des Schiedsspruchs verweigern, kann die 
+          andere Partei die Vollstreckung vor den zuständigen Schweizer Gerichten 
+          beantragen.
+    
+    7.6.3 Der Schiedsspruch ist in der Schweiz und international vollstreckbar 
+          (gemäß New York Convention on the Recognition and Enforcement of Foreign 
+          Arbitral Awards).
+
+
+================================================================================
+8. DATENSCHUTZ UND VERTRAULICHKEIT
+================================================================================
+
+8.1 DATENSCHUTZ
+    8.1.1 Der Emittent verarbeitet personenbezogene Daten des Anleihegläubigers gemäß 
+          der Schweizer Datenschutzgesetze (Bundesgesetz über den Datenschutz).
+    
+    8.1.2 Der Anleihegläubiger erklärt sich damit einverstanden, dass seine Daten 
+          verarbeitet werden.
+    
+    8.1.3 Die Daten werden nicht an Dritte weitergegeben, außer wenn dies gesetzlich 
+          erforderlich ist (z.B. an Behörden, Finanzämter).
+    
+    8.1.4 Der Anleihegläubiger hat das Recht, Zugang zu seinen Daten zu erhalten.
+
+8.2 VERTRAULICHKEIT
+    8.2.1 Die Parteien verpflichten sich, die Bedingungen dieser Vereinbarung 
+          vertraulich zu behandeln.
+    
+    8.2.2 Ausnahmen: Offenlegung an Rechtsberater, Steuerberater, Wirtschaftsprüfer 
+          und Behörden.
+    
+    8.2.3 Der Anleihegläubiger darf die Vereinbarung seinen Finanz- und Steuerberatern 
+          zeigen.
+
+
+================================================================================
+9. SALVATORISCHE KLAUSEL
+================================================================================
+
+9.1 Sollte eine Bestimmung dieser Vereinbarung ganz oder teilweise unwirksam sein, 
+    bleibt die Gültigkeit der übrigen Bestimmungen unberührt.
+
+9.2 Die Parteien verpflichten sich, die unwirksame Bestimmung durch eine wirksame 
+    Bestimmung zu ersetzen, die dem wirtschaftlichen Zweck der unwirksamen Bestimmung 
+    entspricht.
+
+9.3 Sollte eine Bestimmung nicht durchsetzbar sein, wird diese Bestimmung so 
+    ausgelegt, dass sie durchsetzbar wird.
+
+
+================================================================================
+10. SCHLUSSBESTIMMUNGEN
+================================================================================
+
+10.1 GESAMTE VEREINBARUNG
+     Diese Vereinbarung stellt die gesamte Vereinbarung zwischen den Parteien dar 
+     und ersetzt alle vorherigen Vereinbarungen und Absprachen.
+
+10.2 ÄNDERUNGEN
+     Änderungen und Ergänzungen dieser Vereinbarung bedürfen der Schriftform. 
+     Elektronische Unterschriften sind zulässig.
+
+10.3 ABTRETUNG
+     Der Anleihegläubiger darf die Anleihe nicht ohne vorherige schriftliche 
+     Zustimmung des Emittenten abtreten oder übertragen.
+
+10.4 MITTEILUNGEN
+     Alle Mitteilungen müssen schriftlich erfolgen und an die in dieser Vereinbarung 
+     angegebenen Adressen gesendet werden.
+
+10.5 VERZICHT
+     Der Verzicht auf die Geltendmachung eines Rechts gilt nicht als Verzicht auf 
+     zukünftige Rechte.
+
+10.6 GESAMTE VEREINBARUNG
+     Diese Vereinbarung, zusammen mit der Risikooffenlegung und den AGB, stellt die 
+     gesamte Vereinbarung dar.
+
+10.7 SPRACHE
+     Diese Vereinbarung ist in deutscher Sprache verfasst. Übersetzungen in andere 
+     Sprachen sind nicht bindend.
+
+
+================================================================================
+11. BESTÄTIGUNG UND UNTERSCHRIFT
+================================================================================
+
+Der Anleihegläubiger erklärt hiermit, dass er diese Unternehmensanleihe-Vereinbarung 
+gelesen hat, alle Bedingungen versteht und akzeptiert.
+
+Der Anleihegläubiger bestätigt, dass er:
+- Die Risikooffenlegung gelesen und verstanden hat
+- Die Bedingungen dieser Anleihe akzeptiert
+- Das Risiko des Totalverlusts versteht und akzeptiert
+- Die erforderlichen Mittel zur Zahlung des Zeichnungspreises hat
+- Unabhängig finanzielle und rechtliche Beratung eingeholt hat (oder bewusst darauf 
+  verzichtet hat)
+- Volljährig und geschäftsfähig ist
+- Diese Vereinbarung freiwillig unterzeichnet
+
+
+EMITTENT:
+
+_____________________________
+Angelus Management Beratungs und Service KG
+Geschäftsführer/Komplementär
+
+Name (Druckbuchstaben): _______________
+Unterschrift: _______________
+Datum: _______________
+
+
+ANLEIHEGLÄUBIGER:
+
+_____________________________
+[Investor Name]
+Unterschrift
+
+Datum: _______________
+
+
+_____________________________
+[Investor Name]
+Name in Druckbuchstaben

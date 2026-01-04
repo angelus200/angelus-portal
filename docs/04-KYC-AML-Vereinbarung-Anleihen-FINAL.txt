@@ -1,0 +1,354 @@
+================================================================================
+KYC/AML VEREINBARUNG
+================================================================================
+
+Know Your Customer (KYC) und Anti-Geldwäsche (AML) Vereinbarung
+
+ANGELUS MANAGEMENT BERATUNGS UND SERVICE KG
+UNTERNEHMENSANLEIHEN
+
+
+================================================================================
+1. ZWECK UND GELTUNGSBEREICH
+================================================================================
+
+1.1 Diese Vereinbarung regelt die Know Your Customer (KYC) und Anti-Geldwäsche (AML) 
+    Anforderungen für alle Zeichner von Unternehmensanleihen der Angelus Management 
+    Beratungs und Service KG.
+
+1.2 Die Angelus Management Beratungs und Service KG ist verpflichtet, KYC- und 
+    AML-Überprüfungen durchzuführen, um Geldwäsche, Terrorismusfinanzierung und 
+    andere illegale Aktivitäten zu verhindern.
+
+1.3 Der Anleihegläubiger erklärt sich damit einverstanden, alle erforderlichen 
+    Informationen und Dokumente bereitzustellen.
+
+1.4 Diese Vereinbarung unterliegt deutschen und internationalen Gesetzen zur 
+    Bekämpfung von Geldwäsche und Terrorismusfinanzierung sowie Schweizer Recht.
+
+1.5 Durch die Bestätigung via Checkpoint akzeptiert der Anleihegläubiger diese 
+    Vereinbarung in vollem Umfang.
+
+
+================================================================================
+1.6 ANLEIHEDETAILS
+================================================================================
+
+1.6.1 ANLEIHESTRUKTUR
+      • Anleihebezeichnung: Angelus Unternehmensanleihe 2026-2030
+      • Gesamtvolumen: EUR 3.000.000,00
+      • Mindestzeichnung: EUR 100.000,00
+      • Nennwert pro Anleihe: EUR 1.000,00
+      • Zeichnungspreis: 100% des Nennwerts
+
+1.6.2 ZINSEN UND LAUFZEIT
+      • Zinssatz: 12,00% pro Jahr (fix)
+      • Zinszahlung: Jährlich am 01. Januar
+      • Fälligkeitsdatum: 21. Januar 2030
+      • Laufzeit: Circa 4 Jahre
+
+1.6.3 RANGRÜCKTRITT UND INSOLVENZVORBEHALT
+      • Die Anleihen sind nachrangig gegenüber allen anderen Schulden
+      • Rückzahlung unter Vorbehalt der Insolvenzfreiheit des Emittenten
+      • Im Insolvenzfall können Rückzahlungen verzögert, reduziert oder ausfallen
+      • TOTALVERLUSTRISIKO: Aufgrund des Rangrücktritts besteht das Risiko des 
+        Totalverlusts der Investition
+
+1.6.4 KÜNDIGUNGSBESTIMMUNGEN
+      • Sperrfrist: 24 Monate ab Ausgabedatum
+      • Kündigungsfrist nach Sperrfrist: 12 Monate
+      • Vorfälligkeitsentschädigung: 20% der ursprünglichen Zeichnungssumme
+      • Zahlungsfrist: 5 Tage nach Unterzeichnung
+
+
+================================================================================
+2. KYC-ANFORDERUNGEN
+================================================================================
+
+2.1 IDENTITÄTSPRÜFUNG
+    Der Anleihegläubiger muss seine Identität durch ein gültiges Ausweisdokument 
+    nachweisen:
+    • Reisepass
+    • Personalausweis
+    • Führerschein
+    • Sonstige behördliche Ausweisdokumente
+
+2.2 ADRESSVERIFIZIERUNG
+    Der Anleihegläubiger muss seine Adresse durch ein aktuelles Dokument nachweisen:
+    • Stromrechnung (nicht älter als 3 Monate)
+    • Mietvertrag
+    • Kontoauszug
+    • Versicherungspolice
+    • Behördliche Schreiben
+
+2.3 VERMÖGENSHERKUNFT
+    Der Anleihegläubiger muss die Herkunft der Mittel nachweisen, die für die 
+    Investition verwendet werden:
+    • Kontoauszüge
+    • Gehaltsabrechnungen
+    • Steuererklärungen
+    • Geschäftsberichte (bei Unternehmen)
+
+2.4 WIRTSCHAFTLICHER EIGENTÜMER
+    Bei juristischen Personen muss der wirtschaftliche Eigentümer identifiziert werden:
+    • Gesellschafterliste
+    • Handelsregisterauszug
+    • Satzung oder Gesellschaftsvertrag
+    • Identifikation aller Gesellschafter mit Anteilen über 25%
+
+2.5 BERUFLICHE TÄTIGKEIT
+    Der Anleihegläubiger muss Informationen über seine berufliche Tätigkeit und 
+    Einkommensquellen bereitstellen:
+    • Berufsbezeichnung
+    • Arbeitgeber
+    • Einkommensquellen
+    • Vermögensverhältnisse
+
+
+================================================================================
+3. AML-ÜBERPRÜFUNGEN
+================================================================================
+
+3.1 SANKTIONSLISTEN
+    Die Angelus Management Beratungs und Service KG überprüft, ob der 
+    Anleihegläubiger auf internationalen Sanktionslisten aufgeführt ist:
+    • OFAC (Office of Foreign Assets Control) Liste
+    • EU-Sanktionslisten
+    • UN-Sanktionslisten
+    • Deutsche Sanktionslisten
+    • Schweizer Sanktionslisten
+
+3.2 PEP-STATUS
+    Die Angelus Management Beratungs und Service KG überprüft, ob der 
+    Anleihegläubiger eine politisch exponierte Person (PEP) ist:
+    • Aktuelle oder ehemalige hohe Regierungsbeamte
+    • Richter und Staatsanwälte
+    • Militär- und Sicherheitsbeamte
+    • Geschäftsführer von Staatsunternehmen
+    • Familienmitglieder und enge Vertraute von PEPs
+
+3.3 NEGATIVE MEDIENBERICHTE
+    Die Angelus Management Beratungs und Service KG überprüft, ob es negative 
+    Medienberichte über den Anleihegläubiger gibt:
+    • Berichte über Korruption
+    • Berichte über Betrug
+    • Berichte über Geldwäsche
+    • Berichte über Terrorismusfinanzierung
+
+3.4 GELDWÄSCHERISIKO
+    Die Angelus Management Beratungs und Service KG bewertet das Geldwäscherisiko 
+    des Anleihegläubigers:
+    • Herkunftsland des Vermögens
+    • Art der Geschäftstätigkeit
+    • Transaktionsmuster
+    • Verbindungen zu Hochrisikoländern
+
+
+================================================================================
+4. DOKUMENTATION
+================================================================================
+
+4.1 Der Anleihegläubiger muss die folgenden Dokumente bereitstellen:
+
+    PFLICHTDOKUMENTE:
+    • Gültiger Personalausweis oder Reisepass (Kopie oder digitale Verifizierung)
+    • Adressnachweis nicht älter als 3 Monate (Kopie)
+    • Nachweis der Vermögensherkunft (Kontoauszüge, Gehaltsabrechnungen)
+    • Nachweis des Einkommens (Gehaltsabrechnung, Steuererklärung)
+
+    BEI UNTERNEHMEN:
+    • Handelsregisterauszug
+    • Satzung oder Gesellschaftsvertrag
+    • Gesellschafterliste
+    • Identifikation aller Gesellschafter
+    • Geschäftsbericht oder Jahresabschluss
+
+    BEI PEPs:
+    • Zusätzliche Dokumentation
+    • Nachweis der Vermögensherkunft
+    • Erklärung der wirtschaftlichen Aktivitäten
+
+4.2 Die Angelus Management Beratungs und Service KG kann zusätzliche Dokumente 
+    anfordern, wenn dies erforderlich ist.
+
+4.3 Alle Dokumente müssen in Originalform oder beglaubigter Kopie vorgelegt werden 
+    oder digital verifiziert sein.
+
+4.4 Dokumente können im Online-Portal hochgeladen werden.
+
+
+================================================================================
+5. ÜBERPRÜFUNGSPROZESS
+================================================================================
+
+5.1 INITIALE ÜBERPRÜFUNG
+    Bei der Zeichnung wird eine initiale KYC/AML-Überprüfung durchgeführt:
+    • Identitätsprüfung
+    • Adressverifizierung
+    • Sanktionslisten-Überprüfung
+    • PEP-Überprüfung
+    • Geldwäscherisiko-Bewertung
+
+5.2 LAUFENDE ÜBERPRÜFUNG
+    Die Angelus Management Beratungs und Service KG führt regelmäßig laufende 
+    Überprüfungen durch:
+    • Mindestens jährlich
+    • Bei Änderungen der Vermögensverhältnisse
+    • Bei Verdacht auf illegale Aktivitäten
+
+5.3 ERHÖHTE SORGFALT
+    Bei hohem Risiko kann eine erhöhte Sorgfalt erforderlich sein:
+    • Zusätzliche Dokumentation
+    • Detaillierte Vermögensherkunftsanalyse
+    • Regelmäßige Überwachung
+
+5.4 VEREINFACHTE SORGFALT
+    Bei niedrigem Risiko kann eine vereinfachte Sorgfalt angewendet werden:
+    • Reduzierte Dokumentation
+    • Weniger häufige Überprüfungen
+
+5.5 ÜBERPRÜFUNGSDAUER
+    Die KYC/AML-Überprüfung kann bis zu 10 Geschäftstage dauern.
+
+
+================================================================================
+6. INFORMATIONSPFLICHTEN
+================================================================================
+
+6.1 Der Anleihegläubiger verpflichtet sich, die Angelus Management Beratungs und 
+    Service KG unverzüglich über Änderungen seiner persönlichen oder wirtschaftlichen 
+    Verhältnisse zu informieren:
+    • Änderung der Adresse
+    • Änderung der Vermögensverhältnisse
+    • Änderung der Geschäftstätigkeit
+    • Änderung der Gesellschafterstruktur
+
+6.2 Der Anleihegläubiger verpflichtet sich, alle erforderlichen Informationen 
+    wahrheitsgemäß und vollständig bereitzustellen.
+
+6.3 Der Anleihegläubiger verpflichtet sich, falsche oder irreführende Informationen 
+    nicht bereitzustellen.
+
+6.4 Der Anleihegläubiger verpflichtet sich, bei Anfragen der Angelus Management 
+    Beratungs und Service KG unverzüglich zu antworten.
+
+6.5 Informationen können über das Online-Portal eingegeben oder aktualisiert werden.
+
+
+================================================================================
+7. SANKTIONEN UND KONSEQUENZEN
+================================================================================
+
+7.1 Sollte der Anleihegläubiger die KYC/AML-Anforderungen nicht erfüllen, behält 
+    sich die Angelus Management Beratungs und Service KG das Recht vor, die 
+    Zeichnung zu stornieren.
+
+7.2 Sollte der Anleihegläubiger auf Sanktionslisten aufgeführt sein, wird die 
+    Zeichnung storniert und die Mittel werden zurückgegeben.
+
+7.3 Sollte der Anleihegläubiger falsche Informationen bereitstellen, kann die 
+    Angelus Management Beratungs und Service KG die Zeichnung stornieren und 
+    rechtliche Maßnahmen einleiten.
+
+7.4 Die Angelus Management Beratungs und Service KG kann den Anleihegläubiger von 
+    zukünftigen Investitionen ausschließen.
+
+7.5 Die Angelus Management Beratungs und Service KG kann die zuständigen Behörden 
+    informieren, wenn ein Verdacht auf illegale Aktivitäten besteht.
+
+7.6 Bei Verstoß gegen diese Vereinbarung kann die Zeichnung rückgängig gemacht werden.
+
+
+================================================================================
+8. DATENSCHUTZ
+================================================================================
+
+8.1 Die Angelus Management Beratungs und Service KG verarbeitet personenbezogene 
+    Daten des Anleihegläubigers für KYC/AML-Zwecke.
+
+8.2 Die Daten werden gemäß der Datenschutzerklärung und der DSGVO verarbeitet.
+
+8.3 Der Anleihegläubiger hat das Recht, Zugang zu seinen Daten zu erhalten.
+
+8.4 Die Daten werden nicht an Dritte weitergegeben, außer wenn dies gesetzlich 
+    erforderlich ist.
+
+8.5 Die Daten werden für die Dauer der Geschäftsbeziehung und darüber hinaus gemäß 
+    gesetzlicher Aufbewahrungspflichten gespeichert.
+
+8.6 Der Anleihegläubiger kann seine Daten im Online-Portal einsehen.
+
+
+================================================================================
+9. COMPLIANCE MIT GESETZEN
+================================================================================
+
+9.1 Die Angelus Management Beratungs und Service KG erfüllt alle geltenden Gesetze 
+    und Vorschriften bezüglich KYC und AML:
+    • Geldwäschegesetz (GwG)
+    • Terrorismusfinanzierungsgesetz
+    • EU-Richtlinien
+    • Schweizer Gesetze
+    • Internationale Standards (FATF)
+
+9.2 Der Anleihegläubiger erklärt sich damit einverstanden, dass die Angelus 
+    Management Beratungs und Service KG alle erforderlichen Berichte an die 
+    zuständigen Behörden erstattet:
+    • Meldungen verdächtiger Transaktionen
+    • Meldungen von Sanktionsverstößen
+    • Regelmäßige Compliance-Berichte
+
+
+================================================================================
+10. SCHIEDSGERICHTSBARKEIT
+================================================================================
+
+10.1 Alle Streitigkeiten bezüglich dieser Vereinbarung werden durch Schiedsverfahren 
+     nach Schweizer Recht beigelegt.
+
+10.2 Der ordentliche Rechtsweg ist ausgeschlossen.
+
+10.3 Der Schiedsspruch ist endgültig und verbindlich.
+
+
+================================================================================
+11. CHECKPOINT-BESTÄTIGUNG
+================================================================================
+
+11.1 Der Anleihegläubiger bestätigt diese KYC/AML-Vereinbarung durch einen 
+     Checkpoint im Online-Portal.
+
+11.2 Die Checkpoint-Bestätigung ersetzt die handschriftliche Unterschrift.
+
+11.3 Der Anleihegläubiger erklärt, dass er diese Vereinbarung gelesen, verstanden 
+     und akzeptiert.
+
+11.4 Die Bestätigung ist bindend und kann nicht widerrufen werden.
+
+11.5 Der Anleihegläubiger erklärt, dass er alle erforderlichen Informationen 
+     wahrheitsgemäß bereitgestellt hat.
+
+11.6 Der Anleihegläubiger erhält eine Bestätigung der Checkpoint-Akzeptanz per 
+     E-Mail.
+
+
+================================================================================
+12. SALVATORISCHE KLAUSEL
+================================================================================
+
+12.1 Sollte eine Bestimmung dieser Vereinbarung unwirksam sein, bleibt die 
+     Gültigkeit der übrigen Bestimmungen unberührt.
+
+12.2 Die Parteien verpflichten sich, die unwirksame Bestimmung durch eine wirksame 
+     Bestimmung zu ersetzen.
+
+
+================================================================================
+13. ANWENDBARES RECHT
+================================================================================
+
+13.1 Diese Vereinbarung unterliegt Schweizer Recht (Kanton Zürich).
+
+13.2 Zusätzlich gelten deutsche und internationale AML/KYC-Gesetze.
+
+13.3 Die Kollisionsnormen sind ausgeschlossen.

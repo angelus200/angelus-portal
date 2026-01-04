@@ -1,0 +1,268 @@
+================================================================================
+KYC/AML VEREINBARUNG
+================================================================================
+
+Know Your Customer (KYC) und Anti-Geldwäsche (AML) Vereinbarung
+
+ANGELUS GROUP
+
+
+================================================================================
+1. ZWECK UND GELTUNGSBEREICH
+================================================================================
+
+1.1 Diese Vereinbarung regelt die Know Your Customer (KYC) und Anti-Geldwäsche (AML) 
+    Anforderungen für alle Zeichner von Beteiligungspapieren der Angelus Group.
+
+1.2 Die Angelus Group ist verpflichtet, KYC- und AML-Überprüfungen durchzuführen, um 
+    Geldwäsche, Terrorismusfinanzierung und andere illegale Aktivitäten zu verhindern.
+
+1.3 Der Zeichner erklärt sich damit einverstanden, alle erforderlichen Informationen 
+    und Dokumente bereitzustellen.
+
+1.4 Diese Vereinbarung unterliegt deutschen und internationalen Gesetzen zur 
+    Bekämpfung von Geldwäsche und Terrorismusfinanzierung.
+
+
+================================================================================
+2. KYC-ANFORDERUNGEN
+================================================================================
+
+2.1 IDENTITÄTSPRÜFUNG
+    Der Zeichner muss seine Identität durch ein gültiges Ausweisdokument nachweisen:
+    • Reisepass
+    • Personalausweis
+    • Führerschein
+    • Sonstige behördliche Ausweisdokumente
+
+2.2 ADRESSVERIFIZIERUNG
+    Der Zeichner muss seine Adresse durch ein aktuelles Dokument nachweisen:
+    • Stromrechnung (nicht älter als 3 Monate)
+    • Mietvertrag
+    • Kontoauszug
+    • Versicherungspolice
+    • Behördliche Schreiben
+
+2.3 VERMÖGENSHERKUNFT
+    Der Zeichner muss die Herkunft der Mittel nachweisen, die für die Investition 
+    verwendet werden:
+    • Kontoauszüge
+    • Gehaltsabrechnungen
+    • Steuererklärungen
+    • Geschäftsberichte (bei Unternehmen)
+
+2.4 WIRTSCHAFTLICHER EIGENTÜMER
+    Bei juristischen Personen muss der wirtschaftliche Eigentümer identifiziert werden:
+    • Gesellschafterliste
+    • Handelsregisterauszug
+    • Satzung oder Gesellschaftsvertrag
+    • Identifikation aller Gesellschafter mit Anteilen über 25%
+
+2.5 BERUFLICHE TÄTIGKEIT
+    Der Zeichner muss Informationen über seine berufliche Tätigkeit und 
+    Einkommensquellen bereitstellen:
+    • Berufsbezeichnung
+    • Arbeitgeber
+    • Einkommensquellen
+    • Vermögensverhältnisse
+
+
+================================================================================
+3. AML-ÜBERPRÜFUNGEN
+================================================================================
+
+3.1 SANKTIONSLISTEN
+    Die Angelus Group überprüft, ob der Zeichner auf internationalen Sanktionslisten 
+    aufgeführt ist:
+    • OFAC (Office of Foreign Assets Control) Liste
+    • EU-Sanktionslisten
+    • UN-Sanktionslisten
+    • Deutsche Sanktionslisten
+
+3.2 PEP-STATUS
+    Die Angelus Group überprüft, ob der Zeichner eine politisch exponierte Person 
+    (PEP) ist:
+    • Aktuelle oder ehemalige hohe Regierungsbeamte
+    • Richter und Staatsanwälte
+    • Militär- und Sicherheitsbeamte
+    • Geschäftsführer von Staatsunternehmen
+    • Familienmitglieder und enge Vertraute von PEPs
+
+3.3 NEGATIVE MEDIENBERICHTE
+    Die Angelus Group überprüft, ob es negative Medienberichte über den Zeichner gibt:
+    • Berichte über Korruption
+    • Berichte über Betrug
+    • Berichte über Geldwäsche
+    • Berichte über Terrorismusfinanzierung
+
+3.4 GELDWÄSCHERISIKO
+    Die Angelus Group bewertet das Geldwäscherisiko des Zeichners:
+    • Herkunftsland des Vermögens
+    • Art der Geschäftstätigkeit
+    • Transaktionsmuster
+    • Verbindungen zu Hochrisikoländern
+
+
+================================================================================
+4. DOKUMENTATION
+================================================================================
+
+4.1 Der Zeichner muss die folgenden Dokumente bereitstellen:
+
+    PFLICHTDOKUMENTE:
+    • Gültiger Personalausweis oder Reisepass (Kopie)
+    • Adressnachweis nicht älter als 3 Monate (Kopie)
+    • Nachweis der Vermögensherkunft (Kontoauszüge, Gehaltsabrechnungen)
+    • Nachweis des Einkommens (Gehaltsabrechnung, Steuererklärung)
+
+    BEI UNTERNEHMEN:
+    • Handelsregisterauszug
+    • Satzung oder Gesellschaftsvertrag
+    • Gesellschafterliste
+    • Identifikation aller Gesellschafter
+    • Geschäftsbericht oder Jahresabschluss
+
+    BEI PEPs:
+    • Zusätzliche Dokumentation
+    • Nachweis der Vermögensherkunft
+    • Erklärung der wirtschaftlichen Aktivitäten
+
+4.2 Die Angelus Group kann zusätzliche Dokumente anfordern, wenn dies erforderlich ist.
+
+4.3 Alle Dokumente müssen in Originalform oder beglaubigter Kopie vorgelegt werden.
+
+
+================================================================================
+5. ÜBERPRÜFUNGSPROZESS
+================================================================================
+
+5.1 INITIALE ÜBERPRÜFUNG
+    Bei der Zeichnung wird eine initiale KYC/AML-Überprüfung durchgeführt:
+    • Identitätsprüfung
+    • Adressverifizierung
+    • Sanktionslisten-Überprüfung
+    • PEP-Überprüfung
+    • Geldwäscherisiko-Bewertung
+
+5.2 LAUFENDE ÜBERPRÜFUNG
+    Die Angelus Group führt regelmäßig laufende Überprüfungen durch:
+    • Mindestens jährlich
+    • Bei Änderungen der Vermögensverhältnisse
+    • Bei Verdacht auf illegale Aktivitäten
+
+5.3 ERHÖHTE SORGFALT
+    Bei hohem Risiko kann eine erhöhte Sorgfalt erforderlich sein:
+    • Zusätzliche Dokumentation
+    • Detaillierte Vermögensherkunftsanalyse
+    • Regelmäßige Überwachung
+
+5.4 VEREINFACHTE SORGFALT
+    Bei niedrigem Risiko kann eine vereinfachte Sorgfalt angewendet werden:
+    • Reduzierte Dokumentation
+    • Weniger häufige Überprüfungen
+
+
+================================================================================
+6. INFORMATIONSPFLICHTEN
+================================================================================
+
+6.1 Der Zeichner verpflichtet sich, die Angelus Group unverzüglich über Änderungen 
+    seiner persönlichen oder wirtschaftlichen Verhältnisse zu informieren:
+    • Änderung der Adresse
+    • Änderung der Vermögensverhältnisse
+    • Änderung der Geschäftstätigkeit
+    • Änderung der Gesellschafterstruktur
+
+6.2 Der Zeichner verpflichtet sich, alle erforderlichen Informationen wahrheitsgemäß 
+    und vollständig bereitzustellen.
+
+6.3 Der Zeichner verpflichtet sich, falsche oder irreführende Informationen nicht 
+    bereitzustellen.
+
+6.4 Der Zeichner verpflichtet sich, bei Anfragen der Angelus Group unverzüglich zu 
+    antworten.
+
+
+================================================================================
+7. SANKTIONEN UND KONSEQUENZEN
+================================================================================
+
+7.1 Sollte der Zeichner die KYC/AML-Anforderungen nicht erfüllen, behält sich die 
+    Angelus Group das Recht vor, die Zeichnung zu stornieren.
+
+7.2 Sollte der Zeichner auf Sanktionslisten aufgeführt sein, wird die Zeichnung 
+    storniert und die Mittel werden zurückgegeben.
+
+7.3 Sollte der Zeichner falsche Informationen bereitstellen, kann die Angelus Group 
+    die Zeichnung stornieren und rechtliche Maßnahmen einleiten.
+
+7.4 Die Angelus Group kann den Zeichner von zukünftigen Investitionen ausschließen.
+
+7.5 Die Angelus Group kann die zuständigen Behörden informieren, wenn ein Verdacht auf 
+    illegale Aktivitäten besteht.
+
+
+================================================================================
+8. DATENSCHUTZ
+================================================================================
+
+8.1 Die Angelus Group verarbeitet personenbezogene Daten des Zeichners für KYC/AML-
+    Zwecke.
+
+8.2 Die Daten werden gemäß der Datenschutzerklärung und der DSGVO verarbeitet.
+
+8.3 Der Zeichner hat das Recht, Zugang zu seinen Daten zu erhalten.
+
+8.4 Die Daten werden nicht an Dritte weitergegeben, außer wenn dies gesetzlich 
+    erforderlich ist.
+
+8.5 Die Daten werden für die Dauer der Geschäftsbeziehung und darüber hinaus gemäß 
+    gesetzlicher Aufbewahrungspflichten gespeichert.
+
+
+================================================================================
+9. COMPLIANCE MIT GESETZEN
+================================================================================
+
+9.1 Die Angelus Group erfüllt alle geltenden Gesetze und Vorschriften bezüglich KYC 
+    und AML:
+    • Geldwäschegesetz (GwG)
+    • Terrorismusfinanzierungsgesetz
+    • EU-Richtlinien
+    • Internationale Standards (FATF)
+
+9.2 Der Zeichner erklärt sich damit einverstanden, dass die Angelus Group alle 
+    erforderlichen Berichte an die zuständigen Behörden erstattet:
+    • Meldungen verdächtiger Transaktionen
+    • Meldungen von Sanktionsverstößen
+    • Regelmäßige Compliance-Berichte
+
+
+================================================================================
+10. SCHIEDSGERICHTSBARKEIT
+================================================================================
+
+10.1 Alle Streitigkeiten bezüglich dieser Vereinbarung werden durch Schiedsverfahren 
+     nach den DIS-Regeln beigelegt.
+
+10.2 Der ordentliche Rechtsweg ist ausgeschlossen.
+
+10.3 Der Schiedsspruch ist endgültig und verbindlich.
+
+
+================================================================================
+11. BESTÄTIGUNG
+================================================================================
+
+Der Zeichner bestätigt hiermit, dass er diese KYC/AML-Vereinbarung gelesen und 
+verstanden hat und sich an alle Anforderungen gebunden erklärt.
+
+
+_____________________________
+Investor Name (Druckbuchstaben)
+
+_____________________________
+Investor Unterschrift
+
+_____________________________
+Datum
