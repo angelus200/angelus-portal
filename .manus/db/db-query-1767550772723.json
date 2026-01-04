@@ -1,0 +1,31 @@
+{
+  "query": "\n-- Erstelle Admin-User für c.herr@angelus.group\nINSERT INTO users (email, role, name, createdAt, updatedAt) \nVALUES ('c.herr@angelus.group', 'admin', 'C. Herr', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'admin';\n\n-- Erstelle Admin-User für f.schmid@angelus.group\nINSERT INTO users (email, role, name, createdAt, updatedAt) \nVALUES ('f.schmid@angelus.group', 'admin', 'F. Schmid', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'admin';\n\n-- Überprüfe die erstellten Admin-User\nSELECT id, email, role, name, createdAt FROM users WHERE email IN ('c.herr@angelus.group', 'f.schmid@angelus.group', 'grossdigitalpartner@gmail.com') ORDER BY createdAt DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 45EyxYVJKxfKNgq.995c0e9f06f5 --database TN563UpDJCcuGULZGrQyaX --execute \n-- Erstelle Admin-User für c.herr@angelus.group\nINSERT INTO users (email, role, name, createdAt, updatedAt) \nVALUES ('c.herr@angelus.group', 'admin', 'C. Herr', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'admin';\n\n-- Erstelle Admin-User für f.schmid@angelus.group\nINSERT INTO users (email, role, name, createdAt, updatedAt) \nVALUES ('f.schmid@angelus.group', 'admin', 'F. Schmid', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'admin';\n\n-- Überprüfe die erstellten Admin-User\nSELECT id, email, role, name, createdAt FROM users WHERE email IN ('c.herr@angelus.group', 'f.schmid@angelus.group', 'grossdigitalpartner@gmail.com') ORDER BY createdAt DESC;\n",
+  "rows": [
+    {
+      "id": "270006",
+      "email": "c.herr@angelus.group",
+      "role": "admin",
+      "name": "C. Herr",
+      "createdAt": "2026-01-04 18:19:32"
+    },
+    {
+      "id": "270007",
+      "email": "f.schmid@angelus.group",
+      "role": "admin",
+      "name": "F. Schmid",
+      "createdAt": "2026-01-04 18:19:32"
+    },
+    {
+      "id": "1",
+      "email": "grossdigitalpartner@gmail.com",
+      "role": "admin",
+      "name": "Thomas Gross",
+      "createdAt": "2026-01-02 08:50:03"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tname\tcreatedAt\n270006\tc.herr@angelus.group\tadmin\tC. Herr\t2026-01-04 18:19:32\n270007\tf.schmid@angelus.group\tadmin\tF. Schmid\t2026-01-04 18:19:32\n1\tgrossdigitalpartner@gmail.com\tadmin\tThomas Gross\t2026-01-02 08:50:03\n",
+  "stderr": "",
+  "execution_time_ms": 2059
+}
