@@ -151,3 +151,10 @@
 
 ## Admin Verträge Bug-Fix
 - [x] Fehler beim Anlegen eines neuen Vertrags beheben (unexpected error)
+
+## Admin Profil-Checks Seite
+- [x] Admin ProfileChecks.tsx Seite erstellen
+- [x] Tabelle mit allen Profil-Checks anzeigen
+- [x] Filter nach Kategorie, Datum, Investor
+- [x] Detailansicht fuer einzelne Profil-Checks
+- [x] Route und Navigation hinzufuegen

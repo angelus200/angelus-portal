@@ -33,7 +33,8 @@ import {
   FileText,
   Newspaper,
   Settings,
-  Home
+  Home,
+  CheckSquare
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Newspaper,
   Settings,
   Home,
+  CheckSquare,
 };
 
 // Default investor menu items
@@ -67,7 +69,8 @@ const adminMenuItems = [
   { icon: "TrendingUp", label: "Beteiligungen", path: "/admin/bonds" },
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
-  { icon: "FileText", label: "Verträge", path: "/admin/contracts" },
+  { icon: "FileText", label: "Vertraege", path: "/admin/contracts" },
+  { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
 ];
 

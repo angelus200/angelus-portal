@@ -28,6 +28,7 @@ import AdminInvestors from "./pages/admin/Investors";
 import AdminNews from "./pages/admin/News";
 import AdminWallets from "./pages/admin/Wallets";
 import AdminContracts from "./pages/admin/Contracts";
+import AdminProfileChecks from "./pages/admin/ProfileChecks";
 import AdminInvestorDetails from "./pages/admin/InvestorDetails";
 
 function Router() {
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/admin/news" component={AdminNews} />
       <Route path="/admin/wallets" component={AdminWallets} />
       <Route path="/admin/contracts" component={AdminContracts} />
+      <Route path="/admin/profile-checks" component={AdminProfileChecks} />
       <Route path="/admin/investors/:id" component={AdminInvestorDetails} />
       
       {/* Fallback */}
