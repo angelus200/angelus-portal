@@ -164,3 +164,5 @@
 - [x] Profil-Kategorie und Risiko-Score anzeigen
 - [x] Risikomatrix Visualisierung im Dashboard
 - [x] Option zum Erneut-Durchfuehren des Tests
+## Verträge Fehler-Behebung
+- [x] Fehler beim Anlegen neuer Verträge beheben (unexpected error) - type enum korrigiert
