@@ -253,3 +253,12 @@
 - [x] admin.auditLogs tRPC Prozedur hinzugefügt
 - [x] DB-Funktionen für Dashboard-Statistiken implementiert
 - [x] Admin-Dashboard zeigt Zeichnungen korrekt an
+
+## Admin Wallet-Verwaltung
+- [x] tRPC-Prozeduren für Wallet-Verwaltung (getAllWallets, adjustBalance, approvePendingWithdrawal, rejectPendingWithdrawal)
+- [x] Admin-Komponente WalletManagement.tsx mit Investor-Wallet-Tabelle
+- [x] Guthaben-Anpassungs-Dialog (Betrag eingeben, Grund dokumentieren)
+- [x] Transaktions-Genehmigung für ausstehende Auszahlungen
+- [x] Transaktions-Historie mit Filterung
+- [x] Route /admin/wallets und Navigation integrieren
+- [x] Vitest Tests für Wallet-Management Prozeduren

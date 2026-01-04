@@ -1016,3 +1016,88 @@ export async function getPendingKycCount() {
   return result[0]?.count || 0;
 }
 
+
+
+// ==================== ADMIN WALLET MANAGEMENT FUNCTIONS ====================
+
+export async function getAllWalletsWithUserInfo() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: wallets.id,
+    userId: wallets.userId,
+    email: users.email,
+    name: users.name,
+    currency: wallets.currency,
+    currencyType: wallets.currencyType,
+    balance: wallets.balance,
+    availableBalance: wallets.availableBalance,
+    createdAt: wallets.createdAt,
+  })
+  .from(wallets)
+  .innerJoin(users, eq(wallets.userId, users.id))
+  .orderBy(desc(wallets.createdAt));
+}
+
+export async function adjustWalletBalance(walletId: number, newBalance: string, reason: string, adminId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update wallet balance
+  await db.update(wallets).set({
+    balance: newBalance,
+    availableBalance: newBalance,
+  }).where(eq(wallets.id, walletId));
+  
+  // Log the transaction
+  const wallet = await db.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+  if (wallet.length > 0) {
+    await createWalletTransaction({
+      walletId,
+      userId: wallet[0].userId,
+      type: "credit",
+      amount: newBalance,
+      currency: wallet[0].currency,
+      status: "completed",
+      description: `Admin adjustment: ${reason}`,
+      approvedBy: adminId,
+      approvedAt: new Date(),
+    });
+  }
+}
+
+export async function rejectWithdrawal(id: number, reason: string, adminId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(walletTransactions).set({
+    status: "cancelled",
+    description: `Rejected: ${reason}`,
+    approvedBy: adminId,
+    approvedAt: new Date()
+  }).where(eq(walletTransactions.id, id));
+}
+
+export async function getWalletTransactionsForAdmin(limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: walletTransactions.id,
+    userId: walletTransactions.userId,
+    email: users.email,
+    name: users.name,
+    type: walletTransactions.type,
+    amount: walletTransactions.amount,
+    currency: walletTransactions.currency,
+    status: walletTransactions.status,
+    description: walletTransactions.description,
+    createdAt: walletTransactions.createdAt,
+    approvedAt: walletTransactions.approvedAt,
+  })
+  .from(walletTransactions)
+  .innerJoin(users, eq(walletTransactions.userId, users.id))
+  .orderBy(desc(walletTransactions.createdAt))
+  .limit(limit);
+}

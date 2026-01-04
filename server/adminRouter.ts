@@ -99,4 +99,57 @@ export const adminRouter = router({
     .query(async ({ input }) => {
       return await db.getAuditLogs(input.limit);
     }),
+
+  // Get all wallets with user info
+  getAllWallets: adminProcedure.query(async () => {
+    return await db.getAllWalletsWithUserInfo();
+  }),
+
+  // Adjust wallet balance
+  adjustWalletBalance: adminProcedure
+    .input(z.object({
+      walletId: z.number(),
+      newBalance: z.string(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return await db.adjustWalletBalance(
+        input.walletId,
+        input.newBalance,
+        input.reason,
+        ctx.user.id
+      );
+    }),
+
+  // Get pending withdrawals
+  getPendingWithdrawals: adminProcedure.query(async () => {
+    return await db.getPendingWithdrawals();
+  }),
+
+  // Approve withdrawal
+  approveWithdrawal: adminProcedure
+    .input(z.object({ transactionId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return await db.approveWithdrawal(input.transactionId, ctx.user.id);
+    }),
+
+  // Reject withdrawal
+  rejectWithdrawal: adminProcedure
+    .input(z.object({
+      transactionId: z.number(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return await db.rejectWithdrawal(input.transactionId, input.reason, ctx.user.id);
+    }),
+
+  // Get wallet transactions for admin
+  getWalletTransactions: adminProcedure
+    .input(z.object({ limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      return await db.getWalletTransactionsForAdmin(input.limit);
+    }),
 });

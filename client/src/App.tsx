@@ -33,6 +33,7 @@ import AdminProfileChecks from "./pages/admin/ProfileChecks";
 import AdminInvestorDetails from "./pages/admin/InvestorDetails";
 import AdminManagement from "./pages/admin/AdminManagement";
 import { InvestorKYCApproval } from "./pages/admin/InvestorKYCApproval";
+import WalletManagement from "./pages/admin/WalletManagement";
 
 function Router() {
   return (
@@ -62,11 +63,12 @@ function Router() {
       <Route path="/admin/contracts" component={ProductsAndContracts} />
       <Route path="/admin/investors" component={AdminInvestors} />
       <Route path="/admin/news" component={AdminNews} />
-      <Route path="/admin/wallets" component={AdminWallets} />
+      <Route path="/admin/wallets" component={WalletManagement} />
       <Route path="/admin/profile-checks" component={AdminProfileChecks} />
       <Route path="/admin/investors/:id" component={AdminInvestorDetails} />
       <Route path="/admin/admin-management" component={AdminManagement} />
       <Route path="/admin/kyc-approval" component={InvestorKYCApproval} />
+      <Route path="/admin/wallet-management" component={WalletManagement} />
       
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
