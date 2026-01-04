@@ -19,6 +19,8 @@ import {
   bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -129,6 +131,45 @@ export async function updateUserProfile(userId: number, data: Partial<InsertUser
   const db = await getDb();
   if (!db) return;
   await db.update(users).set(data).where(eq(users.id, userId));
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function getAdminUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).where(eq(users.role, "admin")).orderBy(desc(users.createdAt));
+}
+
+export async function createUser(data: { email: string; name?: string; role?: "admin" | "user" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(users).values({
+    email: data.email,
+    name: data.name,
+    role: data.role || "user",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }).returning();
+  return result[0];
+}
+
+export async function updateUserRole(userId: number, role: "admin" | "user") {
+  const db = await getDb();
+  if (!db) return undefined;
+  await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, userId));
+  return getUserById(userId);
 }
 
 // ==================== BOND FUNCTIONS ====================
@@ -434,13 +475,6 @@ export async function getDashboardStats() {
 }
 
 // ==================== EMAIL/PASSWORD AUTH FUNCTIONS ====================
-
-export async function getUserByEmail(email: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
 
 export async function createUserWithPassword(userData: {
   email: string;
@@ -755,12 +789,6 @@ export async function getConsentsByUser(userId: number) {
 
 
 // Admin Helper Functions
-export async function getAllUsers() {
-  const database = await getDb();
-  if (!database) throw new Error("Database not available");
-  return database.query.users.findMany();
-}
-
 export async function getAdminStats() {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
@@ -789,35 +817,28 @@ export async function createContractTemplate(data: InsertContractTemplate) {
 }
 
 export async function getContractTemplate(id: number) {
-  const database = await getDb();
-  if (!database) throw new Error("Database not available");
-  return database.query.contractTemplates.findFirst({
-    where: (templates: any, { eq }: any) => eq(templates.id, id),
-  });
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(contractTemplates).where(eq(contractTemplates.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
 export async function getAllContractTemplates() {
-  const database = await getDb();
-  if (!database) throw new Error("Database not available");
-  return database.query.contractTemplates.findMany({
-    where: (templates: any, { eq }: any) => eq(templates.isActive, true),
-    orderBy: (templates: any, { desc }: any) => [desc(templates.createdAt)],
-  });
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(contractTemplates).where(eq(contractTemplates.isActive, true)).orderBy(desc(contractTemplates.createdAt));
 }
 
 export async function updateContractTemplate(id: number, data: Partial<InsertContractTemplate>) {
-  const database = await getDb();
-  if (!database) throw new Error("Database not available");
-  return database.update(contractTemplates)
-    .set({ ...data, updatedAt: new Date() })
-    .where((t: any, { eq }: any) => eq(t.id, id));
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(contractTemplates).set({ ...data, updatedAt: new Date() }).where(eq(contractTemplates.id, id));
 }
 
 export async function deleteContractTemplate(id: number) {
-  const database = await getDb();
-  if (!database) throw new Error("Database not available");
-  return database.delete(contractTemplates)
-    .where((t: any, { eq }: any) => eq(t.id, id));
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(contractTemplates).where(eq(contractTemplates.id, id));
 }
 
 // Bond-Template associations

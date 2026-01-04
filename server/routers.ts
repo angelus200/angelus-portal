@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
+import { adminRouter } from "./adminRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -20,6 +21,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+  admin: adminRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -1237,18 +1239,7 @@ export const appRouter = router({
       }),
   }),
 
-  // ==================== ADMIN DASHBOARD ROUTES ====================
-  admin: router({
-    stats: adminProcedure.query(async () => {
-      return db.getDashboardStats();
-    }),
-    
-    auditLogs: adminProcedure
-      .input(z.object({ limit: z.number().default(100) }))
-      .query(async ({ input }) => {
-        return db.getAuditLogs(input.limit);
-      }),
-  }),
+  // ==================== ADMIN DASHBOARD ROUTES (MOVED TO adminRouter) ====================
 
   // ==================== CONTRACT ROUTES ====================
   contracts: router({

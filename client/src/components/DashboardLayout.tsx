@@ -73,6 +73,7 @@ const adminMenuItems = [
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
+  { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
