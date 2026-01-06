@@ -10,6 +10,8 @@ import { SignJWT } from "jose";
 import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
+import { stripeRouter } from "./stripeRouter";
+import { adminPaymentRouter } from "./adminPaymentRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -22,6 +24,8 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
+  stripe: stripeRouter,
+  adminPayment: adminPaymentRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

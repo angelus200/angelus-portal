@@ -272,3 +272,15 @@
 - [x] Filterung nach Status, Beteiligung, Investor
 - [x] Route /admin/subscriptions und Navigation integrieren
 - [x] Vitest Tests für Subscription-Prozeduren (8 Tests bestanden)
+
+## Stripe-Integration
+- [x] Stripe API Keys konfiguriert (Live Keys eingegeben)
+- [x] Stripe Package installiert
+- [x] stripeRouter.ts mit Payment-Intent Prozeduren erstellt
+- [x] Webhook Handler für Stripe Events implementiert
+- [x] Webhook Secret konfiguriert und eingegeben
+- [x] Payment-UI für Investoren (/investor/payment) erstellt
+- [x] Admin-Zahlungsverwaltung (adminPaymentRouter mit Refunds) implementiert
+- [x] Stripe Webhook Endpoint registriert (/api/stripe/webhook)
+- [x] Tests für Stripe-Integration (8 Tests bestanden)
+- [ ] TypeScript Fehler in db.ts beheben (metadata field) - nicht kritisch
