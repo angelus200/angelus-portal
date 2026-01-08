@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../webhooks/stripe";
+import interestCalculationRouter from "../routers/interest-calculation.router";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Interest Calculation API
+  app.use("/api", interestCalculationRouter);
   
   // Stripe webhook - must be before express.json() to access raw body
   app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {

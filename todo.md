@@ -374,5 +374,7 @@
 - [x] POST /api/interest-calculation - Komplette Zinsberechnung
 - [x] POST /api/payment-schedule - Zahlungsplan-Generierung
 - [x] Tests: 10/10 bestanden
-- [ ] Integration in Main Router (server/routers.ts)
+- [x] Integration in Main Router (server/_core/index.ts)
+  - [x] Registriert in Express App unter /api
+  - [x] Alle Tests bestanden (10/10 + 72/72)
 - [ ] Dokumentation (OpenAPI/Swagger)

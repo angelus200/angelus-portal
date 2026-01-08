@@ -12,6 +12,7 @@ import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";
 import { interestParametersRouter } from "./interestParametersRouter";
+import interestCalculationRouter from "./routers/interest-calculation.router";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
