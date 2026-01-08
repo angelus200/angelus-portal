@@ -249,6 +249,11 @@ export const subscriptions = mysqlTable("subscriptions", {
   // Status
   status: mysqlEnum("status", ["pending", "confirmed", "active", "completed", "cancelled"]).default("pending").notNull(),
   
+  // Payment tracking
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "processing", "completed", "failed", "refunded"]).default("pending"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
+  
   // Consent logging (Swiss law compliance)
   termsAccepted: boolean("termsAccepted").default(false),
   riskWarningAccepted: boolean("riskWarningAccepted").default(false),
@@ -257,6 +262,10 @@ export const subscriptions = mysqlTable("subscriptions", {
   
   // Contract
   contractId: int("contractId"),
+  
+  // Payment timestamps
+  paymentCompletedAt: timestamp("paymentCompletedAt"),
+  paymentFailedAt: timestamp("paymentFailedAt"),
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

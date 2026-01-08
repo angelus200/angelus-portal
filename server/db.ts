@@ -19,8 +19,7 @@ import {
   bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { desc } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -152,7 +151,7 @@ export async function getAdminUsers() {
   return db.select().from(users).where(eq(users.role, "admin")).orderBy(desc(users.createdAt));
 }
 
-export async function createUser(data: { email: string; name?: string; role?: "admin" | "user" }) {
+export async function createUser(data: Omit<InsertUser, 'createdAt' | 'updatedAt'>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(users).values({
@@ -161,8 +160,8 @@ export async function createUser(data: { email: string; name?: string; role?: "a
     role: data.role || "user",
     createdAt: new Date(),
     updatedAt: new Date(),
-  }).returning();
-  return result[0];
+  });
+  return result[0].insertId;
 }
 
 export async function updateUserRole(userId: number, role: "admin" | "user") {
@@ -237,6 +236,66 @@ export async function updateSubscriptionStatus(id: number, status: "pending" | "
   const db = await getDb();
   if (!db) return;
   await db.update(subscriptions).set({ status }).where(eq(subscriptions.id, id));
+}
+
+export async function updateSubscriptionPaymentStatus(
+  id: number,
+  paymentStatus: "pending" | "processing" | "completed" | "failed" | "refunded",
+  stripePaymentIntentId?: string,
+  stripeCustomerId?: string
+) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: any = { paymentStatus };
+  if (stripePaymentIntentId) updates.stripePaymentIntentId = stripePaymentIntentId;
+  if (stripeCustomerId) updates.stripeCustomerId = stripeCustomerId;
+  if (paymentStatus === "completed") updates.paymentCompletedAt = new Date();
+  if (paymentStatus === "failed") updates.paymentFailedAt = new Date();
+  await db.update(subscriptions).set(updates).where(eq(subscriptions.id, id));
+}
+
+export async function getSubscriptionByStripePaymentIntentId(stripePaymentIntentId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripePaymentIntentId, stripePaymentIntentId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function getSubscriptionsByPaymentStatus(
+  paymentStatus: "pending" | "processing" | "completed" | "failed" | "refunded"
+) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.paymentStatus, paymentStatus))
+    .orderBy(desc(subscriptions.createdAt));
+}
+
+export async function getInvestorPayments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .orderBy(desc(subscriptions.paymentCompletedAt));
+}
+
+export async function getSubscriptionWithPayment(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.id, id))
+    .limit(1);
+  return result[0] || null;
 }
 
 // ==================== CONTRACT FUNCTIONS ====================
