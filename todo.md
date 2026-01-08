@@ -368,3 +368,11 @@
   - [x] Funktionen: calculateCompleteInterest(), validateCompleteInterestCalculation()
   - [x] Kombinierte Berechnung aller 5 Schritte
   - [x] Tests: 10/10 bestanden
+
+## API-Endpoints
+
+- [x] POST /api/interest-calculation - Komplette Zinsberechnung
+- [x] POST /api/payment-schedule - Zahlungsplan-Generierung
+- [x] Tests: 10/10 bestanden
+- [ ] Integration in Main Router (server/routers.ts)
+- [ ] Dokumentation (OpenAPI/Swagger)
