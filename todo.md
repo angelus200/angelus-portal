@@ -340,4 +340,4 @@
 
 
 ## Bugs (URGENT)
-- [x] Admin Interest Parameters Seite zeigt "An unexpected error occurred" (adminProcedure zu protectedProcedure geändert)
+- [x] Admin Interest Parameters Seite zeigt "An unexpected error occurred" (Komponente vereinfacht, adminProcedure zu protectedProcedure geändert)
