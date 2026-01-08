@@ -253,6 +253,52 @@ export const legacyCustomerPaymentHistory = mysqlTable(
 );
 
 /**
+ * Legacy Customer Invitations Table
+ * Stores invitation tokens for legacy customers to register
+ */
+export const legacyCustomerInvitations = mysqlTable(
+  'legacy_customer_invitations',
+  {
+    // Primary Key
+    id: int('id').primaryKey().autoincrement(),
+
+    // Reference
+    legacyCustomerId: int('legacy_customer_id').notNull(),
+
+    // Invitation Token
+    token: varchar('token', { length: 255 }).notNull().unique(), // Unique invitation token
+    tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(), // Hash of token for security
+
+    // Invitation Details
+    email: varchar('email', { length: 255 }).notNull(), // Email to send invitation to
+    status: mysqlEnum('status', ['pending', 'accepted', 'expired', 'cancelled']).default('pending'),
+
+    // Timestamps
+    sentAt: timestamp('sent_at').defaultNow(),
+    expiresAt: timestamp('expires_at').notNull(), // Token expires after 7 days
+    acceptedAt: timestamp('accepted_at'), // When invitation was accepted
+    usedAt: timestamp('used_at'), // When token was used for registration
+
+    // Metadata
+    sentByAdminId: int('sent_by_admin_id'), // Admin who sent the invitation
+    resendCount: int('resend_count').default(0), // How many times invitation was resent
+    lastResendAt: timestamp('last_resend_at'),
+
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  },
+  (table) => ({
+    legacyCustomerIdIdx: index('idx_legacy_customer_id').on(table.legacyCustomerId),
+    tokenIdx: uniqueIndex('idx_token').on(table.token),
+    tokenHashIdx: uniqueIndex('idx_token_hash').on(table.tokenHash),
+    emailIdx: index('idx_email').on(table.email),
+    statusIdx: index('idx_status').on(table.status),
+    expiresAtIdx: index('idx_expires_at').on(table.expiresAt),
+    statusExpiresIdx: index('idx_status_expires').on(table.status, table.expiresAt),
+  })
+);
+
+/**
  * Relations
  */
 export const legacyCustomersRelations = relations(legacyCustomers, ({ one, many }) => ({
@@ -304,6 +350,20 @@ export const legacyCustomerPaymentHistoryRelations = relations(
     interestCalculation: one(legacyCustomerInterestCalculations, {
       fields: [legacyCustomerPaymentHistory.interestCalculationId],
       references: [legacyCustomerInterestCalculations.id],
+    }),
+  })
+);
+
+export const legacyCustomerInvitationsRelations = relations(
+  legacyCustomerInvitations,
+  ({ one }) => ({
+    legacyCustomer: one(legacyCustomers, {
+      fields: [legacyCustomerInvitations.legacyCustomerId],
+      references: [legacyCustomers.id],
+    }),
+    sentByAdmin: one(users, {
+      fields: [legacyCustomerInvitations.sentByAdminId],
+      references: [users.id],
     }),
   })
 );

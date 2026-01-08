@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Impressum from "./pages/Impressum";
 import AMLPolicy from "./pages/legal/AML";
 import PrivacyPolicy from "./pages/legal/Privacy";
+import { RegisterWithInvitation } from "./pages/RegisterWithInvitation";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/register" component={RegisterWithInvitation} />
       <Route path="/impressum" component={Impressum} />
       <Route path="/aml" component={AMLPolicy} />
       <Route path="/datenschutz" component={PrivacyPolicy} />

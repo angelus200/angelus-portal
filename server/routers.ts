@@ -11,6 +11,7 @@ import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";
+import { legacyInvitationsRouter } from "./legacyInvitationsRouter";
 import { interestParametersRouter } from "./interestParametersRouter";
 import interestCalculationRouter from "./routers/interest-calculation.router";
 
@@ -26,6 +27,7 @@ export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
   legacyCustomer: legacyCustomerRouter,
+  legacyInvitations: legacyInvitationsRouter,
   interestParameters: interestParametersRouter,
   
   auth: router({

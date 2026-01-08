@@ -441,3 +441,62 @@
 - [ ] Schritt 4: Fehlerbehandlung & Validierung
   - [ ] Error-Handling in API-Endpoints
   - [ ] Client-seitige Fehlerbehandlung
+
+
+## Bestandsanleger Onboarding System (2-teilig)
+
+### Phase 1: Planung & Anforderungsanalyse
+- [x] Anforderungen dokumentieren
+- [x] Datenfluss visualisieren
+- [x] Sicherheitsaspekte prüfen (Token-Ablauf, Validierung)
+
+### Phase 2: Datenbank-Schema
+- [x] Invitations-Tabelle erstellen (id, legacyCustomerId, email, token, status, createdAt, expiresAt, usedAt)
+- [x] Migration durchführen (pnpm db:push)
+- [x] Datenbankfunktionen schreiben
+
+### Phase 3: Backend - Invitations-Router
+- [x] tRPC-Prozeduren:
+  - [x] sendInvitation - Einladung versenden
+  - [x] getInvitation - Einladung abrufen (by token)
+  - [x] listInvitations - Alle Einladungen auflisten (Admin)
+  - [x] acceptInvitation - Einladung akzeptieren (bei Registrierung)
+  - [x] resendInvitation - Einladung erneut versenden
+- [x] Validierung und Fehlerbehandlung
+- [ ] Tests schreiben (Vitest)
+
+### Phase 4: Backend - Email-Versand
+- [x] Email-Template für Einladung
+- [x] Resend API Integration
+- [x] Email-Versand in sendInvitation Prozedur
+- [ ] Tests für Email-Versand
+
+### Phase 5: Frontend - Registrierungs-Seite
+- [x] Route /register?invitation={token} erstellen
+- [x] Einladung validieren und Bestandsinvestor-Daten laden
+- [x] Registrierungs-Formular mit vorausgefüllten Daten
+- [x] Passwort-Eingabe und Bestätigung
+- [x] Registrierung durchführen und User mit Bestandsinvestor verknüpfen
+- [x] Fehlerbehandlung (abgelaufene Token, ungültige Token)
+
+### Phase 6: Frontend - Admin-Interface
+- [ ] LegacyCustomerImport erweitern:
+  - [ ] Nach Schritt 4: "Einladen" Button
+  - [ ] Einladungs-Modal mit Email-Eingabe
+  - [ ] Erfolgs-/Fehler-Meldung
+- [ ] Neue Admin-Seite: Einladungen-Übersicht
+  - [ ] Tabelle mit allen Einladungen
+  - [ ] Status-Anzeige (pending, accepted, expired)
+  - [ ] "Erneut einladen" Button
+  - [ ] "Löschen" Button
+
+### Phase 7: Tests & Validierung
+- [ ] Vitest Tests für alle tRPC-Prozeduren
+- [ ] End-to-End Test des kompletten Onboarding-Flows
+- [ ] Email-Versand testen
+- [ ] Token-Ablauf testen
+
+### Phase 8: Checkpoint & Ergebnis
+- [ ] Alle Tests bestanden
+- [x] Checkpoint speichern
+- [ ] Ergebnis an User liefern
