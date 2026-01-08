@@ -378,3 +378,24 @@
   - [x] Registriert in Express App unter /api
   - [x] Alle Tests bestanden (10/10 + 72/72)
 - [ ] Dokumentation (OpenAPI/Swagger)
+
+
+## Investor Legacy Account Portal
+
+- [x] Portal-Komponenten erstellen
+  - [x] LegacyAccountPortal - Hauptseite
+  - [x] InterestCalculationForm - Zinsberechnung-Formular
+  - [x] PaymentScheduleTable - Zahlungsplan-Tabelle
+  - [x] InterestSummary - Zinsübersicht
+- [x] API-Integration
+  - [x] Hook: useInterestCalculation() - Interest Calculation API
+  - [x] Hook: usePaymentSchedule() - Payment Schedule API
+  - [x] Fehlerbehandlung und Loading-States
+- [x] Styling und UI-Polish
+  - [x] Responsive Design (Tailwind CSS)
+  - [x] Tab-Navigation
+  - [x] Gradient-Header
+  - [x] Info-Boxen und Zusammenfassungen
+- [x] Tests
+  - [x] TypeScript Compilation erfolgreich
+  - [x] Komponenten-Struktur validiert
