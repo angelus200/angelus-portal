@@ -7,7 +7,7 @@
  * POST /api/payment-schedule - Zahlungsplan-Generierung
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import Decimal from 'decimal.js';
 import {
   calculateCompleteInterest,
@@ -28,15 +28,25 @@ import {
 
 const router = Router();
 
-// Middleware to extract user ID from request (assumes authentication middleware sets ctx.user)
+// Middleware to ensure user is authenticated
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const user = (req as any).user;
+  if (!user || !user.id) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required. Please log in first.',
+    });
+  }
+  next();
+}
+
+// Middleware to extract user ID from request
 function getUserId(req: Request): number {
-  // For now, return a test user ID (1) - in production, this should come from authentication
-  // const user = (req as any).user;
-  // if (!user || !user.id) {
-  //   throw new Error('User not authenticated');
-  // }
-  // return user.id;
-  return 1; // Test user ID
+  const user = (req as any).user;
+  if (!user || !user.id) {
+    throw new Error('User not authenticated. Please log in first.');
+  }
+  return user.id;
 }
 
 /**
@@ -56,6 +66,8 @@ interface InterestCalculationRequest {
   isCompanyLiability?: boolean;
   enableInsolvencyHold?: boolean;
   paymentFrequency: 'monthly' | 'annual' | 'thesaurierend';
+  description?: string;
+  reference?: string;
 }
 
 /**
@@ -323,7 +335,7 @@ router.post('/payment-schedule', (req: Request<{}, {}, InterestCalculationReques
  * 
  * Speichert eine Zinsberechnung in der Datenbank
  */
-router.post('/interest-calculation/save', async (req: Request<{}, {}, InterestCalculationRequest>, res: Response) => {
+router.post('/interest-calculation/save', requireAuth, async (req: Request<{}, {}, InterestCalculationRequest>, res: Response) => {
   try {
     const userId = getUserId(req);
     
@@ -434,7 +446,7 @@ router.post('/interest-calculation/save', async (req: Request<{}, {}, InterestCa
  * 
  * Ruft eine gespeicherte Zinsberechnung ab
  */
-router.get('/interest-calculation/:id', async (req: Request, res: Response) => {
+router.get('/interest-calculation/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const id = parseInt(req.params.id);
@@ -466,7 +478,7 @@ router.get('/interest-calculation/:id', async (req: Request, res: Response) => {
  * 
  * Listet alle Zinsberechnungen des Benutzers auf
  */
-router.get('/interest-calculations/user', async (req: Request, res: Response) => {
+router.get('/interest-calculations/user', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
@@ -498,7 +510,7 @@ router.get('/interest-calculations/user', async (req: Request, res: Response) =>
  * 
  * Ruft einen gespeicherten Zahlungsplan ab
  */
-router.get('/payment-schedule/:id', async (req: Request, res: Response) => {
+router.get('/payment-schedule/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const id = parseInt(req.params.id);
@@ -536,7 +548,7 @@ router.get('/payment-schedule/:id', async (req: Request, res: Response) => {
  * 
  * Listet alle Zahlungspläne des Benutzers auf
  */
-router.get('/payment-schedules/user', async (req: Request, res: Response) => {
+router.get('/payment-schedules/user', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
@@ -566,7 +578,7 @@ router.get('/payment-schedules/user', async (req: Request, res: Response) => {
  * 
  * Löscht eine Zinsberechnung und ihre Zahlungspläne
  */
-router.delete('/interest-calculation/:id', async (req: Request, res: Response) => {
+router.delete('/interest-calculation/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const id = parseInt(req.params.id);

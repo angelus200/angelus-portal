@@ -425,3 +425,19 @@
 - [x] Tests
   - [x] TypeScript Compilation
   - [x] Datenbank-Funktionen validiert
+
+
+## Verbleibende Schritte
+
+- [ ] Schritt 1: Migrations durchführen
+  - [ ] pnpm db:push ausführen
+  - [ ] Migration validieren
+- [ ] Schritt 2: Authentifizierung in API-Endpoints
+  - [ ] getUserId() mit echter Authentifizierung verbinden
+  - [ ] Tests für Authentifizierung
+- [ ] Schritt 3: Portal-Integration mit Datenbank
+  - [ ] Save-Endpoints in Portal nutzen
+  - [ ] Gespeicherte Berechnungen laden
+- [ ] Schritt 4: Fehlerbehandlung & Validierung
+  - [ ] Error-Handling in API-Endpoints
+  - [ ] Client-seitige Fehlerbehandlung

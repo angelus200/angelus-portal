@@ -6,6 +6,8 @@
 
 import { useState, useCallback } from 'react';
 import Decimal from 'decimal.js';
+import { ApiErrorHandler, retryFetch } from '../utils/errorHandler';
+import { InterestCalculationValidator } from '../utils/validationRules';
 
 export interface InterestCalculationInput {
   principal: number;
@@ -66,6 +68,8 @@ export interface UseInterestCalculationState {
   data: InterestCalculationResult | null;
   loading: boolean;
   error: string | null;
+  calculationId?: number;
+  scheduleId?: number;
 }
 
 /**
@@ -84,7 +88,13 @@ export function useInterestCalculation() {
     setState({ data: null, loading: true, error: null });
 
     try {
-      const response = await fetch('/api/interest-calculation', {
+      // Validiere Input
+      const validationError = InterestCalculationValidator.getFirstError(input);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      const response = await retryFetch('/api/interest-calculation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,4 +208,119 @@ export function formatDate(isoDate: string): string {
   } catch {
     return isoDate;
   }
+}
+
+
+/**
+ * Hook zum Speichern und Laden von Zinsberechnungen
+ */
+export function useSaveInterestCalculation() {
+  const [state, setState] = useState<{
+    loading: boolean;
+    error: string | null;
+    calculationId?: number;
+    scheduleId?: number;
+  }>({
+    loading: false,
+    error: null,
+  });
+
+  const save = useCallback(async (input: InterestCalculationInput & { description?: string; reference?: string }) => {
+    setState({ loading: true, error: null });
+
+    try {
+      const response = await fetch('/api/interest-calculation/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Speichern fehlgeschlagen');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Speichern fehlgeschlagen');
+      }
+
+      setState({
+        loading: false,
+        error: null,
+        calculationId: result.data.calculationId,
+        scheduleId: result.data.scheduleId,
+      });
+
+      return result.data;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Unbekannter Fehler';
+      setState({ loading: false, error });
+      throw err;
+    }
+  }, []);
+
+  return {
+    ...state,
+    save,
+  };
+}
+
+/**
+ * Hook zum Laden von gespeicherten Zinsberechnungen
+ */
+export function useLoadInterestCalculations() {
+  const [state, setState] = useState<{
+    calculations: any[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    calculations: [],
+    loading: false,
+    error: null,
+  });
+
+  const loadCalculations = useCallback(async (limit: number = 50, offset: number = 0) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const response = await fetch(`/api/interest-calculations/user?limit=${limit}&offset=${offset}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Laden fehlgeschlagen');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Laden fehlgeschlagen');
+      }
+
+      setState({
+        calculations: result.data.calculations,
+        loading: false,
+        error: null,
+      });
+
+      return result.data;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Unbekannter Fehler';
+      setState((prev) => ({ ...prev, loading: false, error }));
+      throw err;
+    }
+  }, []);
+
+  return {
+    ...state,
+    loadCalculations,
+  };
 }

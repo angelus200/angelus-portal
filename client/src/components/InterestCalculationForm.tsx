@@ -9,10 +9,12 @@ import { InterestCalculationInput } from '../hooks/useInterestCalculation';
 
 interface InterestCalculationFormProps {
   onSubmit: (input: InterestCalculationInput) => Promise<void>;
+  onSave?: (input: InterestCalculationInput & { description?: string; reference?: string }) => Promise<void>;
   loading?: boolean;
+  canSave?: boolean;
 }
 
-export const InterestCalculationForm: React.FC<InterestCalculationFormProps> = ({ onSubmit, loading = false }) => {
+export const InterestCalculationForm: React.FC<InterestCalculationFormProps> = ({ onSubmit, onSave, loading = false, canSave = false }) => {
   const [formData, setFormData] = useState<InterestCalculationInput>({
     principal: 100000,
     annualRate: 6,
