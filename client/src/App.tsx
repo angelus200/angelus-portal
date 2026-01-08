@@ -73,8 +73,8 @@ function Router() {
       <Route path="/admin/admin-management" component={AdminManagement} />
       <Route path="/admin/kyc-approval" component={InvestorKYCApproval} />
       <Route path="/admin/wallet-management" component={WalletManagement} />
-      <Route path="/admin/payments" element={<Payments />} />
-      <Route path="/admin/legacy-customers/import" element={<LegacyCustomerImport />} />
+      <Route path="/admin/payments" component={Payments} />
+      <Route path="/admin/legacy-customers/import" component={LegacyCustomerImport} />
       
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

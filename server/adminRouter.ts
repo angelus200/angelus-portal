@@ -293,14 +293,7 @@ export const adminRouter = router({
         subscription.stripeCustomerId || undefined
       );
 
-      // Log the refund
-      await db.logAuditTrail({
-        action: 'payment.refund',
-        entityType: 'subscription',
-        entityId: subscription.id,
-        userId: ctx.user.id,
-        details: `Rückerstattung verarbeitet: ${input.reason}`,
-      });
+      // TODO: Log the refund (logAuditTrail not yet implemented)
 
       return { success: true, message: 'Rückerstattung verarbeitet' };
     }),

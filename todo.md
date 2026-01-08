@@ -303,3 +303,10 @@
 - [ ] Kundenportal-Seiten für Bestandskunden
 - [ ] Email-Automatisierung für Bestandskunden
 - [ ] PDF-Generierung (Hochrechnung, Zahlungsplan)
+
+
+## Bugs (URGENT)
+- [x] Admin Legacy-Customers Import Seite zeigt leere Seite (Route-Syntax behoben: element -> component)
+- [x] Admin Payments Seite zeigt leere Seite (Route-Syntax behoben: element -> component)
+- [x] logAuditTrail Fehler behoben (entfernt, nicht implementiert)
+- [x] decimal.js Fehler behoben (Paket installiert)
