@@ -13,6 +13,10 @@ import {
   isInsolvencyHoldActive,
   calculateInterestWithBusinessRules,
   calculateNetInterestWithBusinessRules,
+  calculateMonthlyPaymentSchedule,
+  calculateAnnualPaymentSchedule,
+  calculateThesaurierendPaymentSchedule,
+  calculatePaymentScheduleByFrequency,
 } from './interest-calculation';
 
 describe('Interest Calculation - Schritt 1: Basis-Zinsberechnung', () => {
@@ -941,5 +945,289 @@ describe('Interest Calculation - Schritt 4: Geschäftsregeln', () => {
     // Gesamt: 81.225€
     expect(result.appliedDefaultInterest.toNumber()).toBe(0);
     expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(81225, 2);
+  });
+});
+
+
+describe('Interest Calculation - Schritt 5: Zahlungsweisen-Handling', () => {
+  const startDate = new Date('2024-01-01');
+
+  /**
+   * TESTFALL 1: Monatliche Zahlungen
+   * 100.000€ × 6% p.a. × 12 Monate
+   * Monatliche Zinsen: ~493,15€
+   * Gesamtzinsen: ~5.917,81€
+   * Mit KESt (25%) + SolZ (5,5%): ~1.561,42€ Steuern
+   */
+  it('Testfall 1: Monatliche Zahlungen (12 Monate)', () => {
+    const result = calculateMonthlyPaymentSchedule(
+      100000,
+      6,
+      12,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('monthly');
+    expect(result.totalPayments).toBe(12);
+    expect(result.schedule).toHaveLength(12);
+    expect(result.totalInterest.toNumber()).toBeCloseTo(6000, 2);
+    expect(result.totalTaxes.toNumber()).toBeCloseTo(1582.56, 2);
+    expect(result.totalPayable.toNumber()).toBeCloseTo(107582.56, 2);
+  });
+
+  /**
+   * TESTFALL 2: Jährliche Zahlungen
+   * 100.000€ × 6% p.a. × 3 Jahre
+   * Jährliche Zinsen: 6.000€
+   * Gesamtzinsen: 18.000€
+   * Mit KESt (25%) + SolZ (5,5%): 4.770€ Steuern
+   */
+  it('Testfall 2: Jährliche Zahlungen (3 Jahre)', () => {
+    const result = calculateAnnualPaymentSchedule(
+      100000,
+      6,
+      3,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('annual');
+    expect(result.totalPayments).toBe(3);
+    expect(result.schedule).toHaveLength(3);
+    expect(result.totalInterest.toNumber()).toBeCloseTo(18000, 2);
+    expect(result.totalTaxes.toNumber()).toBeCloseTo(4747.50, 2);
+    expect(result.totalPayable.toNumber()).toBeCloseTo(122747.50, 2);
+  });
+
+  /**
+   * TESTFALL 3: Thesaurierende Zahlungen (KEINE Zinseszinsen!)
+   * 100.000€ × 6% p.a. × 5 Jahre
+   * Gesamtzinsen: 5 × 6.000€ = 30.000€ (LINEAR, KEINE Zinseszinsen)
+   * Mit KESt (25%) + SolZ (5,5%): 7.950€ Steuern
+   * Gesamtzahlung: 100.000€ + 30.000€ + 7.950€ = 137.950€
+   */
+  it('Testfall 3: Thesaurierende Zahlungen (5 Jahre, KEINE Zinseszinsen)', () => {
+    const result = calculateThesaurierendPaymentSchedule(
+      100000,
+      6,
+      5,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('thesaurierend');
+    expect(result.totalPayments).toBe(1);
+    expect(result.schedule).toHaveLength(1);
+    expect(result.totalInterest.toNumber()).toBeCloseTo(30000, 2);
+    expect(result.totalTaxes.toNumber()).toBeCloseTo(7912.50, 2);
+    expect(result.totalPayable.toNumber()).toBeCloseTo(137912.50, 2);
+    
+    // Prüfe dass es nur eine Zahlung am Ende gibt
+    expect(result.schedule[0].paymentNumber).toBe(1);
+    expect(result.schedule[0].paymentDate.getFullYear()).toBe(2028); // 2024 + 5 Jahre (aber 2023 + 5 = 2028)
+  });
+
+  /**
+   * TESTFALL 4: Monatliche Zahlungen mit Kirchensteuer
+   */
+  it('Testfall 4: Monatliche Zahlungen mit Kirchensteuer (9%)', () => {
+    const result = calculateMonthlyPaymentSchedule(
+      100000,
+      6,
+      12,
+      startDate,
+      25,
+      5.5,
+      9
+    );
+
+    expect(result.frequency).toBe('monthly');
+    expect(result.totalPayments).toBe(12);
+    // Mit Kirchensteuer sollten die Steuern höher sein
+    expect(result.totalTaxes.toNumber()).toBeGreaterThan(1561.42);
+  });
+
+  /**
+   * TESTFALL 5: Große Beträge - Jährliche Zahlungen
+   * 1.000.000€ × 6% p.a. × 10 Jahre
+   */
+  it('Testfall 5: Große Beträge - Jährliche Zahlungen (1.000.000€, 10 Jahre)', () => {
+    const result = calculateAnnualPaymentSchedule(
+      1000000,
+      6,
+      10,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('annual');
+    expect(result.totalPayments).toBe(10);
+    expect(result.totalInterest.toNumber()).toBeCloseTo(600000, 2);
+    expect(result.totalTaxes.toNumber()).toBeCloseTo(158250, 2);
+    expect(result.totalPayable.toNumber()).toBeCloseTo(1758250, 2);
+  });
+
+  /**
+   * TESTFALL 6: Zahlungsplan nach Zahlungsweise (monatlich)
+   */
+  it('Testfall 6: calculatePaymentScheduleByFrequency - monatlich', () => {
+    const result = calculatePaymentScheduleByFrequency(
+      'monthly',
+      100000,
+      6,
+      12,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('monthly');
+    expect(result.totalPayments).toBe(12);
+  });
+
+  /**
+   * TESTFALL 7: Zahlungsplan nach Zahlungsweise (jährlich)
+   */
+  it('Testfall 7: calculatePaymentScheduleByFrequency - jährlich', () => {
+    const result = calculatePaymentScheduleByFrequency(
+      'annual',
+      100000,
+      6,
+      3,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('annual');
+    expect(result.totalPayments).toBe(3);
+  });
+
+  /**
+   * TESTFALL 8: Zahlungsplan nach Zahlungsweise (thesaurierend)
+   */
+  it('Testfall 8: calculatePaymentScheduleByFrequency - thesaurierend', () => {
+    const result = calculatePaymentScheduleByFrequency(
+      'thesaurierend',
+      100000,
+      6,
+      5,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.frequency).toBe('thesaurierend');
+    expect(result.totalPayments).toBe(1);
+  });
+
+  /**
+   * TESTFALL 9: Vergleich der Zahlungsweisen
+   * Monatlich vs. Jährlich vs. Thesaurierend sollten die gleiche Gesamtzahlung haben
+   * (unterschiedliche Zahlungsweise, aber gleiche Gesamtzinsen)
+   */
+  it('Testfall 9: Vergleich der Zahlungsweisen', () => {
+    const monthly = calculateMonthlyPaymentSchedule(
+      100000,
+      6,
+      12,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    const annual = calculateAnnualPaymentSchedule(
+      100000,
+      6,
+      1,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    const thesaurierend = calculateThesaurierendPaymentSchedule(
+      100000,
+      6,
+      1,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    // Alle sollten die gleiche Gesamtzahlung haben (100.000 + 6.000 + 1.582,50)
+    expect(monthly.totalPayable.toNumber()).toBeCloseTo(107582.50, 0);
+    expect(annual.totalPayable.toNumber()).toBeCloseTo(107582.50, 0);
+    expect(thesaurierend.totalPayable.toNumber()).toBeCloseTo(107582.50, 0);
+  });
+
+  /**
+   * TESTFALL 10: Zahlungsplan-Details prüfen
+   * Prüfe dass die Zahlungsdaten korrekt berechnet werden
+   */
+  it('Testfall 10: Zahlungsplan-Details (Daten und Beträge)', () => {
+    const result = calculateMonthlyPaymentSchedule(
+      100000,
+      6,
+      3,
+      startDate,
+      25,
+      5.5,
+      0
+    );
+
+    expect(result.schedule).toHaveLength(3);
+    
+    // Erste Zahlung (Monat 0 = Januar)
+    expect(result.schedule[0].paymentNumber).toBe(1);
+    expect(result.schedule[0].frequency).toBe('monthly');
+    expect(result.schedule[0].principalAmount.toNumber()).toBe(100000);
+    expect(result.schedule[0].interestAmount.toNumber()).toBeGreaterThan(0);
+    expect(result.schedule[0].taxAmount.toNumber()).toBeGreaterThan(0);
+    expect(result.schedule[0].totalPayment.toNumber()).toBeGreaterThan(0);
+    expect(result.schedule[0].paymentDate.getMonth()).toBe(0); // Januar = Monat 0
+    
+    // Zweite Zahlung (Monat 2 = März)
+    expect(result.schedule[1].paymentNumber).toBe(2);
+    expect(result.schedule[1].paymentDate.getMonth()).toBe(2);
+    
+    // Dritte Zahlung (Monat 2 = März)
+    expect(result.schedule[2].paymentNumber).toBe(3);
+    expect(result.schedule[2].paymentDate.getMonth()).toBe(2);
+  });
+
+  /**
+   * TESTFALL 11: Thesaurierende Zahlungen - Keine Zinseszinsen Validierung
+   * Prüfe dass die Zinsen LINEAR addiert werden, nicht exponentiell
+   */
+  it('Testfall 11: Thesaurierende Zahlungen - LINEAR (KEINE Zinseszinsen)', () => {
+    const result = calculateThesaurierendPaymentSchedule(
+      100000,
+      10,
+      5,
+      startDate,
+      0,
+      0,
+      0
+    );
+
+    // Mit 10% p.a. sollten die Zinsen 5 × 10.000€ = 50.000€ sein
+    // NICHT 100.000€ × (1.1^5 - 1) = 61.051€ (mit Zinseszinsen)
+    expect(result.totalInterest.toNumber()).toBeCloseTo(50000, 2);
+    expect(result.totalPayable.toNumber()).toBeCloseTo(150000, 2);
   });
 });

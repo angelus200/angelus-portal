@@ -722,3 +722,375 @@ export function calculateNetInterestWithBusinessRules(
     .plus(result.appliedDefaultInterest)
     .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 }
+
+
+/**
+ * SCHRITT 5: Zahlungsweisen-Handling
+ * 
+ * Implementiert verschiedene Zahlungsweisen für die Zinsberechnung:
+ * 
+ * 1. MONATLICH (Monthly):
+ *    - 12 Zahlungen pro Jahr
+ *    - Zinsen werden monatlich berechnet und ausgezahlt
+ *    - Keine Zinseszinsen
+ * 
+ * 2. JÄHRLICH (Annual):
+ *    - 1 Zahlung pro Jahr
+ *    - Zinsen werden über das ganze Jahr berechnet
+ *    - Keine Zinseszinsen
+ * 
+ * 3. THESAURIEREND (Accumulating):
+ *    - Zinsen werden angesammelt (nicht ausgezahlt)
+ *    - Am Ende der Laufzeit wird Kapital + alle Zinsen ausgezahlt
+ *    - WICHTIG: KEINE Zinseszinsen! Zinsen werden linear addiert
+ *    - Formel: Gesamtzinsen = Summe aller Jahres-Zinsen
+ */
+
+type PaymentFrequency = 'monthly' | 'annual' | 'thesaurierend';
+
+interface PaymentScheduleItem {
+  paymentNumber: number;
+  paymentDate: Date;
+  principalAmount: Decimal;
+  interestAmount: Decimal;
+  taxAmount: Decimal;
+  defaultInterestAmount: Decimal;
+  totalPayment: Decimal;
+  frequency: PaymentFrequency;
+}
+
+interface PaymentScheduleResult {
+  frequency: PaymentFrequency;
+  totalPayments: number;
+  schedule: PaymentScheduleItem[];
+  totalInterest: Decimal;
+  totalTaxes: Decimal;
+  totalDefaultInterest: Decimal;
+  totalPayable: Decimal;
+}
+
+/**
+ * Berechnet Zahlungsplan für monatliche Zahlungen
+ * 
+ * 12 Zahlungen pro Jahr, keine Zinseszinsen
+ * 
+ * @param principal - Hauptbetrag
+ * @param annualRate - Jährlicher Zinssatz
+ * @param months - Anzahl der Monate
+ * @param startDate - Startdatum
+ * @param kestRate - KESt-Satz
+ * @param solzRate - SolZ-Satz
+ * @param churchTaxRate - Kirchensteuer-Satz
+ * @returns Zahlungsplan
+ */
+export function calculateMonthlyPaymentSchedule(
+  principal: number | Decimal,
+  annualRate: number,
+  months: number,
+  startDate: Date,
+  kestRate?: number,
+  solzRate?: number,
+  churchTaxRate?: number
+): PaymentScheduleResult {
+  const principalDecimal = new Decimal(principal);
+  const daysPerMonth = 365 / 12; // ~30.42 Tage pro Monat
+  const schedule: PaymentScheduleItem[] = [];
+  let totalInterest = new Decimal(0);
+  let totalTaxes = new Decimal(0);
+  let totalDefaultInterest = new Decimal(0);
+
+  for (let i = 1; i <= months; i++) {
+    // Berechne Zahlungsdatum
+    const paymentDate = new Date(startDate);
+    paymentDate.setMonth(paymentDate.getMonth() + i);
+
+    // Berechne Zinsen für diesen Monat
+    const interestResult = calculateBasicInterest({
+      principal: principalDecimal,
+      annualRate,
+      days: daysPerMonth,
+    });
+
+    // Berechne Steuern
+    const taxResult = calculateTaxes({
+      interestAmount: interestResult.interestAmount,
+      kestRate,
+      solzRate,
+      churchTaxRate,
+    });
+
+    // Keine Verzugszinsen bei regelmäßigen Zahlungen
+    const defaultInterestAmount = new Decimal(0);
+
+    // Gesamtzahlung = Zinsen + Steuern + Verzugszinsen
+    const totalPayment = interestResult.interestAmount
+      .plus(taxResult.totalTaxes)
+      .plus(defaultInterestAmount)
+      .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+    schedule.push({
+      paymentNumber: i,
+      paymentDate,
+      principalAmount: principalDecimal,
+      interestAmount: interestResult.interestAmount,
+      taxAmount: taxResult.totalTaxes,
+      defaultInterestAmount,
+      totalPayment,
+      frequency: 'monthly',
+    });
+
+    totalInterest = totalInterest.plus(interestResult.interestAmount);
+    totalTaxes = totalTaxes.plus(taxResult.totalTaxes);
+    totalDefaultInterest = totalDefaultInterest.plus(defaultInterestAmount);
+  }
+
+  const totalPayable = principalDecimal
+    .plus(totalInterest)
+    .plus(totalTaxes)
+    .plus(totalDefaultInterest)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  return {
+    frequency: 'monthly',
+    totalPayments: months,
+    schedule,
+    totalInterest: totalInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalTaxes: totalTaxes.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalDefaultInterest: totalDefaultInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalPayable,
+  };
+}
+
+/**
+ * Berechnet Zahlungsplan für jährliche Zahlungen
+ * 
+ * 1 Zahlung pro Jahr, keine Zinseszinsen
+ * 
+ * @param principal - Hauptbetrag
+ * @param annualRate - Jährlicher Zinssatz
+ * @param years - Anzahl der Jahre
+ * @param startDate - Startdatum
+ * @param kestRate - KESt-Satz
+ * @param solzRate - SolZ-Satz
+ * @param churchTaxRate - Kirchensteuer-Satz
+ * @returns Zahlungsplan
+ */
+export function calculateAnnualPaymentSchedule(
+  principal: number | Decimal,
+  annualRate: number,
+  years: number,
+  startDate: Date,
+  kestRate?: number,
+  solzRate?: number,
+  churchTaxRate?: number
+): PaymentScheduleResult {
+  const principalDecimal = new Decimal(principal);
+  const schedule: PaymentScheduleItem[] = [];
+  let totalInterest = new Decimal(0);
+  let totalTaxes = new Decimal(0);
+  let totalDefaultInterest = new Decimal(0);
+
+  for (let i = 1; i <= years; i++) {
+    // Berechne Zahlungsdatum
+    const paymentDate = new Date(startDate);
+    paymentDate.setFullYear(paymentDate.getFullYear() + i);
+
+    // Berechne Zinsen für dieses Jahr
+    const interestResult = calculateBasicInterest({
+      principal: principalDecimal,
+      annualRate,
+      days: 365,
+    });
+
+    // Berechne Steuern
+    const taxResult = calculateTaxes({
+      interestAmount: interestResult.interestAmount,
+      kestRate,
+      solzRate,
+      churchTaxRate,
+    });
+
+    // Keine Verzugszinsen bei regelmäßigen Zahlungen
+    const defaultInterestAmount = new Decimal(0);
+
+    // Gesamtzahlung = Zinsen + Steuern + Verzugszinsen
+    const totalPayment = interestResult.interestAmount
+      .plus(taxResult.totalTaxes)
+      .plus(defaultInterestAmount)
+      .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+    schedule.push({
+      paymentNumber: i,
+      paymentDate,
+      principalAmount: principalDecimal,
+      interestAmount: interestResult.interestAmount,
+      taxAmount: taxResult.totalTaxes,
+      defaultInterestAmount,
+      totalPayment,
+      frequency: 'annual',
+    });
+
+    totalInterest = totalInterest.plus(interestResult.interestAmount);
+    totalTaxes = totalTaxes.plus(taxResult.totalTaxes);
+    totalDefaultInterest = totalDefaultInterest.plus(defaultInterestAmount);
+  }
+
+  const totalPayable = principalDecimal
+    .plus(totalInterest)
+    .plus(totalTaxes)
+    .plus(totalDefaultInterest)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  return {
+    frequency: 'annual',
+    totalPayments: years,
+    schedule,
+    totalInterest: totalInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalTaxes: totalTaxes.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalDefaultInterest: totalDefaultInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalPayable,
+  };
+}
+
+/**
+ * Berechnet Zahlungsplan für thesaurierende Zahlungen
+ * 
+ * Zinsen werden angesammelt, am Ende ausgezahlt
+ * WICHTIG: KEINE Zinseszinsen! Zinsen werden linear addiert
+ * 
+ * @param principal - Hauptbetrag
+ * @param annualRate - Jährlicher Zinssatz
+ * @param years - Anzahl der Jahre
+ * @param startDate - Startdatum
+ * @param kestRate - KESt-Satz
+ * @param solzRate - SolZ-Satz
+ * @param churchTaxRate - Kirchensteuer-Satz
+ * @returns Zahlungsplan (nur eine Zahlung am Ende)
+ */
+export function calculateThesaurierendPaymentSchedule(
+  principal: number | Decimal,
+  annualRate: number,
+  years: number,
+  startDate: Date,
+  kestRate?: number,
+  solzRate?: number,
+  churchTaxRate?: number
+): PaymentScheduleResult {
+  const principalDecimal = new Decimal(principal);
+  const schedule: PaymentScheduleItem[] = [];
+
+  // Berechne Gesamtzinsen für alle Jahre (LINEAR, KEINE Zinseszinsen)
+  let totalInterest = new Decimal(0);
+  let totalTaxes = new Decimal(0);
+
+  for (let i = 1; i <= years; i++) {
+    // Berechne Zinsen für dieses Jahr
+    const interestResult = calculateBasicInterest({
+      principal: principalDecimal,
+      annualRate,
+      days: 365,
+    });
+
+    totalInterest = totalInterest.plus(interestResult.interestAmount);
+  }
+
+  // Berechne Steuern auf Gesamtzinsen
+  const taxResult = calculateTaxes({
+    interestAmount: totalInterest,
+    kestRate,
+    solzRate,
+    churchTaxRate,
+  });
+
+  totalTaxes = taxResult.totalTaxes;
+
+  // Zahlungsdatum: Nach Ende der Laufzeit
+  const paymentDate = new Date(startDate);
+  paymentDate.setFullYear(paymentDate.getFullYear() + years);
+
+  // Gesamtzahlung = Kapital + Zinsen + Steuern
+  const totalPayment = principalDecimal
+    .plus(totalInterest)
+    .plus(totalTaxes)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  schedule.push({
+    paymentNumber: 1,
+    paymentDate,
+    principalAmount: principalDecimal,
+    interestAmount: totalInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    taxAmount: totalTaxes,
+    defaultInterestAmount: new Decimal(0),
+    totalPayment,
+    frequency: 'thesaurierend',
+  });
+
+  return {
+    frequency: 'thesaurierend',
+    totalPayments: 1,
+    schedule,
+    totalInterest: totalInterest.toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+    totalTaxes: totalTaxes,
+    totalDefaultInterest: new Decimal(0),
+    totalPayable: totalPayment,
+  };
+}
+
+/**
+ * Berechnet Zahlungsplan basierend auf Zahlungsweise
+ * 
+ * @param frequency - Zahlungsweise (monthly, annual, thesaurierend)
+ * @param principal - Hauptbetrag
+ * @param annualRate - Jährlicher Zinssatz
+ * @param periods - Anzahl der Perioden (Monate oder Jahre)
+ * @param startDate - Startdatum
+ * @param kestRate - KESt-Satz
+ * @param solzRate - SolZ-Satz
+ * @param churchTaxRate - Kirchensteuer-Satz
+ * @returns Zahlungsplan
+ */
+export function calculatePaymentScheduleByFrequency(
+  frequency: PaymentFrequency,
+  principal: number | Decimal,
+  annualRate: number,
+  periods: number,
+  startDate: Date,
+  kestRate?: number,
+  solzRate?: number,
+  churchTaxRate?: number
+): PaymentScheduleResult {
+  switch (frequency) {
+    case 'monthly':
+      return calculateMonthlyPaymentSchedule(
+        principal,
+        annualRate,
+        periods,
+        startDate,
+        kestRate,
+        solzRate,
+        churchTaxRate
+      );
+    case 'annual':
+      return calculateAnnualPaymentSchedule(
+        principal,
+        annualRate,
+        periods,
+        startDate,
+        kestRate,
+        solzRate,
+        churchTaxRate
+      );
+    case 'thesaurierend':
+      return calculateThesaurierendPaymentSchedule(
+        principal,
+        annualRate,
+        periods,
+        startDate,
+        kestRate,
+        solzRate,
+        churchTaxRate
+      );
+    default:
+      throw new Error(`Unbekannte Zahlungsweise: ${frequency}`);
+  }
+}

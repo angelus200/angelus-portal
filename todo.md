@@ -360,8 +360,8 @@
   - [x] Funktionen: shouldApplyDefaultInterest(), isInsolvencyHoldActive(), calculateInterestWithBusinessRules()
   - [x] Keine Verzugszinsen für Unternehmensverbindlichkeiten
   - [x] Tests: 12/12 bestanden
-- [ ] Schritt 5: Zahlungsweisen
-  - [ ] Monatlich, jährlich, thesaurierend
-  - [ ] Funktion: calculateByPaymentFrequency()
-  - [ ] Tests: 5 Testfälle
+- [x] Schritt 5: Zahlungsweisen
+  - [x] Monatlich, jährlich, thesaurierend
+  - [x] Funktionen: calculateMonthlyPaymentSchedule(), calculateAnnualPaymentSchedule(), calculateThesaurierendPaymentSchedule(), calculatePaymentScheduleByFrequency()
+  - [x] Tests: 11/11 bestanden
 - [ ] Integration & Finale Tests
