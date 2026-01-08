@@ -352,10 +352,10 @@
   - [x] Funktion: calculateTaxes()
   - [x] KESt (25%), SolZ (5,5%), Kirchensteuer (0-9%)
   - [x] Tests: 9/9 bestanden
-- [ ] Schritt 3: Verzugszins für ausstehende Zahlungen
-  - [ ] Funktion: calculateDefaultInterest()
-  - [ ] 17% p.a. auf ausstehende Beträge
-  - [ ] Tests: 5 Testfälle
+- [x] Schritt 3: Verzugszins für ausstehende Zahlungen
+  - [x] Funktion: calculateDefaultInterest()
+  - [x] 17% p.a. auf ausstehende Beträge
+  - [x] Tests: 14/14 bestanden
 - [ ] Schritt 4: Insolvenzvorhalt & Geschäftsregeln
   - [ ] Funktion: applyInsolvencyHold()
   - [ ] Keine Verzugszinsen für Verbindlichkeit

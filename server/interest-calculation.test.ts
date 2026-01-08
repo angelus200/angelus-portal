@@ -5,6 +5,10 @@ import {
   calculateInterestByPeriods,
   calculateInterestByDateRange,
   calculateTotalInterestByPeriods,
+  calculateDefaultInterest,
+  calculateDefaultInterestByPeriods,
+  calculateDefaultInterestByDateRange,
+  calculateTotalDefaultInterestByPeriods,
 } from './interest-calculation';
 
 describe('Interest Calculation - Schritt 1: Basis-Zinsberechnung', () => {
@@ -441,5 +445,238 @@ describe('Interest Calculation - Schritt 2: Steuern-Berechnung', () => {
     expect(result.taxes.churchTax.toNumber()).toBeCloseTo(44.38, 2);
     expect(result.taxes.totalTaxes.toNumber()).toBeCloseTo(174.45, 2);
     expect(result.netInterestAfterTax.toNumber()).toBeCloseTo(318.70, 2);
+  });
+});
+
+
+describe('Interest Calculation - Schritt 3: Verzugszins-Berechnung', () => {
+  /**
+   * TESTFALL 1: Standard-Verzugszins
+   * Zeichnung: 100.000€, Eingezahlt: 80.000€, Ausstehend: 20.000€
+   * Verzugszins: 20.000 × 17% × 30 / 365 = 279,45€
+   */
+  it('Testfall 1: Standard-Verzugszins (100.000€ Zeichnung, 80.000€ eingezahlt, 30 Tage)', () => {
+    const result = calculateDefaultInterest({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      defaultRate: 17,
+      days: 30,
+    });
+
+    expect(result.subscriptionAmount.toNumber()).toBe(100000);
+    expect(result.paidAmount.toNumber()).toBe(80000);
+    expect(result.outstandingAmount.toNumber()).toBe(20000);
+    expect(result.defaultRate.toNumber()).toBe(17);
+    expect(result.days).toBe(30);
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(279.45, 2);
+    expect(result.calculationMethod).toBe('default_interest_17_percent_365_days');
+  });
+
+  /**
+   * TESTFALL 2: Ganzes Jahr (365 Tage)
+   * Zeichnung: 100.000€, Eingezahlt: 80.000€, Ausstehend: 20.000€
+   * Verzugszins: 20.000 × 17% × 365 / 365 = 3.400€
+   */
+  it('Testfall 2: Ganzes Jahr (100.000€ Zeichnung, 80.000€ eingezahlt, 365 Tage)', () => {
+    const result = calculateDefaultInterest({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      defaultRate: 17,
+      days: 365,
+    });
+
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(3400, 2);
+  });
+
+  /**
+   * TESTFALL 3: Keine ausstehenden Beträge
+   * Zeichnung: 100.000€, Eingezahlt: 100.000€, Ausstehend: 0€
+   * Verzugszins: 0€
+   */
+  it('Testfall 3: Keine ausstehenden Beträge (vollständig eingezahlt)', () => {
+    const result = calculateDefaultInterest({
+      subscriptionAmount: 100000,
+      paidAmount: 100000,
+      defaultRate: 17,
+      days: 30,
+    });
+
+    expect(result.outstandingAmount.toNumber()).toBe(0);
+    expect(result.defaultInterestAmount.toNumber()).toBe(0);
+  });
+
+  /**
+   * TESTFALL 4: Dezimalzahlen (Präzision mit Decimal.js)
+   * Zeichnung: 12.345,67€, Eingezahlt: 9.876,54€, Ausstehend: 2.469,13€
+   * Verzugszins: 2.469,13 × 17% × 90 / 365 = 103,37€
+   */
+  it('Testfall 4: Dezimalzahlen (12.345,67€ Zeichnung, 9.876,54€ eingezahlt, 90 Tage)', () => {
+    const result = calculateDefaultInterest({
+      subscriptionAmount: 12345.67,
+      paidAmount: 9876.54,
+      defaultRate: 17,
+      days: 90,
+    });
+
+    expect(result.outstandingAmount.toNumber()).toBeCloseTo(2469.13, 2);
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(103.5, 2);
+  });
+
+  /**
+   * TESTFALL 5: Große Beträge (Präzision)
+   * Zeichnung: 1.000.000€, Eingezahlt: 500.000€, Ausstehend: 500.000€
+   * Verzugszins: 500.000 × 17% × 365 / 365 = 85.000€
+   */
+  it('Testfall 5: Große Beträge (1.000.000€ Zeichnung, 500.000€ eingezahlt, 365 Tage)', () => {
+    const result = calculateDefaultInterest({
+      subscriptionAmount: 1000000,
+      paidAmount: 500000,
+      defaultRate: 17,
+      days: 365,
+    });
+
+    expect(result.outstandingAmount.toNumber()).toBe(500000);
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(85000, 2);
+  });
+
+  /**
+   * VALIDIERUNG: Eingezahlter Betrag größer als Zeichnungsbetrag
+   */
+  it('Validierung: Eingezahlter Betrag > Zeichnungsbetrag wirft Fehler', () => {
+    expect(() => {
+      calculateDefaultInterest({
+        subscriptionAmount: 100000,
+        paidAmount: 150000,
+        defaultRate: 17,
+        days: 30,
+      });
+    }).toThrow('Eingezahlter Betrag darf nicht größer als Zeichnungsbetrag sein');
+  });
+
+  /**
+   * VALIDIERUNG: Negative Zeichnungsbetrag
+   */
+  it('Validierung: Negative Zeichnungsbetrag wirft Fehler', () => {
+    expect(() => {
+      calculateDefaultInterest({
+        subscriptionAmount: -100000,
+        paidAmount: 80000,
+        defaultRate: 17,
+        days: 30,
+      });
+    }).toThrow('Zeichnungsbetrag darf nicht negativ sein');
+  });
+
+  /**
+   * VALIDIERUNG: Negative Eingezahlter Betrag
+   */
+  it('Validierung: Negative Eingezahlter Betrag wirft Fehler', () => {
+    expect(() => {
+      calculateDefaultInterest({
+        subscriptionAmount: 100000,
+        paidAmount: -80000,
+        defaultRate: 17,
+        days: 30,
+      });
+    }).toThrow('Eingezahlter Betrag darf nicht negativ sein');
+  });
+
+  /**
+   * VALIDIERUNG: Ungültiger Verzugszinssatz
+   */
+  it('Validierung: Verzugszinssatz > 100% wirft Fehler', () => {
+    expect(() => {
+      calculateDefaultInterest({
+        subscriptionAmount: 100000,
+        paidAmount: 80000,
+        defaultRate: 150,
+        days: 30,
+      });
+    }).toThrow('Verzugszinssatz muss zwischen 0 und 100% liegen');
+  });
+
+  /**
+   * TESTFALL: Monatliche Perioden (12 Monate)
+   */
+  it('Testfall: Monatliche Perioden (12 Monate)', () => {
+    const results = calculateDefaultInterestByPeriods(
+      {
+        subscriptionAmount: 100000,
+        paidAmount: 80000,
+        defaultRate: 17,
+        days: 365,
+      },
+      12
+    );
+
+    expect(results).toHaveLength(12);
+    // Jeder Monat sollte ungefähr 283,33€ Verzugszins haben (3400 / 12)
+    expect(results[0].defaultInterestAmount.toNumber()).toBeCloseTo(283.33, 1);
+  });
+
+  /**
+   * TESTFALL: Gesamtverzugszinsen für mehrere Perioden
+   */
+  it('Testfall: Gesamtverzugszinsen für 12 Perioden', () => {
+    const total = calculateTotalDefaultInterestByPeriods(
+      {
+        subscriptionAmount: 100000,
+        paidAmount: 80000,
+        defaultRate: 17,
+        days: 365,
+      },
+      12
+    );
+
+    // Sollte ungefähr 3.400€ sein (20.000€ × 17%)
+    expect(total.toNumber()).toBeCloseTo(3400, 0);
+  });
+
+  /**
+   * TESTFALL: Datumsbereich (30 Tage)
+   */
+  it('Testfall: Datumsbereich (30 Tage)', () => {
+    const startDate = new Date('2024-01-01');
+    const endDate = new Date('2024-01-31');
+
+    const result = calculateDefaultInterestByDateRange(
+      100000,
+      80000,
+      startDate,
+      endDate,
+      17
+    );
+
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(279.45, 2);
+  });
+
+  /**
+   * TESTFALL: Datumsbereich (ganzes Jahr)
+   */
+  it('Testfall: Datumsbereich (ganzes Jahr)', () => {
+    const startDate = new Date('2024-01-01');
+    const endDate = new Date('2024-12-31');
+
+    const result = calculateDefaultInterestByDateRange(
+      100000,
+      80000,
+      startDate,
+      endDate,
+      17
+    );
+
+    expect(result.defaultInterestAmount.toNumber()).toBeCloseTo(3400, 2);
+  });
+
+  /**
+   * VALIDIERUNG: Enddatum vor Startdatum
+   */
+  it('Validierung: Enddatum vor Startdatum wirft Fehler', () => {
+    const startDate = new Date('2024-12-31');
+    const endDate = new Date('2024-01-01');
+
+    expect(() => {
+      calculateDefaultInterestByDateRange(100000, 80000, startDate, endDate, 17);
+    }).toThrow('Enddatum muss nach Startdatum liegen');
   });
 });
