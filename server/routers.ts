@@ -306,6 +306,25 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { bonds } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error('Database not available');
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "bond.delete",
+          entityType: "bond",
+          entityId: input.id,
+          details: { bondId: input.id },
+          ipAddress: ctx.req.ip,
+        });
+        return await database.delete(bonds).where(eq(bonds.id, input.id));
+      }),
   }),
 
   // ==================== SUBSCRIPTION ROUTES ====================
