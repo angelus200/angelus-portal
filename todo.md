@@ -292,3 +292,19 @@
 - [x] SEPA-Lastschrift als Zahlungsmethode implementiert
 - [x] Firmendetails in Stripe Customer speichern (metadata)
 - [x] Tests für Firmen-Zahlungen (12 Tests bestanden)
+
+## Datenbankschema erweitert
+- [x] paymentStatus Feld hinzugefügt
+- [x] stripePaymentIntentId Feld hinzugefügt
+- [x] Datenbankmigrationen durchgeführt
+
+## Webhook-basierte Zeichnungs-Aktualisierung
+- [x] Webhook Handler für payment_intent.succeeded
+- [x] Zeichnungs-Status auf "paid" aktualisieren
+- [x] Zahlungs-Metadaten in Datenbank speichern
+
+## Zahlungshistorie für Investoren
+- [x] Zahlungs-Tabelle mit Status und Datum
+- [x] Rechnungs-Download Funktion (Placeholder)
+- [x] Route /investor/payments
+- [x] Payment Integration Tests (15 Tests bestanden)

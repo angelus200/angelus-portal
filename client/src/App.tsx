@@ -24,6 +24,7 @@ import RiskProfile from "./pages/investor/RiskProfile";
 import Subscribe from "./pages/investor/Subscribe";
 import Payment from "./pages/investor/Payment";
 import PaymentAdvanced from "./pages/investor/PaymentAdvanced";
+import PaymentHistory from "./pages/investor/PaymentHistory";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/investor/subscribe/:id" component={Subscribe} />
       <Route path="/investor/payment" component={Payment} />
       <Route path="/investor/payment-advanced" component={PaymentAdvanced} />
+      <Route path="/investor/payments" component={PaymentHistory} />
       
       {/* Admin routes */}
       <Route path="/admin" component={AdminDashboard} />
