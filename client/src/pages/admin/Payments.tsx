@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -46,34 +46,54 @@ export default function PaymentsPage() {
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [page, setPage] = useState(0);
 
   // Fetch all payments
-  const { data: payments = [], isLoading } = useQuery({
-    queryKey: ["admin.payments"],
+  const { data: paymentsData, isLoading, refetch } = useQuery({
+    queryKey: ["admin.getAllPayments", statusFilter, page],
     queryFn: async () => {
-      // This would be a tRPC call to get all payments
-      // For now, we'll use a placeholder
-      return [];
+      const result = await trpc.admin.getAllPayments.query({
+        limit: 50,
+        offset: page * 50,
+        status: statusFilter === "all" ? undefined : (statusFilter as any),
+      });
+      return result;
     },
   });
 
-  // Filter payments
-  const filteredPayments = payments.filter((payment: any) => {
-    const matchesStatus = statusFilter === "all" || payment.paymentStatus === statusFilter;
-    const matchesEmail = payment.investor?.email?.toLowerCase().includes(searchEmail.toLowerCase());
-    return matchesStatus && matchesEmail;
+  const payments = paymentsData?.payments || [];
+
+  // Fetch payment statistics
+  const { data: statsData } = useQuery({
+    queryKey: ["admin.getPaymentStats"],
+    queryFn: async () => {
+      return await trpc.admin.getPaymentStats.query();
+    },
   });
 
-  // Calculate statistics
-  const stats = {
-    totalPayments: payments.length,
-    completedAmount: payments
-      .filter((p: any) => p.paymentStatus === "completed")
-      .reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
-    failedPayments: payments.filter((p: any) => p.paymentStatus === "failed").length,
-    refundedAmount: payments
-      .filter((p: any) => p.paymentStatus === "refunded")
-      .reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
+  // Refund mutation
+  const refundMutation = useMutation({
+    mutationFn: async (variables: { subscriptionId: number; reason: string }) => {
+      return await trpc.admin.refundPayment.mutate(variables);
+    },
+    onSuccess: () => {
+      refetch();
+      setShowDetails(false);
+    },
+  });
+
+  // Filter payments by email search
+  const filteredPayments = payments.filter((payment: any) => {
+    const matchesEmail = payment.investor?.email?.toLowerCase().includes(searchEmail.toLowerCase());
+    return matchesEmail;
+  });
+
+  // Use stats from query or calculate fallback
+  const stats = statsData || {
+    totalPayments: 0,
+    completedAmount: 0,
+    failedPayments: 0,
+    refundedAmount: 0,
   };
 
   const getStatusIcon = (status: PaymentStatus) => {
@@ -126,7 +146,7 @@ export default function PaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">Gesamtzahlungen</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPayments}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-gray-500 mt-1">Alle Zahlungsvorgänge</p>
           </CardContent>
         </Card>
@@ -148,7 +168,7 @@ export default function PaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">Fehlgeschlagen</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.failedPayments}</div>
+            <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
             <p className="text-xs text-gray-500 mt-1">Zahlungen mit Fehler</p>
           </CardContent>
         </Card>
@@ -215,7 +235,7 @@ export default function PaymentsPage() {
             ) : filteredPayments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  Keine Zahlungen gefunden
+                  {searchEmail ? "Keine Zahlungen mit dieser E-Mail gefunden" : "Keine Zahlungen gefunden"}
                 </TableCell>
               </TableRow>
             ) : (
@@ -336,10 +356,23 @@ export default function PaymentsPage() {
 
               {/* Actions */}
               {selectedPayment.paymentStatus === "completed" && (
-                <div className="pt-4 border-t">
-                  <Button variant="destructive" className="w-full">
+                <div className="pt-4 border-t space-y-3">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => {
+                      const reason = prompt("Grund für Rückerstattung:");
+                      if (reason) {
+                        refundMutation.mutate({
+                          subscriptionId: selectedPayment.id,
+                          reason,
+                        });
+                      }
+                    }}
+                    disabled={refundMutation.isPending}
+                  >
                     <RotateCcw className="w-4 h-4 mr-2" />
-                    Rückerstattung verarbeiten
+                    {refundMutation.isPending ? "Wird verarbeitet..." : "Rückerstattung verarbeiten"}
                   </Button>
                 </div>
               )}
@@ -347,6 +380,29 @@ export default function PaymentsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-6">
+        <p className="text-sm text-gray-600">
+          Zeige {page * 50 + 1} bis {Math.min((page + 1) * 50, paymentsData?.total || 0)} von {paymentsData?.total || 0} Zahlungen
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+          >
+            Zurück
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage(page + 1)}
+            disabled={!paymentsData || (page + 1) * 50 >= paymentsData.total}
+          >
+            Weiter
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

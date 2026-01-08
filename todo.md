@@ -269,7 +269,9 @@
 - [x] Webhook-Sicherheit: Signature Verification implementieren
 - [x] Webhook-Fehlerbehandlung und Logging
 - [x] Vitest Tests für Webhook Handler (13/13 bestanden)
-- [ ] tRPC-Prozeduren für Payment-Abfragen hinzufügen
+- [x] tRPC-Prozeduren für Payment-Abfragen hinzufügen (6 Prozeduren)
+- [x] Admin Payment Dashboard mit echten Daten verbunden
+- [x] Vitest Tests für Payment tRPC-Prozeduren (17/17 bestanden)
 - [ ] Admin Payment Dashboard Route und Navigation integrieren
 - [ ] Investor Payment History Seite erstellen (/investor/payments)
 - [ ] Rechnungs-Download-Funktion implementieren

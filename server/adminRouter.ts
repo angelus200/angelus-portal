@@ -152,4 +152,178 @@ export const adminRouter = router({
     .query(async ({ input }) => {
       return await db.getWalletTransactionsForAdmin(input.limit);
     }),
+
+  // Get all payments with investor and bond info
+  getAllPayments: adminProcedure
+    .input(z.object({
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+      status: z.enum(['pending', 'processing', 'completed', 'failed', 'refunded']).optional(),
+    }))
+    .query(async ({ input }) => {
+      const subscriptions = await db.getAllSubscriptions();
+      
+      // Filter by payment status if provided
+      let filtered = subscriptions;
+      if (input.status) {
+        filtered = subscriptions.filter(s => s.paymentStatus === input.status);
+      }
+
+      // Apply pagination
+      const paginated = filtered.slice(input.offset, input.offset + input.limit);
+
+      // Enrich with investor and bond info
+      const enriched = await Promise.all(
+        paginated.map(async (subscription) => {
+          const investor = await db.getUserById(subscription.userId);
+          const bond = await db.getBondById(subscription.bondId);
+          return {
+            ...subscription,
+            investor,
+            bond,
+          };
+        })
+      );
+
+      return {
+        payments: enriched,
+        total: filtered.length,
+        limit: input.limit,
+        offset: input.offset,
+      };
+    }),
+
+  // Get payment detail
+  getPaymentDetail: adminProcedure
+    .input(z.object({ subscriptionId: z.number() }))
+    .query(async ({ input }) => {
+      const subscription = await db.getSubscriptionWithPayment(input.subscriptionId);
+      
+      if (!subscription) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Zahlung nicht gefunden',
+        });
+      }
+
+      const investor = await db.getUserById(subscription.userId);
+      const bond = await db.getBondById(subscription.bondId);
+
+      return {
+        ...subscription,
+        investor,
+        bond,
+      };
+    }),
+
+  // Get payments by status
+  getPaymentsByStatus: adminProcedure
+    .input(z.object({
+      status: z.enum(['pending', 'processing', 'completed', 'failed', 'refunded']),
+    }))
+    .query(async ({ input }) => {
+      const subscriptions = await db.getSubscriptionsByPaymentStatus(input.status);
+      
+      // Enrich with investor and bond info
+      const enriched = await Promise.all(
+        subscriptions.map(async (subscription) => {
+          const investor = await db.getUserById(subscription.userId);
+          const bond = await db.getBondById(subscription.bondId);
+          return {
+            ...subscription,
+            investor,
+            bond,
+          };
+        })
+      );
+
+      return enriched;
+    }),
+
+  // Get investor payment history
+  getInvestorPayments: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      const payments = await db.getInvestorPayments(input.userId);
+      
+      // Enrich with bond info
+      const enriched = await Promise.all(
+        payments.map(async (subscription) => {
+          const bond = await db.getBondById(subscription.bondId);
+          return {
+            ...subscription,
+            bond,
+          };
+        })
+      );
+
+      return enriched;
+    }),
+
+  // Process refund
+  refundPayment: adminProcedure
+    .input(z.object({
+      subscriptionId: z.number(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      const subscription = await db.getSubscriptionWithPayment(input.subscriptionId);
+      
+      if (!subscription) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Zahlung nicht gefunden',
+        });
+      }
+
+      if (subscription.paymentStatus !== 'completed') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Nur abgeschlossene Zahlungen können rückgängig gemacht werden',
+        });
+      }
+
+      // Update payment status to refunded
+      await db.updateSubscriptionPaymentStatus(
+        subscription.id,
+        'refunded',
+        subscription.stripePaymentIntentId || undefined,
+        subscription.stripeCustomerId || undefined
+      );
+
+      // Log the refund
+      await db.logAuditTrail({
+        action: 'payment.refund',
+        entityType: 'subscription',
+        entityId: subscription.id,
+        userId: ctx.user.id,
+        details: `Rückerstattung verarbeitet: ${input.reason}`,
+      });
+
+      return { success: true, message: 'Rückerstattung verarbeitet' };
+    }),
+
+  // Get payment statistics
+  getPaymentStats: adminProcedure.query(async () => {
+    const allSubscriptions = await db.getAllSubscriptions();
+    
+    const stats = {
+      total: allSubscriptions.length,
+      completed: allSubscriptions.filter(s => s.paymentStatus === 'completed').length,
+      failed: allSubscriptions.filter(s => s.paymentStatus === 'failed').length,
+      refunded: allSubscriptions.filter(s => s.paymentStatus === 'refunded').length,
+      processing: allSubscriptions.filter(s => s.paymentStatus === 'processing').length,
+      pending: allSubscriptions.filter(s => s.paymentStatus === 'pending').length,
+      completedAmount: allSubscriptions
+        .filter(s => s.paymentStatus === 'completed')
+        .reduce((sum, s) => sum + parseFloat(s.amount), 0),
+      refundedAmount: allSubscriptions
+        .filter(s => s.paymentStatus === 'refunded')
+        .reduce((sum, s) => sum + parseFloat(s.amount), 0),
+    };
+
+    return stats;
+  }),
 });
