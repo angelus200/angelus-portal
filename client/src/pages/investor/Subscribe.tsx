@@ -379,7 +379,7 @@ export default function Subscribe() {
                 </>
               )}
               {/* Contract Templates */}
-              {bondTemplates && bondTemplates.length > 0 && (
+              {bondTemplates && (
                 <>
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center gap-2">

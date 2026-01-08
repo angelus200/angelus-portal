@@ -75,7 +75,7 @@ export default function InvestorPaymentsPage() {
     },
   });
 
-  const payments = paymentsData?.payments || [];
+  const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData as any)?.payments || [];
 
   // Apply client-side filtering and sorting
   const filteredAndSortedPayments = useMemo(() => {
@@ -133,7 +133,7 @@ export default function InvestorPaymentsPage() {
   const { data: statsData } = useQuery({
     queryKey: ["payments.myPaymentStats"],
     queryFn: async () => {
-         return await trpc.payments.getStats.useQuery();
+         return await trpc.payments.myPaymentStats.useQuery();
     },
   });
 
@@ -209,7 +209,7 @@ export default function InvestorPaymentsPage() {
               <CardTitle className="text-sm font-medium text-gray-600">Gesamtzahlungen</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl font-bold">{(stats as any)?.total || 0}</div>
               <p className="text-xs text-gray-500 mt-1">Alle Zahlungsvorgänge</p>
             </CardContent>
           </Card>
@@ -220,7 +220,7 @@ export default function InvestorPaymentsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                €{stats.completedAmount.toFixed(2)}
+                €{((stats as any)?.completedAmount || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">Erfolgreich verarbeitet</p>
             </CardContent>
@@ -231,7 +231,7 @@ export default function InvestorPaymentsPage() {
               <CardTitle className="text-sm font-medium text-gray-600">Ausstehend</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending || 0}</div>
               <p className="text-xs text-gray-500 mt-1">Zahlungen in Bearbeitung</p>
             </CardContent>
           </Card>
@@ -242,7 +242,7 @@ export default function InvestorPaymentsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                €{stats.refundedAmount.toFixed(2)}
+                €{((stats as any)?.refundedAmount || 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">Rückerstattete Beträge</p>
             </CardContent>
@@ -587,7 +587,7 @@ export default function InvestorPaymentsPage() {
         {/* Pagination */}
         <div className="flex justify-between items-center mt-6">
           <p className="text-sm text-gray-600">
-            Zeige {page * 50 + 1} bis {Math.min((page + 1) * 50, paymentsData?.total || 0)} von {paymentsData?.total || 0} Zahlungen
+            Zeige {page * 50 + 1} bis {Math.min((page + 1) * 50, payments.length)} von {payments.length} Zahlungen
           </p>
           <div className="flex gap-2">
             <Button
@@ -600,7 +600,7 @@ export default function InvestorPaymentsPage() {
             <Button
               variant="outline"
               onClick={() => setPage(page + 1)}
-              disabled={!paymentsData || (page + 1) * 50 >= paymentsData.total}
+              disabled={!paymentsData || (page + 1) * 50 >= payments.length}
             >
               Weiter
             </Button>

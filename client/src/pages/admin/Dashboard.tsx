@@ -29,7 +29,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statsLoading ? "..." : (stats?.totalInvestors || 0)}
+                {statsLoading ? "..." : String(stats?.totalInvestors ?? 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Registrierte Anleger
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statsLoading ? "..." : (stats?.totalBonds || 0)}
+                {statsLoading ? "..." : String(stats?.totalBonds ?? 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Aktive Angebote
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statsLoading ? "..." : (stats?.totalSubscriptions || 0)}
+                {statsLoading ? "..." : String(stats?.totalSubscriptions ?? 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Gesamte Zeichnungen
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statsLoading ? "..." : (stats?.pendingKyc || 0)}
+                {statsLoading ? "..." : String(stats?.pendingKyc ?? 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Offene Verifizierungen

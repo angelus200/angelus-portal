@@ -37,7 +37,7 @@ export function BondsManagement() {
   const { data: bonds, isLoading, refetch } = trpc.bonds.list.useQuery();
   const createMutation = trpc.bonds.create.useMutation();
   const updateMutation = trpc.bonds.update.useMutation();
-  const deleteMutation = trpc.bonds.delete?.useMutation?.() || { mutate: () => {} }; // Optional chaining for delete
+  const deleteMutation = trpc.bonds.delete.useMutation();
 
   const handleOpenDialog = (bond?: any) => {
     if (bond) {
@@ -101,26 +101,23 @@ export function BondsManagement() {
             description: formData.description,
             status: formData.status as any,
             availableVolume: formData.availableVolume,
-            couponFrequency: formData.couponPaymentFrequency as any,
-            currency: formData.currency,
-            issuer: formData.issuer,
-            sector: formData.sector,
-            country: formData.country,
-            status: formData.status as any,
-            riskCategory: formData.riskCategory as any,
           },
         });
       } else {
         await createMutation.mutateAsync({
           name: formData.name,
-          description: formData.description,
-          status: formData.status as any,
+          bondNumber: formData.bondNumber,
+          totalVolume: formData.totalVolume,
           availableVolume: formData.availableVolume,
+          interestRate: formData.interestRate,
+          termMonths: parseInt(formData.termMonths),
+          description: formData.description,
+          isin: "",
+          minSubscription: formData.minSubscription,
           couponFrequency: formData.couponPaymentFrequency as any,
           currency: formData.currency,
           issuer: formData.issuer,
           sector: formData.sector,
-          country: formData.country,
           status: formData.status as any,
           riskCategory: formData.riskCategory as any,
         });
