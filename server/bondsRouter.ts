@@ -1,6 +1,8 @@
 import { router, adminProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { bonds } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const bondsRouter = router({
   // ==================== BOND CRUD ====================
@@ -81,7 +83,9 @@ export const bondsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      return db.deleteBond(input.id);
+      const database = await db.getDb();
+      if (!database) throw new Error('Database not available');
+      return await database.delete(bonds).where(eq(bonds.id, input.id));
     }),
   
   // ==================== CONTRACT TEMPLATES ====================

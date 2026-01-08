@@ -9,6 +9,7 @@ import Decimal from 'decimal.js';
  */
 export async function getActiveInterestParameters() {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const params = await db
     .select()
     .from(interestParameters)
@@ -27,6 +28,7 @@ export async function getActiveInterestParameters() {
  */
 export async function getInterestParametersById(id: number) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const params = await db
     .select()
     .from(interestParameters)
@@ -45,7 +47,8 @@ export async function getInterestParametersById(id: number) {
  */
 export async function getAllInterestParameters() {
   const db = await getDb();
-  return await db.select().from(interestParameters).orderBy(interestParameters.createdAt);
+  if (!db) return [];
+  return await db.select().from(interestParameters).orderBy(interestParameters.createdAt).execute();
 }
 
 /**
@@ -54,6 +57,7 @@ export async function getAllInterestParameters() {
  */
 export async function getEffectiveInterestParameters(date: Date) {
   const db = await getDb();
+  if (!db) return getActiveInterestParameters();
   const params = await db
     .select()
     .from(interestParameters)
@@ -103,6 +107,7 @@ export async function createInterestParameters(data: {
   effectiveUntil?: Date;
 }) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
 
   // If this is the new active parameter set, deactivate all others
   if (data.isActive) {
@@ -115,18 +120,18 @@ export async function createInterestParameters(data: {
   const result = await db.insert(interestParameters).values({
     name: data.name,
     description: data.description,
-    annualInterestRate: new Decimal(data.annualInterestRate),
-    defaultInterestRate: new Decimal(data.defaultInterestRate),
-    latePaymentInterestRate: new Decimal(data.latePaymentInterestRate || 0),
-    capitalGainsTax: new Decimal(data.capitalGainsTax),
-    solidaritySurcharge: new Decimal(data.solidaritySurcharge),
-    churchTax: new Decimal(data.churchTax || 0),
+    annualInterestRate: new Decimal(data.annualInterestRate).toString(),
+    defaultInterestRate: new Decimal(data.defaultInterestRate).toString(),
+    latePaymentInterestRate: new Decimal(data.latePaymentInterestRate || 0).toString(),
+    capitalGainsTax: new Decimal(data.capitalGainsTax).toString(),
+    solidaritySurcharge: new Decimal(data.solidaritySurcharge).toString(),
+    churchTax: new Decimal(data.churchTax || 0).toString(),
     noDefaultInterestForCompany: data.noDefaultInterestForCompany ?? true,
     enableInsolvencyHold: data.enableInsolvencyHold ?? true,
     enableCompoundInterest: data.enableCompoundInterest ?? false,
     roundInterestToCent: data.roundInterestToCent ?? true,
     daysPerYear: data.daysPerYear ?? 365,
-    minimumInterestAmount: new Decimal(data.minimumInterestAmount || 0.01),
+    minimumInterestAmount: new Decimal(data.minimumInterestAmount || 0.01).toString(),
     graceperiodDays: data.graceperiodDays ?? 0,
     defaultPaymentFrequency: data.defaultPaymentFrequency ?? 'monthly',
     monthlyPaymentDay: data.monthlyPaymentDay ?? 15,
@@ -135,9 +140,9 @@ export async function createInterestParameters(data: {
     version: data.version ?? 1,
     effectiveFrom: data.effectiveFrom ?? new Date(),
     effectiveUntil: data.effectiveUntil,
-  });
+  }).execute();
 
-  return result;
+  return result[0] || result;
 }
 
 /**
@@ -170,6 +175,7 @@ export async function updateInterestParameters(
   }>
 ) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
 
   // If activating this parameter set, deactivate all others
   if (data.isActive) {
@@ -225,6 +231,7 @@ export async function updateInterestParameters(
  */
 export async function deleteInterestParameters(id: number) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   return await db.delete(interestParameters).where(eq(interestParameters.id, id));
 }
 
@@ -233,6 +240,7 @@ export async function deleteInterestParameters(id: number) {
  */
 export async function activateInterestParameters(id: number) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
 
   // Deactivate all others
   await db
@@ -261,6 +269,7 @@ export async function createParameterVersion(
   }
 ) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
 
   // Get base parameters
   const baseParams = await getInterestParametersById(baseId);
@@ -285,11 +294,13 @@ export async function createParameterVersion(
  */
 export async function getParameterHistory(limit: number = 10) {
   const db = await getDb();
+  if (!db) return [];
   return await db
     .select()
     .from(interestParameters)
     .orderBy(interestParameters.createdAt)
-    .limit(limit);
+    .limit(limit)
+    .execute();
 }
 
 /**

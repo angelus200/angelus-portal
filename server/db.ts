@@ -857,9 +857,9 @@ export async function getAdminStats() {
   const database = await getDb();
   if (!database) throw new Error("Database not available");
   
-  const totalUsers = await database.query.users.findMany();
-  const totalBonds = await database.query.bonds.findMany();
-  const totalSubscriptions = await database.query.subscriptions.findMany();
+  const totalUsers = await database.select().from(users).execute();
+  const totalBonds = await database.select().from(bonds).execute();
+  const totalSubscriptions = await database.select().from(subscriptions).execute();
   
   return {
     totalInvestors: totalUsers.length,

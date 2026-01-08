@@ -25,7 +25,7 @@ import {
   addPaymentToHistory,
   getLegacyCustomerPaymentHistory,
   updatePaymentStatus,
-  getLegacyCustomersStatistics,
+  getLegacyCustomerStats,
   getPendingPaymentsForCustomer,
   getUpcomingPayments,
 } from './legacy-db';
@@ -385,7 +385,7 @@ export const legacyCustomerRouter = router({
      */
     getOverall: adminProcedure.query(async () => {
       try {
-        const stats = await getLegacyCustomersStatistics();
+        const stats = await getLegacyCustomerStats();
         return stats;
       } catch (error) {
         throw new Error(`Fehler beim Abrufen der Statistiken: ${error}`);

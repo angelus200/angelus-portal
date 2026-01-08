@@ -218,7 +218,7 @@ export const interestParametersRouter = router({
         name: z.string().min(3),
         effectiveFrom: z.date(),
         effectiveUntil: z.date().optional(),
-        changes: z.record(z.any()).optional(),
+        changes: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -261,7 +261,7 @@ export const interestParametersRouter = router({
    * Validate interest parameters
    */
   validate: protectedProcedure
-    .input(z.record(z.any()))
+    .input(z.record(z.string(), z.any()))
     .mutation(async ({ input }) => {
       try {
         const validation = validateInterestParameters(input);

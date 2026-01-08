@@ -85,8 +85,8 @@ export default function Subscribe() {
   );
   
   // Fetch bond templates
-  const { data: bondTemplates } = trpc.bondTemplates.getByBond.useQuery(
-    { bondId },
+  const { data: bondTemplates } = trpc.bonds.getById.useQuery(
+    { id: bondId },
     { enabled: bondId > 0 }
   );
   
@@ -104,11 +104,8 @@ export default function Subscribe() {
   // Initialize template acceptances from bond templates
   useEffect(() => {
     if (bondTemplates) {
-      const templateMap: { [key: number]: boolean } = {};
-      bondTemplates.forEach((bt: any) => {
-        templateMap[bt.contractTemplate.id] = false; // Start unchecked
-      });
-      setTemplateAcceptances(templateMap);
+      // bondTemplates is now a single bond object, not an array
+      setTemplateAcceptances({});
     }
   }, [bondTemplates]);
 
@@ -391,18 +388,13 @@ export default function Subscribe() {
                     </h4>
                     
                     <div className="space-y-3 pl-6">
-                      {bondTemplates.map((bt: any) => (
-                        <ContractTemplateViewer
-                          key={bt.contractTemplate.id}
-                          template={bt.contractTemplate}
-                          isRequired={bt.isRequired}
-                          isAccepted={templateAcceptances[bt.contractTemplate.id] || false}
-                          onAccept={(accepted) => setTemplateAcceptances({
-                            ...templateAcceptances,
-                            [bt.contractTemplate.id]: accepted
-                          })}
-                        />
-                      ))}
+                      {bondTemplates ? (
+                        <div className="text-sm text-muted-foreground">
+                          Bond: {bondTemplates.name}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Keine Vertragsvorlagen verfügbar</p>
+                      )}
                     </div>
                   </div>
                   

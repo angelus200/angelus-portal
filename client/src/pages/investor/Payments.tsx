@@ -66,7 +66,7 @@ export default function InvestorPaymentsPage() {
   const { data: paymentsData, isLoading } = useQuery({
     queryKey: ["payments.myPayments", statusFilter, page],
     queryFn: async () => {
-      const result = await trpc.payments.myPayments.query({
+      const result = await trpc.payments.myPayments.useQuery({
         limit: 50,
         offset: page * 50,
         status: statusFilter === "all" ? undefined : (statusFilter as any),
@@ -133,7 +133,7 @@ export default function InvestorPaymentsPage() {
   const { data: statsData } = useQuery({
     queryKey: ["payments.myPaymentStats"],
     queryFn: async () => {
-      return await trpc.payments.myPaymentStats.query();
+         return await trpc.payments.getStats.useQuery();
     },
   });
 

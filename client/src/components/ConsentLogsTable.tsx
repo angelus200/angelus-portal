@@ -32,7 +32,7 @@ export default function ConsentLogsTable({ bondId }: ConsentLogsTableProps) {
   );
 
   // Get user data for email lookup
-  const { data: users } = trpc.admin.listUsers.useQuery();
+  const { data: users } = trpc.admin.getUsers.useQuery();
 
   const consentTypes = [
     { value: "risk_disclosure", label: "Risikooffenlegung" },

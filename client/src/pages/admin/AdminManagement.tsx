@@ -253,7 +253,7 @@ function AdminManagementContent() {
                           size="sm"
                           onClick={() => {
                             if (confirm("Möchten Sie diesen Benutzer zum Admin befördern?")) {
-                              promoteToAdminMutation.mutate({ email: user.email });
+                              if (user.email) promoteToAdminMutation.mutate({ email: user.email });
                             }
                           }}
                           disabled={promoteToAdminMutation.isPending}

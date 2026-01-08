@@ -5,7 +5,7 @@ import {
   legacyCustomerInterestCalculations,
   legacyCustomerPaymentHistory,
 } from '../drizzle/legacy-schema';
-import { eq, and, gte, lte, desc, asc, like } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, asc, like, sql, or } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 /**
@@ -49,6 +49,7 @@ export async function createLegacyCustomer(data: {
   notes?: string;
 }) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(legacyCustomers).values({
     contractNumber: data.contractNumber,
     firstName: data.firstName,
@@ -91,16 +92,9 @@ export async function createLegacyCustomer(data: {
  */
 export async function getLegacyCustomerByContractNumber(contractNumber: string) {
   const db = await getDb();
-  const result = await db.query.legacyCustomers.findFirst({
-    where: eq(legacyCustomers.contractNumber, contractNumber),
-    with: {
-      documents: true,
-      interestCalculations: true,
-      paymentHistory: true,
-    },
-  });
-
-  return result;
+  if (!db) return null;
+  const result = await db.select().from(legacyCustomers).where(eq(legacyCustomers.contractNumber, contractNumber)).limit(1).execute();
+  return result.length > 0 ? result[0] : null;
 }
 
 /**
@@ -108,18 +102,9 @@ export async function getLegacyCustomerByContractNumber(contractNumber: string) 
  */
 export async function getLegacyCustomerById(id: number) {
   const db = await getDb();
-  const result = await db.query.legacyCustomers.findFirst({
-    where: eq(legacyCustomers.id, id),
-    with: {
-      documents: true,
-      interestCalculations: true,
-      paymentHistory: true,
-      user: true,
-      bond: true,
-    },
-  });
-
-  return result;
+  if (!db) return null;
+  const result = await db.select().from(legacyCustomers).where(eq(legacyCustomers.id, id)).limit(1).execute();
+  return result.length > 0 ? result[0] : null;
 }
 
 /**
@@ -131,24 +116,20 @@ export async function getAllLegacyCustomers(
   status?: 'pending' | 'active' | 'completed' | 'cancelled'
 ) {
   const db = await getDb();
+  if (!db) return { customers: [], total: 0, page, limit, pages: 0 };
   const offset = (page - 1) * limit;
 
   const whereCondition = status ? eq(legacyCustomers.status, status) : undefined;
 
-  const customers = await db.query.legacyCustomers.findMany({
-    where: whereCondition,
-    limit,
-    offset,
-    orderBy: desc(legacyCustomers.createdAt),
-    with: {
-      documents: {
-        columns: { id: true, documentType: true, fileName: true, uploadedAt: true },
-      },
-    },
-  });
+  const customers = await db.select().from(legacyCustomers)
+    .where(whereCondition)
+    .orderBy(desc(legacyCustomers.createdAt))
+    .limit(limit)
+    .offset(offset)
+    .execute();
 
   const countResult = await db
-    .select({ count: legacyCustomers.id })
+    .select({ count: sql<number>`COUNT(*)`.as('count') })
     .from(legacyCustomers)
     .where(whereCondition);
 
@@ -168,19 +149,18 @@ export async function getAllLegacyCustomers(
  */
 export async function searchLegacyCustomers(query: string, limit: number = 20) {
   const db = await getDb();
+  if (!db) return [];
   const searchTerm = `%${query}%`;
 
-  const results = await db.query.legacyCustomers.findMany({
-    where: (table) => ({
-      [Symbol.for('or')]: [
-        like(table.firstName, searchTerm),
-        like(table.lastName, searchTerm),
-        like(table.email, searchTerm),
-        like(table.contractNumber, searchTerm),
-      ],
-    }),
-    limit,
-  });
+  const results = await db.select().from(legacyCustomers)
+    .where(or(
+      like(legacyCustomers.firstName, searchTerm),
+      like(legacyCustomers.lastName, searchTerm),
+      like(legacyCustomers.email, searchTerm),
+      like(legacyCustomers.contractNumber, searchTerm)
+    ))
+    .limit(limit)
+    .execute();
 
   return results;
 }
@@ -221,6 +201,7 @@ export async function updateLegacyCustomer(
     updateData.annualInterestRate = new Decimal(data.annualInterestRate).toString();
   }
 
+  if (!db) throw new Error('Database not available');
   const result = await db
     .update(legacyCustomers)
     .set({
@@ -237,6 +218,7 @@ export async function updateLegacyCustomer(
  */
 export async function deleteLegacyCustomer(id: number) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   // Delete related records first
   await db.delete(legacyCustomerPaymentHistory).where(eq(legacyCustomerPaymentHistory.legacyCustomerId, id));
   await db.delete(legacyCustomerInterestCalculations).where(eq(legacyCustomerInterestCalculations.legacyCustomerId, id));
@@ -274,6 +256,7 @@ export async function addLegacyCustomerDocument(data: {
   uploadedBy?: number;
 }) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(legacyCustomerDocuments).values({
     legacyCustomerId: data.legacyCustomerId,
     documentType: data.documentType,
@@ -294,11 +277,11 @@ export async function addLegacyCustomerDocument(data: {
  */
 export async function getLegacyCustomerDocuments(legacyCustomerId: number) {
   const db = await getDb();
-  const documents = await db.query.legacyCustomerDocuments.findMany({
-    where: eq(legacyCustomerDocuments.legacyCustomerId, legacyCustomerId),
-    orderBy: desc(legacyCustomerDocuments.uploadedAt),
-  });
-
+  if (!db) return [];
+  const documents = await db.select().from(legacyCustomerDocuments)
+    .where(eq(legacyCustomerDocuments.legacyCustomerId, legacyCustomerId))
+    .orderBy(desc(legacyCustomerDocuments.uploadedAt))
+    .execute();
   return documents;
 }
 
@@ -307,8 +290,8 @@ export async function getLegacyCustomerDocuments(legacyCustomerId: number) {
  */
 export async function deleteLegacyCustomerDocument(documentId: number) {
   const db = await getDb();
+  if (!db) return;
   const result = await db.delete(legacyCustomerDocuments).where(eq(legacyCustomerDocuments.id, documentId));
-
   return result;
 }
 
@@ -335,6 +318,7 @@ export async function createInterestCalculation(data: {
   paymentDate: Date;
 }) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(legacyCustomerInterestCalculations).values({
     legacyCustomerId: data.legacyCustomerId,
     calculationYear: data.calculationYear,
@@ -363,11 +347,11 @@ export async function createInterestCalculation(data: {
  */
 export async function getLegacyCustomerInterestCalculations(legacyCustomerId: number) {
   const db = await getDb();
-  const calculations = await db.query.legacyCustomerInterestCalculations.findMany({
-    where: eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
-    orderBy: asc(legacyCustomerInterestCalculations.paymentDate),
-  });
-
+  if (!db) return [];
+  const calculations = await db.select().from(legacyCustomerInterestCalculations)
+    .where(eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId))
+    .orderBy(asc(legacyCustomerInterestCalculations.paymentDate))
+    .execute();
   return calculations;
 }
 
@@ -380,15 +364,15 @@ export async function getInterestCalculationsByDateRange(
   endDate: Date
 ) {
   const db = await getDb();
-  const calculations = await db.query.legacyCustomerInterestCalculations.findMany({
-    where: and(
+  if (!db) return [];
+  const calculations = await db.select().from(legacyCustomerInterestCalculations)
+    .where(and(
       eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
       gte(legacyCustomerInterestCalculations.paymentDate, startDate),
       lte(legacyCustomerInterestCalculations.paymentDate, endDate)
-    ),
-    orderBy: asc(legacyCustomerInterestCalculations.paymentDate),
-  });
-
+    ))
+    .orderBy(asc(legacyCustomerInterestCalculations.paymentDate))
+    .execute();
   return calculations;
 }
 
@@ -411,6 +395,7 @@ export async function addPaymentToHistory(data: {
   notes?: string;
 }) {
   const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(legacyCustomerPaymentHistory).values({
     legacyCustomerId: data.legacyCustomerId,
     interestCalculationId: data.interestCalculationId,
@@ -431,11 +416,8 @@ export async function addPaymentToHistory(data: {
  */
 export async function getLegacyCustomerPaymentHistory(legacyCustomerId: number) {
   const db = await getDb();
-  const history = await db.query.legacyCustomerPaymentHistory.findMany({
-    where: eq(legacyCustomerPaymentHistory.legacyCustomerId, legacyCustomerId),
-    orderBy: desc(legacyCustomerPaymentHistory.paymentDate),
-  });
-
+  if (!db) return [];
+  const history = await db.select().from(legacyCustomerPaymentHistory).where(eq(legacyCustomerPaymentHistory.legacyCustomerId, legacyCustomerId)).orderBy(desc(legacyCustomerPaymentHistory.paymentDate)).execute();
   return history;
 }
 
@@ -447,6 +429,7 @@ export async function updatePaymentStatus(
   status: 'pending' | 'confirmed' | 'failed' | 'cancelled'
 ) {
   const db = await getDb();
+  if (!db) return;
   const result = await db
     .update(legacyCustomerPaymentHistory)
     .set({
@@ -464,9 +447,8 @@ export async function updatePaymentStatus(
  */
 export async function getTotalPaymentsByType(legacyCustomerId: number) {
   const db = await getDb();
-  const payments = await db.query.legacyCustomerPaymentHistory.findMany({
-    where: eq(legacyCustomerPaymentHistory.legacyCustomerId, legacyCustomerId),
-  });
+  if (!db) return { initialInvestment: new Decimal(0), interestPayment: new Decimal(0), refund: new Decimal(0), adjustment: new Decimal(0) };
+  const payments = await db.select().from(legacyCustomerPaymentHistory).where(eq(legacyCustomerPaymentHistory.legacyCustomerId, legacyCustomerId)).execute();
 
   const totals = {
     initialInvestment: new Decimal(0),
@@ -475,7 +457,7 @@ export async function getTotalPaymentsByType(legacyCustomerId: number) {
     adjustment: new Decimal(0),
   };
 
-  payments.forEach((payment) => {
+  payments.forEach((payment: any) => {
     const amount = new Decimal(payment.amount);
     switch (payment.paymentType) {
       case 'initial_investment':
@@ -503,21 +485,22 @@ export async function getTotalPaymentsByType(legacyCustomerId: number) {
 /**
  * Get legacy customers statistics
  */
-export async function getLegacyCustomersStatistics() {
+export async function getLegacyCustomerStats() {
   const db = await getDb();
-  const allCustomers = await db.query.legacyCustomers.findMany();
+  if (!db) return { total: 0, pending: 0, active: 0, completed: 0, cancelled: 0, totalInvestment: new Decimal(0), totalInterestRate: new Decimal(0) };
+  const allCustomers = await db.select().from(legacyCustomers).execute();
 
   const stats = {
     total: allCustomers.length,
-    pending: allCustomers.filter((c) => c.status === 'pending').length,
-    active: allCustomers.filter((c) => c.status === 'active').length,
-    completed: allCustomers.filter((c) => c.status === 'completed').length,
-    cancelled: allCustomers.filter((c) => c.status === 'cancelled').length,
+    pending: allCustomers.filter((c: any) => c.status === 'pending').length,
+    active: allCustomers.filter((c: any) => c.status === 'active').length,
+    completed: allCustomers.filter((c: any) => c.status === 'completed').length,
+    cancelled: allCustomers.filter((c: any) => c.status === 'cancelled').length,
     totalInvestment: new Decimal(0),
     totalInterestRate: new Decimal(0),
   };
 
-  allCustomers.forEach((customer) => {
+  allCustomers.forEach((customer: any) => {
     if (customer.investmentAmount) {
       stats.totalInvestment = stats.totalInvestment.plus(new Decimal(customer.investmentAmount));
     }
@@ -532,14 +515,23 @@ export async function getLegacyCustomersStatistics() {
 export async function getPendingPaymentsForCustomer(legacyCustomerId: number) {
   const db = await getDb();
   if (!db) return [];
-  const calculations = await db.query.legacyCustomerInterestCalculations.findMany({
-    where: and(
-      eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
-      eq(legacyCustomerInterestCalculations.status, 'pending')
-    ),
-    orderBy: asc(legacyCustomerInterestCalculations.paymentDate),
-  });
+  const calculations = await db.select().from(legacyCustomerInterestCalculations).where(and(
+    eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
+    eq(legacyCustomerInterestCalculations.status, 'pending')
+  )).orderBy(asc(legacyCustomerInterestCalculations.paymentDate)).execute();
+  return calculations;
+}
 
+/**
+ * Get pending payments for legacy customer (old implementation)
+ */
+export async function getPendingPaymentsForCustomer_old(legacyCustomerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const calculations = await db.select().from(legacyCustomerInterestCalculations).where(and(
+    eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
+    eq(legacyCustomerInterestCalculations.status, 'pending')
+  )).orderBy(asc(legacyCustomerInterestCalculations.paymentDate)).execute();
   return calculations;
 }
 
@@ -552,15 +544,29 @@ export async function getUpcomingPayments(legacyCustomerId: number, daysAhead: n
   const today = new Date();
   const futureDate = new Date(today.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
-  const calculations = await db.query.legacyCustomerInterestCalculations.findMany({
-    where: and(
-      eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
-      eq(legacyCustomerInterestCalculations.status, 'pending'),
-      gte(legacyCustomerInterestCalculations.paymentDate, today),
-      lte(legacyCustomerInterestCalculations.paymentDate, futureDate)
-    ),
-    orderBy: asc(legacyCustomerInterestCalculations.paymentDate),
-  });
+  const calculations = await db.select().from(legacyCustomerInterestCalculations).where(and(
+    eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
+    eq(legacyCustomerInterestCalculations.status, 'pending'),
+    gte(legacyCustomerInterestCalculations.paymentDate, today),
+    lte(legacyCustomerInterestCalculations.paymentDate, futureDate)
+  )).orderBy(asc(legacyCustomerInterestCalculations.paymentDate)).execute();
+  return calculations;
+}
 
+/**
+ * Get upcoming payments (old implementation)
+ */
+export async function getUpcomingPayments_old(legacyCustomerId: number, daysAhead: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const today = new Date();
+  const futureDate = new Date(today.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+  const calculations = await db.select().from(legacyCustomerInterestCalculations).where(and(
+    eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
+    eq(legacyCustomerInterestCalculations.status, 'pending'),
+    gte(legacyCustomerInterestCalculations.paymentDate, today),
+    lte(legacyCustomerInterestCalculations.paymentDate, futureDate)
+  )).orderBy(asc(legacyCustomerInterestCalculations.paymentDate)).execute();
   return calculations;
 }

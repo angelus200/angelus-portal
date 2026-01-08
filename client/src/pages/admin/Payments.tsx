@@ -52,7 +52,7 @@ export default function PaymentsPage() {
   const { data: paymentsData, isLoading, refetch } = useQuery({
     queryKey: ["admin.getAllPayments", statusFilter, page],
     queryFn: async () => {
-      const result = await trpc.admin.getAllPayments.query({
+      const result = await trpc.admin.getAllPayments.useQuery({
         limit: 50,
         offset: page * 50,
         status: statusFilter === "all" ? undefined : (statusFilter as any),
@@ -67,14 +67,14 @@ export default function PaymentsPage() {
   const { data: statsData } = useQuery({
     queryKey: ["admin.getPaymentStats"],
     queryFn: async () => {
-      return await trpc.admin.getPaymentStats.query();
+      return await trpc.admin.getPaymentStats.useQuery();
     },
   });
 
   // Refund mutation
   const refundMutation = useMutation({
     mutationFn: async (variables: { subscriptionId: number; reason: string }) => {
-      return await trpc.admin.refundPayment.mutate(variables);
+      return await trpc.admin.refundPayment.useMutation().mutate(variables);
     },
     onSuccess: () => {
       refetch();

@@ -51,7 +51,9 @@ export async function saveInterestCalculation(
     reference?: string;
   }
 ): Promise<number> {
-  const result = await db.insert(interestCalculations).values({
+  const database = await db.getDb();
+  if (!database) throw new Error('Database not available');
+  const result = await database.insert(interestCalculations).values({
     userId,
     principal: input.principal as any,
     annualRate: input.annualRate as any,
@@ -81,14 +83,16 @@ export async function saveInterestCalculation(
     reference: input.reference,
   });
 
-  return result.insertId;
+  return result[0].insertId;
 }
 
 /**
  * Get an interest calculation by ID
  */
 export async function getInterestCalculationById(id: number, userId: number) {
-  const result = await db
+  const database = await db.getDb();
+  if (!database) return null;
+  const result = await database
     .select()
     .from(interestCalculations)
     .where(and(eq(interestCalculations.id, id), eq(interestCalculations.userId, userId)))
@@ -113,7 +117,9 @@ export async function listUserInterestCalculations(
   limit: number = 50,
   offset: number = 0
 ) {
-  const results = await db
+  const database = await db.getDb();
+  if (!database) return [];
+  const results = await database
     .select()
     .from(interestCalculations)
     .where(eq(interestCalculations.userId, userId))
@@ -145,7 +151,9 @@ export async function savePaymentSchedule(
     notes?: string;
   }
 ): Promise<number> {
-  const result = await db.insert(paymentSchedules).values({
+  const database = await db.getDb();
+  if (!database) throw new Error('Database not available');
+  const result = await database.insert(paymentSchedules).values({
     userId,
     interestCalculationId,
     frequency: input.frequency,
@@ -159,14 +167,16 @@ export async function savePaymentSchedule(
     notes: input.notes,
   });
 
-  return result.insertId;
+  return result[0].insertId;
 }
 
 /**
  * Get a payment schedule by ID
  */
 export async function getPaymentScheduleById(id: number, userId: number) {
-  const result = await db
+  const database = await db.getDb();
+  if (!database) return null;
+  const result = await database
     .select()
     .from(paymentSchedules)
     .where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.userId, userId)))
@@ -191,7 +201,9 @@ export async function listUserPaymentSchedules(
   limit: number = 50,
   offset: number = 0
 ) {
-  const results = await db
+  const database = await db.getDb();
+  if (!database) return [];
+  const results = await database
     .select()
     .from(paymentSchedules)
     .where(eq(paymentSchedules.userId, userId))
@@ -222,6 +234,8 @@ export async function savePaymentScheduleItems(
     totalPayment: string;
   }>
 ): Promise<void> {
+  const database = await db.getDb();
+  if (!database) throw new Error('Database not available');
   const values = items.map((item) => ({
     userId,
     paymentScheduleId,
@@ -236,14 +250,16 @@ export async function savePaymentScheduleItems(
     status: 'pending' as const,
   }));
 
-  await db.insert(paymentScheduleItems).values(values);
+  await database.insert(paymentScheduleItems).values(values);
 }
 
 /**
  * Get payment schedule items for a schedule
  */
 export async function getPaymentScheduleItems(paymentScheduleId: number, userId: number) {
-  const results = await db
+  const database = await db.getDb();
+  if (!database) return [];
+  const results = await database
     .select()
     .from(paymentScheduleItems)
     .where(
@@ -265,7 +281,9 @@ export async function updatePaymentScheduleItemStatus(
   status: 'pending' | 'paid' | 'overdue' | 'cancelled',
   userId: number
 ): Promise<boolean> {
-  const result = await db
+  const database = await db.getDb();
+  if (!database) return false;
+  const result = await database
     .update(paymentScheduleItems)
     .set({
       status,
@@ -275,14 +293,16 @@ export async function updatePaymentScheduleItemStatus(
       and(eq(paymentScheduleItems.id, itemId), eq(paymentScheduleItems.userId, userId))
     );
 
-  return result.rowsAffected > 0;
+  return (result as any).changes > 0 || (result as any).rowsAffected > 0;
 }
 
 /**
  * Get statistics for a user's interest calculations
  */
 export async function getUserInterestCalculationStats(userId: number) {
-  const calculations = await db
+  const database = await db.getDb();
+  if (!database) return { totalCalculations: 0, totalInterest: '0', totalTaxes: '0', totalPayable: '0', averageRate: '0' };
+  const calculations = await database
     .select()
     .from(interestCalculations)
     .where(eq(interestCalculations.userId, userId));
@@ -319,7 +339,7 @@ export async function getUserInterestCalculationStats(userId: number) {
 
   return {
     totalCalculations: calculations.length,
-    totalInterest: totalInterest.toString(),
+    totalInterest: result.toString(),
     totalTaxes: totalTaxes.toString(),
     totalPayable: totalPayable.toString(),
     averageRate: averageRate.toString(),
@@ -330,6 +350,9 @@ export async function getUserInterestCalculationStats(userId: number) {
  * Delete an interest calculation and its associated payment schedules
  */
 export async function deleteInterestCalculation(id: number, userId: number): Promise<boolean> {
+  const database = await db.getDb();
+  if (!database) return false;
+  
   // First, get the calculation to verify ownership
   const calc = await getInterestCalculationById(id, userId);
   if (!calc) {
@@ -337,17 +360,17 @@ export async function deleteInterestCalculation(id: number, userId: number): Pro
   }
 
   // Delete payment schedule items
-  await db
+  await database
     .delete(paymentScheduleItems)
     .where(eq(paymentScheduleItems.interestCalculationId, id));
 
   // Delete payment schedules
-  await db
+  await database
     .delete(paymentSchedules)
     .where(eq(paymentSchedules.interestCalculationId, id));
 
   // Delete interest calculation
-  await db
+  await database
     .delete(interestCalculations)
     .where(eq(interestCalculations.id, id));
 

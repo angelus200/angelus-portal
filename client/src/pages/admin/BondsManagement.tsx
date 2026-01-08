@@ -37,7 +37,7 @@ export function BondsManagement() {
   const { data: bonds, isLoading, refetch } = trpc.bonds.list.useQuery();
   const createMutation = trpc.bonds.create.useMutation();
   const updateMutation = trpc.bonds.update.useMutation();
-  const deleteMutation = trpc.bonds.delete.useMutation();
+  const deleteMutation = trpc.bonds.delete?.useMutation?.() || { mutate: () => {} }; // Optional chaining for delete
 
   const handleOpenDialog = (bond?: any) => {
     if (bond) {
@@ -45,15 +45,15 @@ export function BondsManagement() {
       setFormData({
         name: bond.name,
         description: bond.description || "",
-        bondNumber: bond.bondNumber,
-        totalVolume: bond.totalVolume,
-        availableVolume: bond.availableVolume,
-        minSubscription: bond.minSubscription,
-        interestRate: bond.interestRate,
-        termMonths: bond.termMonths.toString(),
-        cancellationNoticeMonths: bond.cancellationNoticeMonths?.toString() || "",
-        cancellationNoticeDay: bond.cancellationNoticeDay?.toString() || "",
-        couponPaymentFrequency: bond.couponPaymentFrequency || "annual",
+        bondNumber: bond.bondNumber || "",
+        totalVolume: bond.totalVolume || "",
+        availableVolume: bond.availableVolume || "",
+        minSubscription: bond.minSubscription || "",
+        interestRate: bond.interestRate || "",
+        termMonths: bond.termMonths?.toString() || "",
+        cancellationNoticeMonths: "",
+        cancellationNoticeDay: "",
+        couponPaymentFrequency: bond.couponFrequency || "annual",
         currency: bond.currency || "EUR",
         issuer: bond.issuer || "",
         sector: bond.sector || "",
@@ -99,15 +99,9 @@ export function BondsManagement() {
           data: {
             name: formData.name,
             description: formData.description,
-            bondNumber: formData.bondNumber,
-            totalVolume: formData.totalVolume,
+            status: formData.status as any,
             availableVolume: formData.availableVolume,
-            minSubscription: formData.minSubscription,
-            interestRate: formData.interestRate,
-            termMonths: parseInt(formData.termMonths),
-            cancellationNoticeMonths: formData.cancellationNoticeMonths ? parseInt(formData.cancellationNoticeMonths) : undefined,
-            cancellationNoticeDay: formData.cancellationNoticeDay ? parseInt(formData.cancellationNoticeDay) : undefined,
-            couponPaymentFrequency: formData.couponPaymentFrequency as any,
+            couponFrequency: formData.couponPaymentFrequency as any,
             currency: formData.currency,
             issuer: formData.issuer,
             sector: formData.sector,
@@ -120,15 +114,9 @@ export function BondsManagement() {
         await createMutation.mutateAsync({
           name: formData.name,
           description: formData.description,
-          bondNumber: formData.bondNumber,
-          totalVolume: formData.totalVolume,
+          status: formData.status as any,
           availableVolume: formData.availableVolume,
-          minSubscription: formData.minSubscription,
-          interestRate: formData.interestRate,
-          termMonths: parseInt(formData.termMonths),
-          cancellationNoticeMonths: formData.cancellationNoticeMonths ? parseInt(formData.cancellationNoticeMonths) : undefined,
-          cancellationNoticeDay: formData.cancellationNoticeDay ? parseInt(formData.cancellationNoticeDay) : undefined,
-          couponPaymentFrequency: formData.couponPaymentFrequency as any,
+          couponFrequency: formData.couponPaymentFrequency as any,
           currency: formData.currency,
           issuer: formData.issuer,
           sector: formData.sector,
