@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { handleStripeWebhook } from "../webhooks/stripe";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -31,10 +32,17 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
+  // Note: express.raw() for webhook is registered before express.json()
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Stripe webhook - must be before express.json() to access raw body
+  app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+    await handleStripeWebhook(req, res);
+  });
+  
   // tRPC API
   app.use(
     "/api/trpc",

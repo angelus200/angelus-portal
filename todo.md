@@ -262,3 +262,14 @@
 - [x] Transaktions-Historie mit Filterung
 - [x] Route /admin/wallets und Navigation integrieren
 - [x] Vitest Tests für Wallet-Management Prozeduren
+
+
+## Stripe Webhook Integration (IN PROGRESS)
+- [x] Stripe Webhook Handler implementieren (payment_intent.succeeded, payment_intent.payment_failed)
+- [x] Webhook-Sicherheit: Signature Verification implementieren
+- [x] Webhook-Fehlerbehandlung und Logging
+- [x] Vitest Tests für Webhook Handler (13/13 bestanden)
+- [ ] tRPC-Prozeduren für Payment-Abfragen hinzufügen
+- [ ] Admin Payment Dashboard Route und Navigation integrieren
+- [ ] Investor Payment History Seite erstellen (/investor/payments)
+- [ ] Rechnungs-Download-Funktion implementieren

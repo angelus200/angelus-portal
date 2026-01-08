@@ -19,7 +19,6 @@ import {
   bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { desc, eq } from 'drizzle-orm';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
