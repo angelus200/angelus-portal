@@ -34,7 +34,8 @@ import {
   Newspaper,
   Settings,
   Home,
-  CheckSquare
+  CheckSquare,
+  CreditCard
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -54,6 +55,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Settings,
   Home,
   CheckSquare,
+  CreditCard,
 };
 
 // Default investor menu items
@@ -70,6 +72,7 @@ const adminMenuItems = [
   { icon: "FileText", label: "Produkte & Verträge", path: "/admin/products-and-contracts" },
   { icon: "TrendingUp", label: "Beteiligungen", path: "/admin/bonds" },
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
+  { icon: "CreditCard", label: "Zahlungen", path: "/admin/payments" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },

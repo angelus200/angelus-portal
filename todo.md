@@ -272,6 +272,9 @@
 - [x] tRPC-Prozeduren für Payment-Abfragen hinzufügen (6 Prozeduren)
 - [x] Admin Payment Dashboard mit echten Daten verbunden
 - [x] Vitest Tests für Payment tRPC-Prozeduren (17/17 bestanden)
-- [ ] Admin Payment Dashboard Route und Navigation integrieren
+- [x] Admin Payment Dashboard Route und Navigation integrieren
+  - [x] Route /admin/payments in App.tsx hinzufügen
+  - [x] Navigation um Payments-Menüpunkt erweitern
+  - [x] Payments-Icon und Link in Sidebar hinzufügen
 - [ ] Investor Payment History Seite erstellen (/investor/payments)
 - [ ] Rechnungs-Download-Funktion implementieren
