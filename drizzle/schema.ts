@@ -588,3 +588,7 @@ export const consentLogs = mysqlTable("consent_logs", {
 export type ConsentLog = typeof consentLogs.$inferSelect;
 export type InsertConsentLog = typeof consentLogs.$inferInsert;
 
+
+
+// Import legacy customer schema
+export * from './legacy-schema';

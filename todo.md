@@ -287,3 +287,19 @@
   - [x] Betrag-Filter (min/max)
   - [x] Suchfunktion nach Bond-Namen
 - [ ] Rechnungs-Download-Funktion implementieren
+
+
+## Bestandskunden Onboarding (IN PROGRESS)
+- [x] Datenbankschema für legacy_customers erstellen (4 Tabellen)
+- [x] DB-Funktionen für Kundenmanagement implementieren (25 Funktionen)
+- [x] Admin Import-Wizard implementieren (4 Schritte)
+  - [x] Schritt 1: Kundendaten-Formular
+  - [x] Schritt 2: Bankverbindung & Anleihedaten
+  - [x] Schritt 3: Vertragsdaten
+  - [x] Schritt 4: Dokumenten-Upload
+- [x] tRPC-Prozeduren für Legacy-Customer-Management (11 Prozeduren)
+- [x] Route und Navigation integrieren
+- [ ] Zinsberechnung-Engine implementieren
+- [ ] Kundenportal-Seiten für Bestandskunden
+- [ ] Email-Automatisierung für Bestandskunden
+- [ ] PDF-Generierung (Hochrechnung, Zahlungsplan)

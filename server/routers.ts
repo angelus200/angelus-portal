@@ -10,6 +10,7 @@ import { SignJWT } from "jose";
 import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
+import { legacyCustomerRouter } from "./legacyCustomerRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -22,6 +23,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
+  legacyCustomer: legacyCustomerRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
