@@ -22,6 +22,7 @@ import InvestorWallet from "./pages/investor/Wallet";
 import BondDetails from "./pages/investor/BondDetails";
 import RiskProfile from "./pages/investor/RiskProfile";
 import Subscribe from "./pages/investor/Subscribe";
+import InvestorPayments from "./pages/investor/Payments";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/investor/bond/:id" component={BondDetails} />
       <Route path="/investor/risk-profile" component={RiskProfile} />
       <Route path="/investor/subscribe/:id" component={Subscribe} />
+      <Route path="/investor/payments" component={InvestorPayments} />
       
       {/* Admin routes */}
       <Route path="/admin" component={AdminDashboard} />

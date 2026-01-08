@@ -1128,6 +1128,65 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    // Investor payment history
+    myPayments: protectedProcedure
+      .input(z.object({
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+        status: z.enum(['pending', 'processing', 'completed', 'failed', 'refunded']).optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const payments = await db.getInvestorPayments(ctx.user.id);
+        
+        let filtered = payments;
+        if (input.status) {
+          filtered = payments.filter(s => s.paymentStatus === input.status);
+        }
+
+        const paginated = filtered.slice(input.offset, input.offset + input.limit);
+
+        const enriched = await Promise.all(
+          paginated.map(async (subscription) => {
+            const bond = await db.getBondById(subscription.bondId);
+            return { ...subscription, bond };
+          })
+        );
+
+        return { payments: enriched, total: filtered.length, limit: input.limit, offset: input.offset };
+      }),
+
+    myPaymentDetail: protectedProcedure
+      .input(z.object({ subscriptionId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const subscription = await db.getSubscriptionWithPayment(input.subscriptionId);
+        
+        if (!subscription) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Zahlung nicht gefunden' });
+        }
+
+        if (subscription.userId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Zugriff verweigert' });
+        }
+
+        const bond = await db.getBondById(subscription.bondId);
+        return { ...subscription, bond };
+      }),
+
+    myPaymentStats: protectedProcedure.query(async ({ ctx }) => {
+      const payments = await db.getInvestorPayments(ctx.user.id);
+      
+      return {
+        total: payments.length,
+        completed: payments.filter(s => s.paymentStatus === 'completed').length,
+        failed: payments.filter(s => s.paymentStatus === 'failed').length,
+        refunded: payments.filter(s => s.paymentStatus === 'refunded').length,
+        processing: payments.filter(s => s.paymentStatus === 'processing').length,
+        pending: payments.filter(s => s.paymentStatus === 'pending').length,
+        completedAmount: payments.filter(s => s.paymentStatus === 'completed').reduce((sum, s) => sum + parseFloat(s.amount), 0),
+        refundedAmount: payments.filter(s => s.paymentStatus === 'refunded').reduce((sum, s) => sum + parseFloat(s.amount), 0),
+      };
+    }),
   }),
 
   // ==================== NEWS ROUTES ====================

@@ -276,5 +276,9 @@
   - [x] Route /admin/payments in App.tsx hinzufügen
   - [x] Navigation um Payments-Menüpunkt erweitern
   - [x] Payments-Icon und Link in Sidebar hinzufügen
-- [ ] Investor Payment History Seite erstellen (/investor/payments)
+- [x] Investor Payment History Seite erstellen (/investor/payments)
+  - [x] tRPC-Prozedur für Investor Payments implementieren (3 Prozeduren)
+  - [x] Investor Payment History Komponente erstellen
+  - [x] Vitest Tests schreiben (21/21 bestanden)
+  - [x] Route und Navigation integrieren
 - [ ] Rechnungs-Download-Funktion implementieren

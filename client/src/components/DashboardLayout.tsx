@@ -62,6 +62,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const investorMenuItems = [
   { icon: "LayoutDashboard", label: "Dashboard", path: "/investor" },
   { icon: "TrendingUp", label: "Meine Investments", path: "/investor/investments" },
+  { icon: "CreditCard", label: "Zahlungen", path: "/investor/payments" },
   { icon: "Wallet", label: "Wallet", path: "/investor/wallet" },
   { icon: "Shield", label: "Risikoprofil", path: "/investor/risk-profile" },
 ];
