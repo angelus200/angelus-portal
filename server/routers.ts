@@ -12,6 +12,7 @@ import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { stripeRouter } from "./stripeRouter";
 import { adminPaymentRouter } from "./adminPaymentRouter";
+import { stripeAdvancedRouter } from "./stripeAdvancedRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -25,6 +26,7 @@ export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
   stripe: stripeRouter,
+  stripeAdvanced: stripeAdvancedRouter,
   adminPayment: adminPaymentRouter,
   
   auth: router({

@@ -284,3 +284,11 @@
 - [x] Stripe Webhook Endpoint registriert (/api/stripe/webhook)
 - [x] Tests für Stripe-Integration (8 Tests bestanden)
 - [ ] TypeScript Fehler in db.ts beheben (metadata field) - nicht kritisch
+
+## Firmen-Zahlungen & SEPA-Integration
+- [x] Datenbankschema für Firmendetails bereits vorhanden (isCompany, companyName, companyTaxNumber, bankIban, bankBic)
+- [x] tRPC-Prozeduren für Firmen-Zahlungen (createCompanyPayment, createSepaPayment, getSepaStatus)
+- [x] Payment-Formular mit Privatperson/Firma Unterscheidung (/investor/payment-advanced)
+- [x] SEPA-Lastschrift als Zahlungsmethode implementiert
+- [x] Firmendetails in Stripe Customer speichern (metadata)
+- [x] Tests für Firmen-Zahlungen (12 Tests bestanden)
