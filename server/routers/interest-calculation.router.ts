@@ -13,8 +13,31 @@ import {
   calculateCompleteInterest,
   validateCompleteInterestCalculation,
 } from '../interest-calculation';
+import {
+  saveInterestCalculation,
+  getInterestCalculationById,
+  listUserInterestCalculations,
+  savePaymentSchedule,
+  getPaymentScheduleById,
+  listUserPaymentSchedules,
+  savePaymentScheduleItems,
+  getPaymentScheduleItems,
+  getUserInterestCalculationStats,
+  deleteInterestCalculation,
+} from '../db-interest-calculations';
 
 const router = Router();
+
+// Middleware to extract user ID from request (assumes authentication middleware sets ctx.user)
+function getUserId(req: Request): number {
+  // For now, return a test user ID (1) - in production, this should come from authentication
+  // const user = (req as any).user;
+  // if (!user || !user.id) {
+  //   throw new Error('User not authenticated');
+  // }
+  // return user.id;
+  return 1; // Test user ID
+}
 
 /**
  * Request Body für Zinsberechnung
@@ -291,6 +314,281 @@ router.post('/payment-schedule', (req: Request<{}, {}, InterestCalculationReques
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unbekannter Fehler',
+    });
+  }
+});
+
+/**
+ * POST /api/interest-calculation/save
+ * 
+ * Speichert eine Zinsberechnung in der Datenbank
+ */
+router.post('/interest-calculation/save', async (req: Request<{}, {}, InterestCalculationRequest>, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    
+    // Berechne Zinsberechnung
+    const { principal, annualRate, subscriptionAmount, paidAmount, startDate, periods, paymentFrequency } = req.body;
+    
+    const result = calculateCompleteInterest({
+      principal,
+      annualRate,
+      subscriptionAmount,
+      paidAmount,
+      startDate: new Date(startDate),
+      periods,
+      kestRate: req.body.kestRate ?? 25,
+      solzRate: req.body.solzRate ?? 5.5,
+      churchTaxRate: req.body.churchTaxRate ?? 0,
+      defaultRate: req.body.defaultRate ?? 17,
+      isCompanyLiability: req.body.isCompanyLiability ?? false,
+      enableInsolvencyHold: req.body.enableInsolvencyHold ?? false,
+      paymentFrequency,
+    });
+    
+    // Speichere Zinsberechnung
+    const calculationId = await saveInterestCalculation(userId, {
+      principal: principal.toString(),
+      annualRate: annualRate.toString(),
+      subscriptionAmount: subscriptionAmount.toString(),
+      paidAmount: paidAmount.toString(),
+      startDate,
+      periods,
+      kestRate: (req.body.kestRate ?? 25).toString(),
+      solzRate: (req.body.solzRate ?? 5.5).toString(),
+      churchTaxRate: (req.body.churchTaxRate ?? 0).toString(),
+      defaultRate: (req.body.defaultRate ?? 17).toString(),
+      isCompanyLiability: req.body.isCompanyLiability ?? false,
+      enableInsolvencyHold: req.body.enableInsolvencyHold ?? false,
+      paymentFrequency,
+      basicInterest: result.basicInterest.toString(),
+      kest: result.kest.toString(),
+      solz: result.solz.toString(),
+      churchTax: result.churchTax.toString(),
+      totalTaxes: result.totalTaxes.toString(),
+      defaultInterest: result.defaultInterest.toString(),
+      appliedDefaultInterest: result.appliedDefaultInterest.toString(),
+      totalInterestAndTaxes: result.totalInterestAndTaxes.toString(),
+      netInterest: result.netInterest.toString(),
+      totalPayable: result.totalPayable.toString(),
+      businessRulesApplied: result.businessRulesApplied,
+      description: req.body.description,
+      reference: req.body.reference,
+    });
+    
+    // Speichere Zahlungsplan
+    const scheduleId = await savePaymentSchedule(userId, calculationId, {
+      frequency: result.paymentSchedule.frequency,
+      totalPayments: result.paymentSchedule.totalPayments,
+      totalInterest: result.paymentSchedule.totalInterest.toString(),
+      totalTaxes: result.paymentSchedule.totalTaxes.toString(),
+      totalDefaultInterest: result.paymentSchedule.totalDefaultInterest.toString(),
+      totalPayable: result.paymentSchedule.totalPayable.toString(),
+      scheduleData: result.paymentSchedule.schedule.map((payment) => ({
+        paymentNumber: payment.paymentNumber,
+        paymentDate: payment.paymentDate.toISOString(),
+        principalAmount: payment.principalAmount.toString(),
+        interestAmount: payment.interestAmount.toString(),
+        taxAmount: payment.taxAmount.toString(),
+        defaultInterestAmount: payment.defaultInterestAmount.toString(),
+        totalPayment: payment.totalPayment.toString(),
+        frequency: payment.frequency,
+      })),
+    });
+    
+    // Speichere Zahlungsplan-Items
+    await savePaymentScheduleItems(
+      userId,
+      scheduleId,
+      calculationId,
+      result.paymentSchedule.schedule.map((payment) => ({
+        paymentNumber: payment.paymentNumber,
+        paymentDate: payment.paymentDate.toISOString(),
+        principalAmount: payment.principalAmount.toString(),
+        interestAmount: payment.interestAmount.toString(),
+        taxAmount: payment.taxAmount.toString(),
+        defaultInterestAmount: payment.defaultInterestAmount.toString(),
+        totalPayment: payment.totalPayment.toString(),
+      }))
+    );
+    
+    return res.status(201).json({
+      success: true,
+      data: {
+        calculationId,
+        scheduleId,
+        message: 'Zinsberechnung und Zahlungsplan erfolgreich gespeichert',
+      },
+    });
+  } catch (error) {
+    console.error('Error saving interest calculation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Speichern',
+    });
+  }
+});
+
+/**
+ * GET /api/interest-calculation/:id
+ * 
+ * Ruft eine gespeicherte Zinsberechnung ab
+ */
+router.get('/interest-calculation/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const id = parseInt(req.params.id);
+    
+    const calculation = await getInterestCalculationById(id, userId);
+    
+    if (!calculation) {
+      return res.status(404).json({
+        success: false,
+        error: 'Zinsberechnung nicht gefunden',
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: calculation,
+    });
+  } catch (error) {
+    console.error('Error getting interest calculation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Abrufen',
+    });
+  }
+});
+
+/**
+ * GET /api/interest-calculations/user
+ * 
+ * Listet alle Zinsberechnungen des Benutzers auf
+ */
+router.get('/interest-calculations/user', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const calculations = await listUserInterestCalculations(userId, limit, offset);
+    const stats = await getUserInterestCalculationStats(userId);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        calculations,
+        stats,
+        limit,
+        offset,
+      },
+    });
+  } catch (error) {
+    console.error('Error listing interest calculations:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Abrufen',
+    });
+  }
+});
+
+/**
+ * GET /api/payment-schedule/:id
+ * 
+ * Ruft einen gespeicherten Zahlungsplan ab
+ */
+router.get('/payment-schedule/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const id = parseInt(req.params.id);
+    
+    const schedule = await getPaymentScheduleById(id, userId);
+    
+    if (!schedule) {
+      return res.status(404).json({
+        success: false,
+        error: 'Zahlungsplan nicht gefunden',
+      });
+    }
+    
+    // Hole auch die Zahlungsplan-Items
+    const items = await getPaymentScheduleItems(id, userId);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...schedule,
+        items,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting payment schedule:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Abrufen',
+    });
+  }
+});
+
+/**
+ * GET /api/payment-schedules/user
+ * 
+ * Listet alle Zahlungspläne des Benutzers auf
+ */
+router.get('/payment-schedules/user', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const schedules = await listUserPaymentSchedules(userId, limit, offset);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        schedules,
+        limit,
+        offset,
+      },
+    });
+  } catch (error) {
+    console.error('Error listing payment schedules:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Abrufen',
+    });
+  }
+});
+
+/**
+ * DELETE /api/interest-calculation/:id
+ * 
+ * Löscht eine Zinsberechnung und ihre Zahlungspläne
+ */
+router.delete('/interest-calculation/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const id = parseInt(req.params.id);
+    
+    const success = await deleteInterestCalculation(id, userId);
+    
+    if (!success) {
+      return res.status(404).json({
+        success: false,
+        error: 'Zinsberechnung nicht gefunden',
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Zinsberechnung erfolgreich gelöscht',
+    });
+  } catch (error) {
+    console.error('Error deleting interest calculation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Fehler beim Löschen',
     });
   }
 });

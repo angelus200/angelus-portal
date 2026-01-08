@@ -399,3 +399,29 @@
 - [x] Tests
   - [x] TypeScript Compilation erfolgreich
   - [x] Komponenten-Struktur validiert
+
+
+## Datenbankintegration
+
+- [x] Datenbankschema erstellen
+  - [x] interestCalculations Tabelle
+  - [x] paymentSchedules Tabelle
+  - [x] paymentScheduleItems Tabelle
+- [x] Datenbank-Funktionen
+  - [x] saveInterestCalculation()
+  - [x] savePaymentSchedule()
+  - [x] getInterestCalculationById()
+  - [x] getPaymentScheduleById()
+  - [x] listUserCalculations()
+  - [x] getUserInterestCalculationStats()
+  - [x] deleteInterestCalculation()
+- [x] API-Endpoints erweitern
+  - [x] POST /api/interest-calculation/save
+  - [x] GET /api/interest-calculation/:id
+  - [x] GET /api/interest-calculations/user
+  - [x] GET /api/payment-schedule/:id
+  - [x] GET /api/payment-schedules/user
+  - [x] DELETE /api/interest-calculation/:id
+- [x] Tests
+  - [x] TypeScript Compilation
+  - [x] Datenbank-Funktionen validiert

@@ -313,3 +313,181 @@ export const exampleParameterSets = {
     churchTax: '0.00' as any,
   },
 };
+
+
+/**
+ * Interest Calculations Table
+ * Stores all calculated interest calculations for audit trail and reporting
+ */
+export const interestCalculations = mysqlTable(
+  'interest_calculations',
+  {
+    id: int('id').primaryKey().autoincrement(),
+    
+    // User reference
+    userId: int('user_id').notNull(),
+    
+    // Calculation inputs
+    principal: decimal('principal', { precision: 18, scale: 2 }).notNull(),
+    annualRate: decimal('annual_rate', { precision: 5, scale: 2 }).notNull(),
+    subscriptionAmount: decimal('subscription_amount', { precision: 18, scale: 2 }).notNull(),
+    paidAmount: decimal('paid_amount', { precision: 18, scale: 2 }).notNull(),
+    startDate: timestamp('start_date').notNull(),
+    periods: int('periods').notNull(),
+    
+    // Tax rates
+    kestRate: decimal('kest_rate', { precision: 5, scale: 2 }).notNull().default('25.00'),
+    solzRate: decimal('solz_rate', { precision: 5, scale: 2 }).notNull().default('5.50'),
+    churchTaxRate: decimal('church_tax_rate', { precision: 5, scale: 2 }).notNull().default('0.00'),
+    
+    // Default interest rate
+    defaultRate: decimal('default_rate', { precision: 5, scale: 2 }).notNull().default('17.00'),
+    
+    // Business rules
+    isCompanyLiability: boolean('is_company_liability').notNull().default(false),
+    enableInsolvencyHold: boolean('enable_insolvency_hold').notNull().default(false),
+    
+    // Payment frequency
+    paymentFrequency: varchar('payment_frequency', { length: 20 }).notNull(), // 'monthly', 'annual', 'thesaurierend'
+    
+    // Calculation results
+    basicInterest: decimal('basic_interest', { precision: 18, scale: 2 }).notNull(),
+    kest: decimal('kest', { precision: 18, scale: 2 }).notNull(),
+    solz: decimal('solz', { precision: 18, scale: 2 }).notNull(),
+    churchTax: decimal('church_tax', { precision: 18, scale: 2 }).notNull(),
+    totalTaxes: decimal('total_taxes', { precision: 18, scale: 2 }).notNull(),
+    defaultInterest: decimal('default_interest', { precision: 18, scale: 2 }).notNull(),
+    appliedDefaultInterest: decimal('applied_default_interest', { precision: 18, scale: 2 }).notNull(),
+    totalInterestAndTaxes: decimal('total_interest_and_taxes', { precision: 18, scale: 2 }).notNull(),
+    netInterest: decimal('net_interest', { precision: 18, scale: 2 }).notNull(),
+    totalPayable: decimal('total_payable', { precision: 18, scale: 2 }).notNull(),
+    
+    // Applied business rules (stored as JSON for audit trail)
+    businessRulesApplied: text('business_rules_applied'), // JSON array
+    
+    // Metadata
+    description: text('description'),
+    reference: varchar('reference', { length: 255 }), // External reference (e.g., bond ID, contract ID)
+    
+    // Timestamps
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    idxUserId: sql`INDEX idx_user_id ON interest_calculations(user_id)`,
+    idxCreatedAt: sql`INDEX idx_created_at ON interest_calculations(created_at)`,
+    idxReference: sql`INDEX idx_reference ON interest_calculations(reference)`,
+  })
+);
+
+export type InterestCalculation = typeof interestCalculations.$inferSelect;
+export type InsertInterestCalculation = typeof interestCalculations.$inferInsert;
+
+/**
+ * Payment Schedules Table
+ * Stores generated payment schedules for each interest calculation
+ */
+export const paymentSchedules = mysqlTable(
+  'payment_schedules',
+  {
+    id: int('id').primaryKey().autoincrement(),
+    
+    // Reference to interest calculation
+    interestCalculationId: int('interest_calculation_id').notNull(),
+    userId: int('user_id').notNull(),
+    
+    // Schedule metadata
+    frequency: varchar('frequency', { length: 20 }).notNull(), // 'monthly', 'annual', 'thesaurierend'
+    totalPayments: int('total_payments').notNull(),
+    
+    // Summary totals
+    totalInterest: decimal('total_interest', { precision: 18, scale: 2 }).notNull(),
+    totalTaxes: decimal('total_taxes', { precision: 18, scale: 2 }).notNull(),
+    totalDefaultInterest: decimal('total_default_interest', { precision: 18, scale: 2 }).notNull(),
+    totalPayable: decimal('total_payable', { precision: 18, scale: 2 }).notNull(),
+    
+    // Schedule data (stored as JSON for flexibility)
+    scheduleData: text('schedule_data').notNull(), // JSON array of payment items
+    
+    // Metadata
+    reference: varchar('reference', { length: 255 }), // External reference
+    notes: text('notes'),
+    
+    // Timestamps
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    idxInterestCalculationId: sql`INDEX idx_interest_calculation_id ON payment_schedules(interest_calculation_id)`,
+    idxUserId: sql`INDEX idx_user_id ON payment_schedules(user_id)`,
+    idxCreatedAt: sql`INDEX idx_created_at ON payment_schedules(created_at)`,
+  })
+);
+
+export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
+export type InsertPaymentSchedule = typeof paymentSchedules.$inferInsert;
+
+/**
+ * Payment Schedule Items Table
+ * Individual payment items from a schedule (denormalized for quick access)
+ */
+export const paymentScheduleItems = mysqlTable(
+  'payment_schedule_items',
+  {
+    id: int('id').primaryKey().autoincrement(),
+    
+    // Reference to payment schedule
+    paymentScheduleId: int('payment_schedule_id').notNull(),
+    interestCalculationId: int('interest_calculation_id').notNull(),
+    userId: int('user_id').notNull(),
+    
+    // Payment details
+    paymentNumber: int('payment_number').notNull(),
+    paymentDate: timestamp('payment_date').notNull(),
+    
+    // Amount breakdown
+    principalAmount: decimal('principal_amount', { precision: 18, scale: 2 }).notNull(),
+    interestAmount: decimal('interest_amount', { precision: 18, scale: 2 }).notNull(),
+    taxAmount: decimal('tax_amount', { precision: 18, scale: 2 }).notNull(),
+    defaultInterestAmount: decimal('default_interest_amount', { precision: 18, scale: 2 }).notNull(),
+    totalPayment: decimal('total_payment', { precision: 18, scale: 2 }).notNull(),
+    
+    // Payment status
+    status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'paid', 'overdue', 'cancelled'
+    paidAt: timestamp('paid_at'),
+    
+    // Metadata
+    notes: text('notes'),
+    
+    // Timestamps
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    idxPaymentScheduleId: sql`INDEX idx_payment_schedule_id ON payment_schedule_items(payment_schedule_id)`,
+    idxUserId: sql`INDEX idx_user_id ON payment_schedule_items(user_id)`,
+    idxPaymentDate: sql`INDEX idx_payment_date ON payment_schedule_items(payment_date)`,
+    idxStatus: sql`INDEX idx_status ON payment_schedule_items(status)`,
+  })
+);
+
+export type PaymentScheduleItem = typeof paymentScheduleItems.$inferSelect;
+export type InsertPaymentScheduleItem = typeof paymentScheduleItems.$inferInsert;
