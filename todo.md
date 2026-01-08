@@ -341,3 +341,27 @@
 
 ## Bugs (URGENT)
 - [x] Admin Interest Parameters Seite zeigt "An unexpected error occurred" (Komponente vereinfacht, adminProcedure zu protectedProcedure geändert)
+
+
+## Zinsberechnung-Engine (IN PROGRESS - STEP BY STEP)
+- [x] Schritt 1: Basis-Zinsberechnung (ohne Steuern)
+  - [x] Funktion: calculateBasicInterest()
+  - [x] Berechnung: (Betrag × Zinssatz × Tage) / 365
+  - [x] Tests: 16/16 bestanden
+- [x] Schritt 2: Steuern-Berechnung
+  - [x] Funktion: calculateTaxes()
+  - [x] KESt (25%), SolZ (5,5%), Kirchensteuer (0-9%)
+  - [x] Tests: 9/9 bestanden
+- [ ] Schritt 3: Verzugszins für ausstehende Zahlungen
+  - [ ] Funktion: calculateDefaultInterest()
+  - [ ] 17% p.a. auf ausstehende Beträge
+  - [ ] Tests: 5 Testfälle
+- [ ] Schritt 4: Insolvenzvorhalt & Geschäftsregeln
+  - [ ] Funktion: applyInsolvencyHold()
+  - [ ] Keine Verzugszinsen für Verbindlichkeit
+  - [ ] Tests: 5 Testfälle
+- [ ] Schritt 5: Zahlungsweisen
+  - [ ] Monatlich, jährlich, thesaurierend
+  - [ ] Funktion: calculateByPaymentFrequency()
+  - [ ] Tests: 5 Testfälle
+- [ ] Integration & Finale Tests
