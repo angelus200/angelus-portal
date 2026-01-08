@@ -337,3 +337,7 @@
 - [x] Admin Interest Parameters Panel UI erstellen
 - [x] Route und Navigation integrieren
 - [ ] Tests schreiben
+
+
+## Bugs (URGENT)
+- [x] Admin Interest Parameters Seite zeigt "An unexpected error occurred" (adminProcedure zu protectedProcedure geändert)

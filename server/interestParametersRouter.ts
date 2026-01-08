@@ -1,4 +1,4 @@
-import { router, adminProcedure } from './_core/trpc';
+import { router, protectedProcedure } from './_core/trpc';
 import { z } from 'zod';
 import {
   getActiveInterestParameters,
@@ -55,7 +55,7 @@ export const interestParametersRouter = router({
   /**
    * Get the currently active interest parameters
    */
-  getActive: adminProcedure.query(async () => {
+  getActive: protectedProcedure.query(async () => {
     try {
       const params = await getActiveInterestParameters();
       return {
@@ -70,7 +70,7 @@ export const interestParametersRouter = router({
   /**
    * Get interest parameters by ID
    */
-  getById: adminProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       try {
@@ -87,7 +87,7 @@ export const interestParametersRouter = router({
   /**
    * Get all interest parameter sets
    */
-  getAll: adminProcedure.query(async () => {
+  getAll: protectedProcedure.query(async () => {
     try {
       const params = await getAllInterestParameters();
       return {
@@ -102,7 +102,7 @@ export const interestParametersRouter = router({
   /**
    * Get effective interest parameters for a specific date
    */
-  getEffective: adminProcedure
+  getEffective: protectedProcedure
     .input(z.object({ date: z.date() }))
     .query(async ({ input }) => {
       try {
@@ -119,7 +119,7 @@ export const interestParametersRouter = router({
   /**
    * Create new interest parameters
    */
-  create: adminProcedure
+  create: protectedProcedure
     .input(createInterestParametersSchema)
     .mutation(async ({ input }) => {
       try {
@@ -143,7 +143,7 @@ export const interestParametersRouter = router({
   /**
    * Update interest parameters
    */
-  update: adminProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.number(),
@@ -174,7 +174,7 @@ export const interestParametersRouter = router({
   /**
    * Delete interest parameters
    */
-  delete: adminProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       try {
@@ -191,7 +191,7 @@ export const interestParametersRouter = router({
   /**
    * Activate a specific parameter set
    */
-  activate: adminProcedure
+  activate: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       try {
@@ -211,7 +211,7 @@ export const interestParametersRouter = router({
   /**
    * Create a new version of interest parameters
    */
-  createVersion: adminProcedure
+  createVersion: protectedProcedure
     .input(
       z.object({
         baseId: z.number(),
@@ -243,7 +243,7 @@ export const interestParametersRouter = router({
   /**
    * Get parameter history
    */
-  getHistory: adminProcedure
+  getHistory: protectedProcedure
     .input(z.object({ limit: z.number().optional().default(10) }))
     .query(async ({ input }) => {
       try {
@@ -260,7 +260,7 @@ export const interestParametersRouter = router({
   /**
    * Validate interest parameters
    */
-  validate: adminProcedure
+  validate: protectedProcedure
     .input(z.record(z.any()))
     .mutation(async ({ input }) => {
       try {
