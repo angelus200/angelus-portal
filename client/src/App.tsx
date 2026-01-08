@@ -36,7 +36,8 @@ import AdminManagement from "./pages/admin/AdminManagement";
 import { InvestorKYCApproval } from "./pages/admin/InvestorKYCApproval";
 import WalletManagement from "./pages/admin/WalletManagement";
 import Payments from "./pages/admin/Payments";
-import { LegacyCustomerImport } from "./pages/admin/LegacyCustomerImport";
+import LegacyCustomerImport from '@/pages/admin/LegacyCustomerImport';
+import InterestParameters from '@/pages/admin/InterestParameters';
 
 function Router() {
   return (
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/admin/wallet-management" component={WalletManagement} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/legacy-customers/import" component={LegacyCustomerImport} />
+      <Route path="/admin/interest-parameters" component={InterestParameters} />
       
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

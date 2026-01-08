@@ -36,7 +36,8 @@ import {
   Home,
   CheckSquare,
   CreditCard,
-  Upload
+  Upload,
+  Percent
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -58,6 +59,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   CheckSquare,
   CreditCard,
   Upload,
+  Percent,
 };
 
 // Default investor menu items
@@ -77,6 +79,7 @@ const adminMenuItems = [
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "CreditCard", label: "Zahlungen", path: "/admin/payments" },
   { icon: "Upload", label: "Bestandskunden", path: "/admin/legacy-customers/import" },
+  { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },

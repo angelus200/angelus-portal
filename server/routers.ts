@@ -11,6 +11,7 @@ import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";
+import { interestParametersRouter } from "./interestParametersRouter";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -24,6 +25,7 @@ export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
   legacyCustomer: legacyCustomerRouter,
+  interestParameters: interestParametersRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

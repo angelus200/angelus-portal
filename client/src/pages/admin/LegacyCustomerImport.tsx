@@ -977,3 +977,4 @@ function Step4({
     </div>
   );
 }
+export default LegacyCustomerImport;

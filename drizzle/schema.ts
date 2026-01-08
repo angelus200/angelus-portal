@@ -592,3 +592,4 @@ export type InsertConsentLog = typeof consentLogs.$inferInsert;
 
 // Import legacy customer schema
 export * from './legacy-schema';
+export * from './interest-schema';

@@ -310,3 +310,30 @@
 - [x] Admin Payments Seite zeigt leere Seite (Route-Syntax behoben: element -> component)
 - [x] logAuditTrail Fehler behoben (entfernt, nicht implementiert)
 - [x] decimal.js Fehler behoben (Paket installiert)
+
+
+## Erweiterte Zinsberechnung-Engine (IN PROGRESS)
+- [ ] Datenbankschema für Zinsparameter erweitern
+  - [ ] `interest_parameters` Tabelle (globale Zinsparameter)
+  - [ ] `bond_interest_rules` Tabelle (anleihenspezifische Regeln)
+  - [ ] `payment_defaults` Tabelle (Zahlungsausfälle und Verzugszins)
+  - [ ] `insolvency_holds` Tabelle (Insolvenzvorbehalte)
+- [ ] Zinsberechnung-Engine implementieren
+  - [ ] Basis-Zinsberechnung nach Zahlungsweise (monatlich, jährlich, thesaurierend)
+  - [ ] Insolvenzvorhalt-Logik (Zahlungen nur wenn möglich)
+  - [ ] Verzugszins für unvollständige Einzahlungen (17% p.a.)
+  - [ ] Kein Verzugszins für verspätete Zahlungen (Verbindlichkeit)
+  - [ ] Kein Zinseszinseffekt bei Thesaurierung
+- [ ] Vitest Tests für Zinsberechnung
+- [ ] Admin Panel für Zinsparameter
+  - [ ] Globale Zinsparameter bearbeiten
+  - [ ] Anleihenspezifische Regeln konfigurieren
+  - [ ] Zahlungsausfälle verwalten
+- [ ] Investor Portal für Zinsübersicht
+
+
+## Admin Interest Parameters Panel (IN PROGRESS)
+- [x] tRPC-Prozeduren für Interest Parameters implementieren (12 Prozeduren)
+- [x] Admin Interest Parameters Panel UI erstellen
+- [x] Route und Navigation integrieren
+- [ ] Tests schreiben
