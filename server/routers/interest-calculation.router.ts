@@ -8,6 +8,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { requireAuthMiddleware, getUserIdFromRequest } from '../_core/auth-middleware';
 import Decimal from 'decimal.js';
 import {
   calculateCompleteInterest,
@@ -28,25 +29,12 @@ import {
 
 const router = Router();
 
-// Middleware to ensure user is authenticated
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const user = (req as any).user;
-  if (!user || !user.id) {
-    return res.status(401).json({
-      success: false,
-      error: 'Authentication required. Please log in first.',
-    });
-  }
-  next();
-}
+// Verwende zentrale Auth-Middleware
+const requireAuth = requireAuthMiddleware;
 
-// Middleware to extract user ID from request
+// Hilfsfunktion zum Extrahieren der User ID
 function getUserId(req: Request): number {
-  const user = (req as any).user;
-  if (!user || !user.id) {
-    throw new Error('User not authenticated. Please log in first.');
-  }
-  return user.id;
+  return getUserIdFromRequest(req);
 }
 
 /**

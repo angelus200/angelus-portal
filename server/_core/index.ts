@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { authMiddleware } from "./auth-middleware";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import interestCalculationRouter from "../routers/interest-calculation.router";
@@ -38,6 +39,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Authentication Middleware - Authentifiziert Benutzer für alle Routes
+  app.use(authMiddleware);
   
   // Interest Calculation API
   app.use("/api", interestCalculationRouter);

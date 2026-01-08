@@ -9,10 +9,11 @@ import { useInterestCalculation, InterestCalculationInput } from '../hooks/useIn
 import { InterestCalculationForm } from '../components/InterestCalculationForm';
 import { InterestSummary } from '../components/InterestSummary';
 import { PaymentScheduleTable } from '../components/PaymentScheduleTable';
+import { SavedCalculationsList } from '../components/SavedCalculationsList';
 
 export const LegacyAccountPortal: React.FC = () => {
   const { data, loading, error, calculate } = useInterestCalculation();
-  const [activeTab, setActiveTab] = useState<'form' | 'summary' | 'schedule'>('form');
+  const [activeTab, setActiveTab] = useState<'form' | 'summary' | 'schedule' | 'saved'>('form');
 
   const handleFormSubmit = async (input: InterestCalculationInput) => {
     try {
@@ -82,6 +83,16 @@ export const LegacyAccountPortal: React.FC = () => {
                 </button>
               </>
             )}
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'saved'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Gespeicherte Berechnungen
+            </button>
           </div>
         </div>
 
@@ -113,6 +124,21 @@ export const LegacyAccountPortal: React.FC = () => {
                 Neue Berechnung
               </button>
             </div>
+          )}
+
+          {activeTab === 'saved' && (
+            <SavedCalculationsList
+              onSelectCalculation={(id) => {
+                console.log('Load calculation:', id);
+              }}
+              onDeleteCalculation={async (id) => {
+                const response = await fetch(`/api/interest-calculation/${id}`, {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                });
+                if (!response.ok) throw new Error('Delete failed');
+              }}
+            />
           )}
         </div>
 

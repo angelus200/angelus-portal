@@ -18,6 +18,12 @@ import {
   contractTemplates, InsertContractTemplate, ContractTemplate,
   bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
 } from "../drizzle/schema";
+import {
+  legacyCustomers,
+  legacyCustomerDocuments,
+  legacyCustomerInterestCalculations,
+  legacyCustomerPaymentHistory,
+} from "../drizzle/legacy-schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;

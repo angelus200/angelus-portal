@@ -531,6 +531,7 @@ export async function getLegacyCustomersStatistics() {
  */
 export async function getPendingPaymentsForCustomer(legacyCustomerId: number) {
   const db = await getDb();
+  if (!db) return [];
   const calculations = await db.query.legacyCustomerInterestCalculations.findMany({
     where: and(
       eq(legacyCustomerInterestCalculations.legacyCustomerId, legacyCustomerId),
@@ -547,6 +548,7 @@ export async function getPendingPaymentsForCustomer(legacyCustomerId: number) {
  */
 export async function getUpcomingPayments(legacyCustomerId: number, daysAhead: number = 30) {
   const db = await getDb();
+  if (!db) return [];
   const today = new Date();
   const futureDate = new Date(today.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
