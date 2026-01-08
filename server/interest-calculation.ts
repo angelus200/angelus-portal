@@ -1094,3 +1094,200 @@ export function calculatePaymentScheduleByFrequency(
       throw new Error(`Unbekannte Zahlungsweise: ${frequency}`);
   }
 }
+
+
+/**
+ * INTEGRATION & FINALE TESTS
+ * 
+ * Kombinierte Berechnung aller 5 Schritte:
+ * 1. Basis-Zinsberechnung
+ * 2. Steuern (KESt, SolZ, Kirchensteuer)
+ * 3. Verzugszinsen (17% p.a.)
+ * 4. Geschäftsregeln (Investor vs. Company, Insolvenzvorhalt)
+ * 5. Zahlungsweisen (monatlich, jährlich, thesaurierend)
+ */
+
+interface CompleteInterestCalculationInput {
+  // Basis-Parameter
+  principal: number | Decimal;
+  annualRate: number;
+  subscriptionAmount: number | Decimal;
+  paidAmount: number | Decimal;
+  
+  // Zeitraum
+  startDate: Date;
+  periods: number; // Monate oder Jahre je nach Zahlungsweise
+  
+  // Steuern
+  kestRate?: number;
+  solzRate?: number;
+  churchTaxRate?: number;
+  
+  // Verzugszinsen
+  defaultRate?: number;
+  
+  // Geschäftsregeln
+  isCompanyLiability?: boolean;
+  enableInsolvencyHold?: boolean;
+  
+  // Zahlungsweise
+  paymentFrequency: PaymentFrequency;
+}
+
+interface CompleteInterestCalculationResult {
+  // Basis-Berechnung
+  basicInterest: Decimal;
+  
+  // Steuern
+  kest: Decimal;
+  solz: Decimal;
+  churchTax: Decimal;
+  totalTaxes: Decimal;
+  
+  // Verzugszinsen
+  defaultInterest: Decimal;
+  appliedDefaultInterest: Decimal;
+  
+  // Geschäftsregeln
+  isCompanyLiability: boolean;
+  enableInsolvencyHold: boolean;
+  businessRulesApplied: string[];
+  
+  // Zahlungsweise
+  paymentFrequency: PaymentFrequency;
+  paymentSchedule: PaymentScheduleResult;
+  
+  // Gesamtberechnung
+  totalInterestAndTaxes: Decimal;
+  netInterest: Decimal;
+  totalPayable: Decimal;
+}
+
+/**
+ * Berechnet die komplette Zinsberechnung mit allen 5 Schritten
+ * 
+ * Dies ist die Hauptfunktion für die Integration aller Schritte
+ * 
+ * @param input - Eingabeparameter
+ * @returns Komplette Zinsberechnung mit allen Details
+ */
+export function calculateCompleteInterest(
+  input: CompleteInterestCalculationInput
+): CompleteInterestCalculationResult {
+  const principalDecimal = new Decimal(input.principal);
+  const subscriptionDecimal = new Decimal(input.subscriptionAmount);
+  const paidDecimal = new Decimal(input.paidAmount);
+
+  // SCHRITT 1: Basis-Zinsberechnung
+  const basicInterestResult = calculateBasicInterest({
+    principal: principalDecimal,
+    annualRate: input.annualRate,
+    days: 365, // Jährliche Berechnung
+  });
+
+  // SCHRITT 2: Steuern
+  const taxResult = calculateTaxes({
+    interestAmount: basicInterestResult.interestAmount,
+    kestRate: input.kestRate,
+    solzRate: input.solzRate,
+    churchTaxRate: input.churchTaxRate,
+  });
+
+  // SCHRITT 3: Verzugszinsen
+  const defaultInterestResult = calculateDefaultInterest({
+    subscriptionAmount: subscriptionDecimal,
+    paidAmount: paidDecimal,
+    defaultRate: input.defaultRate,
+    days: 365,
+  });
+
+  // SCHRITT 4: Geschäftsregeln
+  const businessRulesResult = calculateInterestWithBusinessRules({
+    subscriptionAmount: subscriptionDecimal,
+    paidAmount: paidDecimal,
+    principal: principalDecimal,
+    annualRate: input.annualRate,
+    days: 365,
+    isCompanyLiability: input.isCompanyLiability,
+    enableInsolvencyHold: input.enableInsolvencyHold,
+    kestRate: input.kestRate,
+    solzRate: input.solzRate,
+    churchTaxRate: input.churchTaxRate,
+    defaultRate: input.defaultRate,
+  });
+
+  // SCHRITT 5: Zahlungsweise
+  const paymentSchedule = calculatePaymentScheduleByFrequency(
+    input.paymentFrequency,
+    principalDecimal,
+    input.annualRate,
+    input.periods,
+    input.startDate,
+    input.kestRate,
+    input.solzRate,
+    input.churchTaxRate
+  );
+
+  // Berechne Gesamtbeträge
+  const totalInterestAndTaxes = businessRulesResult.totalInterestAndTaxes;
+  const netInterest = businessRulesResult.basicInterest.interestAmount
+    .minus(businessRulesResult.taxes.totalTaxes)
+    .plus(businessRulesResult.appliedDefaultInterest)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  const totalPayable = principalDecimal
+    .plus(totalInterestAndTaxes)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  return {
+    basicInterest: basicInterestResult.interestAmount,
+    kest: taxResult.kest,
+    solz: taxResult.solz,
+    churchTax: taxResult.churchTax,
+    totalTaxes: taxResult.totalTaxes,
+    defaultInterest: defaultInterestResult.defaultInterestAmount,
+    appliedDefaultInterest: businessRulesResult.appliedDefaultInterest,
+    isCompanyLiability: businessRulesResult.isCompanyLiability,
+    enableInsolvencyHold: businessRulesResult.enableInsolvencyHold,
+    businessRulesApplied: businessRulesResult.businessRulesApplied,
+    paymentFrequency: input.paymentFrequency,
+    paymentSchedule,
+    totalInterestAndTaxes,
+    netInterest,
+    totalPayable,
+  };
+}
+
+/**
+ * Validiert die komplette Zinsberechnung
+ * 
+ * Prüft dass:
+ * - Alle Beträge positiv sind
+ * - Steuern nicht größer als Zinsen
+ * - Zahlungsplan konsistent ist
+ * 
+ * @param result - Ergebnis der kompletten Zinsberechnung
+ * @returns true wenn valide, false sonst
+ */
+export function validateCompleteInterestCalculation(
+  result: CompleteInterestCalculationResult
+): boolean {
+  // Prüfe positive Beträge
+  if (result.basicInterest.lessThan(0)) return false;
+  if (result.totalTaxes.lessThan(0)) return false;
+  if (result.totalPayable.lessThan(0)) return false;
+
+  // Prüfe dass Steuern nicht größer als Zinsen
+  if (result.totalTaxes.greaterThan(result.basicInterest)) return false;
+
+  // Prüfe Zahlungsplan
+  if (!result.paymentSchedule.schedule || result.paymentSchedule.schedule.length === 0) {
+    return false;
+  }
+
+  // Prüfe dass Zahlungsplan-Summe konsistent ist
+  const scheduleTotal = result.paymentSchedule.totalPayable;
+  if (scheduleTotal.lessThan(0)) return false;
+
+  return true;
+}

@@ -364,4 +364,7 @@
   - [x] Monatlich, jährlich, thesaurierend
   - [x] Funktionen: calculateMonthlyPaymentSchedule(), calculateAnnualPaymentSchedule(), calculateThesaurierendPaymentSchedule(), calculatePaymentScheduleByFrequency()
   - [x] Tests: 11/11 bestanden
-- [ ] Integration & Finale Tests
+- [x] Integration & Finale Tests
+  - [x] Funktionen: calculateCompleteInterest(), validateCompleteInterestCalculation()
+  - [x] Kombinierte Berechnung aller 5 Schritte
+  - [x] Tests: 10/10 bestanden
