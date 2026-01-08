@@ -9,6 +9,10 @@ import {
   calculateDefaultInterestByPeriods,
   calculateDefaultInterestByDateRange,
   calculateTotalDefaultInterestByPeriods,
+  shouldApplyDefaultInterest,
+  isInsolvencyHoldActive,
+  calculateInterestWithBusinessRules,
+  calculateNetInterestWithBusinessRules,
 } from './interest-calculation';
 
 describe('Interest Calculation - Schritt 1: Basis-Zinsberechnung', () => {
@@ -678,5 +682,264 @@ describe('Interest Calculation - Schritt 3: Verzugszins-Berechnung', () => {
     expect(() => {
       calculateDefaultInterestByDateRange(100000, 80000, startDate, endDate, 17);
     }).toThrow('Enddatum muss nach Startdatum liegen');
+  });
+});
+
+
+describe('Interest Calculation - Schritt 4: Geschäftsregeln', () => {
+  /**
+   * TESTFALL 1: Investor-Seite - Volle Verzugszinsen
+   * Investor mit ausstehenden Beträgen sollte volle Verzugszinsen zahlen
+   * 
+   * Zeichnung: 100.000€, Eingezahlt: 80.000€
+   * Basis-Zinsen: 493,15€
+   * Steuern: 130,23€ (KESt + SolZ)
+   * Verzugszinsen: 279,45€ (20.000€ × 17% × 30 / 365)
+   * Gesamt: 902,83€
+   */
+  it('Testfall 1: Investor-Seite - Volle Verzugszinsen angewendet', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: false,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    expect(result.isCompanyLiability).toBe(false);
+    expect(result.enableInsolvencyHold).toBe(false);
+    expect(result.appliedDefaultInterest.toNumber()).toBeCloseTo(279.45, 2);
+    expect(result.businessRulesApplied).toContain('Investor-Seite: Volle Verzugszinsen angewendet');
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(902.67, 2);
+  });
+
+  /**
+   * TESTFALL 2: Unternehmensverbindlichkeit - KEINE Verzugszinsen
+   * Unternehmensverbindlichkeit mit ausstehenden Beträgen
+   * sollte KEINE Verzugszinsen zahlen
+   * 
+   * Zeichnung: 100.000€, Eingezahlt: 80.000€
+   * Basis-Zinsen: 493,15€
+   * Steuern: 130,23€
+   * Verzugszinsen: 0€ (Unternehmensverbindlichkeit!)
+   * Gesamt: 623,38€
+   */
+  it('Testfall 2: Unternehmensverbindlichkeit - KEINE Verzugszinsen', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: true, // <-- Unternehmensverbindlichkeit
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    expect(result.isCompanyLiability).toBe(true);
+    expect(result.appliedDefaultInterest.toNumber()).toBe(0); // KEINE Verzugszinsen
+    expect(result.businessRulesApplied).toContain('Unternehmensverbindlichkeit: Keine Verzugszinsen');
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(623.22, 2);
+  });
+
+  /**
+   * TESTFALL 3: Insolvenzvorhalt aktiv - KEINE Verzugszinsen
+   * Bei aktivem Insolvenzvorhalt werden Zahlungen suspendiert
+   * und es fallen KEINE Verzugszinsen an
+   * 
+   * Zeichnung: 100.000€, Eingezahlt: 80.000€
+   * Basis-Zinsen: 493,15€
+   * Steuern: 130,23€
+   * Verzugszinsen: 0€ (Insolvenzvorhalt!)
+   * Gesamt: 623,38€
+   */
+  it('Testfall 3: Insolvenzvorhalt aktiv - KEINE Verzugszinsen', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: false,
+      enableInsolvencyHold: true, // <-- Insolvenzvorhalt aktiv
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    expect(result.enableInsolvencyHold).toBe(true);
+    expect(result.appliedDefaultInterest.toNumber()).toBe(0); // KEINE Verzugszinsen
+    expect(result.businessRulesApplied).toContain('Insolvenzvorhalt aktiv: Zahlungen suspendiert, keine Verzugszinsen');
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(623.22, 2);
+  });
+
+  /**
+   * TESTFALL 4: Investor vollständig eingezahlt - KEINE Verzugszinsen
+   * Investor mit vollständiger Zahlung sollte KEINE Verzugszinsen zahlen
+   * 
+   * Zeichnung: 100.000€, Eingezahlt: 100.000€
+   * Basis-Zinsen: 493,15€
+   * Steuern: 130,23€
+   * Verzugszinsen: 0€ (vollständig eingezahlt)
+   * Gesamt: 623,38€
+   */
+  it('Testfall 4: Investor vollständig eingezahlt - KEINE Verzugszinsen', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 100000, // Vollständig eingezahlt
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: false,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    expect(result.appliedDefaultInterest.toNumber()).toBe(0); // KEINE Verzugszinsen
+    expect(result.businessRulesApplied).toContain('Investor-Seite: Volle Verzugszinsen angewendet');
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(623.22, 2);
+  });
+
+  /**
+   * TESTFALL 5: shouldApplyDefaultInterest - Investor
+   */
+  it('Testfall 5: shouldApplyDefaultInterest - Investor sollte Verzugszinsen zahlen', () => {
+    const result = shouldApplyDefaultInterest(false, false);
+    expect(result).toBe(true);
+  });
+
+  /**
+   * TESTFALL 6: shouldApplyDefaultInterest - Company
+   */
+  it('Testfall 6: shouldApplyDefaultInterest - Company sollte KEINE Verzugszinsen zahlen', () => {
+    const result = shouldApplyDefaultInterest(true, false);
+    expect(result).toBe(false);
+  });
+
+  /**
+   * TESTFALL 7: shouldApplyDefaultInterest - Insolvenzvorhalt
+   */
+  it('Testfall 7: shouldApplyDefaultInterest - Insolvenzvorhalt: KEINE Verzugszinsen', () => {
+    const result = shouldApplyDefaultInterest(false, true);
+    expect(result).toBe(false);
+  });
+
+  /**
+   * TESTFALL 8: isInsolvencyHoldActive
+   */
+  it('Testfall 8: isInsolvencyHoldActive - Vorhalt aktiv', () => {
+    expect(isInsolvencyHoldActive(true)).toBe(true);
+    expect(isInsolvencyHoldActive(false)).toBe(false);
+  });
+
+  /**
+   * TESTFALL 9: Netto-Zinsen mit Geschäftsregeln - Investor
+   * Netto = Basis-Zinsen - Steuern + Verzugszinsen
+   */
+  it('Testfall 9: calculateNetInterestWithBusinessRules - Investor', () => {
+    const result = calculateNetInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: false,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    // Netto = 493,15 - 130,07 + 279,45 = 642,53€
+    expect(result.toNumber()).toBeCloseTo(642.53, 2);
+  });
+
+  /**
+   * TESTFALL 10: Netto-Zinsen mit Geschäftsregeln - Company
+   * Netto = Basis-Zinsen - Steuern (KEINE Verzugszinsen)
+   */
+  it('Testfall 10: calculateNetInterestWithBusinessRules - Company', () => {
+    const result = calculateNetInterestWithBusinessRules({
+      subscriptionAmount: 100000,
+      paidAmount: 80000,
+      principal: 100000,
+      annualRate: 6,
+      days: 30,
+      isCompanyLiability: true,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 0,
+      defaultRate: 17,
+    });
+
+    // Netto = 493,15 - 130,07 + 0 = 363,08€
+    expect(result.toNumber()).toBeCloseTo(363.08, 2);
+  });
+
+  /**
+   * TESTFALL 11: Große Beträge mit Geschäftsregeln
+   */
+  it('Testfall 11: Große Beträge - Investor mit Verzugszinsen', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 1000000,
+      paidAmount: 500000,
+      principal: 1000000,
+      annualRate: 6,
+      days: 365,
+      isCompanyLiability: false,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 9,
+      defaultRate: 17,
+    });
+
+    // Basis-Zinsen: 60.000€
+    // Steuern: 21.225€ (KESt + SolZ + Kirchensteuer)
+    // Verzugszinsen: 85.000€ (500.000€ × 17%)
+    // Gesamt: 166.225€
+    expect(result.appliedDefaultInterest.toNumber()).toBeCloseTo(85000, 2);
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(166225, 2);
+  });
+
+  /**
+   * TESTFALL 12: Große Beträge mit Geschäftsregeln - Company
+   */
+  it('Testfall 12: Große Beträge - Company OHNE Verzugszinsen', () => {
+    const result = calculateInterestWithBusinessRules({
+      subscriptionAmount: 1000000,
+      paidAmount: 500000,
+      principal: 1000000,
+      annualRate: 6,
+      days: 365,
+      isCompanyLiability: true,
+      enableInsolvencyHold: false,
+      kestRate: 25,
+      solzRate: 5.5,
+      churchTaxRate: 9,
+      defaultRate: 17,
+    });
+
+    // Basis-Zinsen: 60.000€
+    // Steuern: 21.225€
+    // Verzugszinsen: 0€ (Company!)
+    // Gesamt: 81.225€
+    expect(result.appliedDefaultInterest.toNumber()).toBe(0);
+    expect(result.totalInterestAndTaxes.toNumber()).toBeCloseTo(81225, 2);
   });
 });

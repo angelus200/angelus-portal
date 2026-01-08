@@ -499,3 +499,226 @@ export function calculateTotalDefaultInterestByPeriods(
     new Decimal(0)
   );
 }
+
+
+/**
+ * SCHRITT 4: Insolvenzvorhalt & Geschäftsregeln
+ * 
+ * Implementiert komplexe Geschäftsregeln für die Zinsberechnung:
+ * 
+ * 1. UNTERNEHMENSVERBINDLICHKEITEN (Company Liabilities):
+ *    - KEINE Verzugszinsen, auch wenn Zahlungen ausstehen
+ *    - Grund: Unternehmen zahlen nur wenn möglich (Insolvenzvorhalt)
+ *    - Normale Zinsen werden weiterhin berechnet
+ * 
+ * 2. INSOLVENZVORHALT (Insolvency Hold):
+ *    - Wenn enableInsolvencyHold = true, werden Zahlungen suspendiert
+ *    - Ansprüche bleiben bestehen
+ *    - Keine Verzugszinsen während Suspension
+ * 
+ * 3. INVESTOR-SEITE (Investor):
+ *    - Volle Verzugszinsen (17% p.a.) auf ausstehende Beträge
+ *    - Normale Geschäftsbedingungen
+ */
+
+interface BusinessRulesInput {
+  subscriptionAmount: number | Decimal;
+  paidAmount: number | Decimal;
+  principal: number | Decimal;
+  annualRate: number;
+  days: number;
+  isCompanyLiability?: boolean; // true = Unternehmensverbindlichkeit
+  enableInsolvencyHold?: boolean; // true = Insolvenzvorhalt aktiv
+  kestRate?: number;
+  solzRate?: number;
+  churchTaxRate?: number;
+  defaultRate?: number;
+}
+
+interface InterestWithBusinessRulesResult {
+  basicInterest: InterestCalculationResult;
+  taxes: TaxCalculationResult;
+  defaultInterest: DefaultInterestCalculationResult;
+  appliedDefaultInterest: Decimal; // Tatsächlich angewendete Verzugszinsen
+  isCompanyLiability: boolean;
+  enableInsolvencyHold: boolean;
+  businessRulesApplied: string[]; // Array von angewendeten Regeln
+  totalInterestAndTaxes: Decimal; // Gesamtzinsen + Steuern + (ggf.) Verzugszinsen
+}
+
+/**
+ * Prüft, ob Verzugszinsen angewendet werden sollen
+ * 
+ * Verzugszinsen werden NICHT angewendet bei:
+ * 1. Unternehmensverbindlichkeiten (Company Liabilities)
+ * 2. Aktivem Insolvenzvorhalt
+ * 
+ * @param isCompanyLiability - Ist dies eine Unternehmensverbindlichkeit?
+ * @param enableInsolvencyHold - Ist der Insolvenzvorhalt aktiv?
+ * @returns true wenn Verzugszinsen angewendet werden sollen
+ */
+export function shouldApplyDefaultInterest(
+  isCompanyLiability: boolean = false,
+  enableInsolvencyHold: boolean = false
+): boolean {
+  // Keine Verzugszinsen für Unternehmensverbindlichkeiten
+  if (isCompanyLiability) {
+    return false;
+  }
+
+  // Keine Verzugszinsen wenn Insolvenzvorhalt aktiv
+  if (enableInsolvencyHold) {
+    return false;
+  }
+
+  // Ansonsten: Verzugszinsen anwenden
+  return true;
+}
+
+/**
+ * Prüft, ob ein Insolvenzvorhalt aktiv ist
+ * 
+ * Bei aktivem Insolvenzvorhalt:
+ * - Zahlungen werden suspendiert
+ * - Ansprüche bleiben bestehen
+ * - Keine Verzugszinsen
+ * 
+ * @param enableInsolvencyHold - Ist der Insolvenzvorhalt aktiv?
+ * @returns true wenn Insolvenzvorhalt aktiv
+ */
+export function isInsolvencyHoldActive(enableInsolvencyHold: boolean = false): boolean {
+  return enableInsolvencyHold;
+}
+
+/**
+ * Berechnet Zinsen mit Geschäftsregeln
+ * 
+ * Kombiniert:
+ * 1. Basis-Zinsberechnung
+ * 2. Steuer-Berechnung
+ * 3. Verzugszins-Berechnung (mit Geschäftsregeln)
+ * 
+ * @param input - Eingabeparameter
+ * @returns Zinsen mit angewendeten Geschäftsregeln
+ * 
+ * @example
+ * // Investor mit ausstehenden Beträgen
+ * const result = calculateInterestWithBusinessRules({
+ *   subscriptionAmount: 100000,
+ *   paidAmount: 80000,
+ *   principal: 100000,
+ *   annualRate: 6,
+ *   days: 30,
+ *   isCompanyLiability: false,
+ *   enableInsolvencyHold: false,
+ *   kestRate: 25,
+ *   solzRate: 5.5,
+ *   churchTaxRate: 9,
+ *   defaultRate: 17
+ * });
+ * // Verzugszinsen werden angewendet
+ * 
+ * @example
+ * // Unternehmensverbindlichkeit mit ausstehenden Beträgen
+ * const result = calculateInterestWithBusinessRules({
+ *   subscriptionAmount: 100000,
+ *   paidAmount: 80000,
+ *   principal: 100000,
+ *   annualRate: 6,
+ *   days: 30,
+ *   isCompanyLiability: true,  // <-- Unternehmensverbindlichkeit
+ *   enableInsolvencyHold: false,
+ *   kestRate: 25,
+ *   solzRate: 5.5,
+ *   churchTaxRate: 9,
+ *   defaultRate: 17
+ * });
+ * // Verzugszinsen werden NICHT angewendet
+ */
+export function calculateInterestWithBusinessRules(
+  input: BusinessRulesInput
+): InterestWithBusinessRulesResult {
+  // Standardwerte
+  const isCompanyLiability = input.isCompanyLiability ?? false;
+  const enableInsolvencyHold = input.enableInsolvencyHold ?? false;
+
+  // Array von angewendeten Geschäftsregeln
+  const businessRulesApplied: string[] = [];
+
+  // Berechne Basis-Zinsen
+  const basicInterest = calculateBasicInterest({
+    principal: input.principal,
+    annualRate: input.annualRate,
+    days: input.days,
+  });
+
+  // Berechne Steuern
+  const taxes = calculateTaxes({
+    interestAmount: basicInterest.interestAmount,
+    kestRate: input.kestRate,
+    solzRate: input.solzRate,
+    churchTaxRate: input.churchTaxRate,
+  });
+
+  // Berechne Verzugszinsen (ohne Geschäftsregeln)
+  const defaultInterest = calculateDefaultInterest({
+    subscriptionAmount: input.subscriptionAmount,
+    paidAmount: input.paidAmount,
+    defaultRate: input.defaultRate,
+    days: input.days,
+  });
+
+  // Prüfe Geschäftsregeln
+  let appliedDefaultInterest = defaultInterest.defaultInterestAmount;
+
+  if (isCompanyLiability) {
+    businessRulesApplied.push('Unternehmensverbindlichkeit: Keine Verzugszinsen');
+    appliedDefaultInterest = new Decimal(0);
+  }
+
+  if (enableInsolvencyHold) {
+    businessRulesApplied.push('Insolvenzvorhalt aktiv: Zahlungen suspendiert, keine Verzugszinsen');
+    appliedDefaultInterest = new Decimal(0);
+  }
+
+  if (!isCompanyLiability && !enableInsolvencyHold) {
+    businessRulesApplied.push('Investor-Seite: Volle Verzugszinsen angewendet');
+  }
+
+  // Berechne Gesamtzinsen + Steuern + Verzugszinsen
+  const totalInterestAndTaxes = basicInterest.interestAmount
+    .plus(taxes.totalTaxes)
+    .plus(appliedDefaultInterest)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+  return {
+    basicInterest,
+    taxes,
+    defaultInterest,
+    appliedDefaultInterest,
+    isCompanyLiability,
+    enableInsolvencyHold,
+    businessRulesApplied,
+    totalInterestAndTaxes,
+  };
+}
+
+/**
+ * Berechnet Netto-Zinsen nach Steuern und Geschäftsregeln
+ * 
+ * Netto = Basis-Zinsen - Steuern + (ggf.) Verzugszinsen
+ * 
+ * @param input - Eingabeparameter
+ * @returns Netto-Zinsen nach allen Abzügen und Regeln
+ */
+export function calculateNetInterestWithBusinessRules(
+  input: BusinessRulesInput
+): Decimal {
+  const result = calculateInterestWithBusinessRules(input);
+  
+  // Netto-Zinsen = Basis-Zinsen - Steuern + Verzugszinsen
+  return result.basicInterest.interestAmount
+    .minus(result.taxes.totalTaxes)
+    .plus(result.appliedDefaultInterest)
+    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+}

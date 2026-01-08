@@ -356,10 +356,10 @@
   - [x] Funktion: calculateDefaultInterest()
   - [x] 17% p.a. auf ausstehende Beträge
   - [x] Tests: 14/14 bestanden
-- [ ] Schritt 4: Insolvenzvorhalt & Geschäftsregeln
-  - [ ] Funktion: applyInsolvencyHold()
-  - [ ] Keine Verzugszinsen für Verbindlichkeit
-  - [ ] Tests: 5 Testfälle
+- [x] Schritt 4: Insolvenzvorhalt & Geschäftsregeln
+  - [x] Funktionen: shouldApplyDefaultInterest(), isInsolvencyHoldActive(), calculateInterestWithBusinessRules()
+  - [x] Keine Verzugszinsen für Unternehmensverbindlichkeiten
+  - [x] Tests: 12/12 bestanden
 - [ ] Schritt 5: Zahlungsweisen
   - [ ] Monatlich, jährlich, thesaurierend
   - [ ] Funktion: calculateByPaymentFrequency()
