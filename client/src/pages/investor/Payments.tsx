@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Table,
@@ -37,15 +37,30 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  ArrowUpDown,
+  Filter,
+  X,
 } from "lucide-react";
 
 type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
+type SortField = "date" | "amount" | "status";
+type SortOrder = "asc" | "desc";
 
 export default function InvestorPaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [page, setPage] = useState(0);
+  
+  // New filter states
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [searchBond, setSearchBond] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch investor payments
   const { data: paymentsData, isLoading } = useQuery({
@@ -61,6 +76,58 @@ export default function InvestorPaymentsPage() {
   });
 
   const payments = paymentsData?.payments || [];
+
+  // Apply client-side filtering and sorting
+  const filteredAndSortedPayments = useMemo(() => {
+    let filtered = [...payments];
+
+    // Search by bond name
+    if (searchBond.trim()) {
+      filtered = filtered.filter((p) =>
+        p.bond?.name?.toLowerCase().includes(searchBond.toLowerCase())
+      );
+    }
+
+    // Filter by date range
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      filtered = filtered.filter((p) => new Date(p.createdAt) >= fromDate);
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((p) => new Date(p.createdAt) <= toDate);
+    }
+
+    // Filter by amount range
+    if (amountMin) {
+      const min = parseFloat(amountMin);
+      filtered = filtered.filter((p) => parseFloat(p.amount) >= min);
+    }
+
+    if (amountMax) {
+      const max = parseFloat(amountMax);
+      filtered = filtered.filter((p) => parseFloat(p.amount) <= max);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let compareValue = 0;
+
+      if (sortField === "date") {
+        compareValue = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortField === "amount") {
+        compareValue = parseFloat(a.amount) - parseFloat(b.amount);
+      } else if (sortField === "status") {
+        compareValue = a.paymentStatus.localeCompare(b.paymentStatus);
+      }
+
+      return sortOrder === "asc" ? compareValue : -compareValue;
+    });
+
+    return filtered;
+  }, [payments, searchBond, dateFrom, dateTo, amountMin, amountMax, sortField, sortOrder]);
 
   // Fetch payment statistics
   const { data: statsData } = useQuery({
@@ -114,6 +181,16 @@ export default function InvestorPaymentsPage() {
     };
 
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
+  };
+
+  const hasActiveFilters = searchBond || dateFrom || dateTo || amountMin || amountMax;
+
+  const clearFilters = () => {
+    setSearchBond("");
+    setDateFrom("");
+    setDateTo("");
+    setAmountMin("");
+    setAmountMax("");
   };
 
   return (
@@ -172,21 +249,149 @@ export default function InvestorPaymentsPage() {
           </Card>
         </div>
 
-        {/* Filter */}
-        <div className="flex gap-4 flex-wrap">
-          <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Status filtern" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Status</SelectItem>
-              <SelectItem value="pending">Ausstehend</SelectItem>
-              <SelectItem value="processing">Verarbeitung</SelectItem>
-              <SelectItem value="completed">Abgeschlossen</SelectItem>
-              <SelectItem value="failed">Fehlgeschlagen</SelectItem>
-              <SelectItem value="refunded">Rückerstattung</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Filter Section */}
+        <div className="space-y-4">
+          <div className="flex gap-4 flex-wrap items-center">
+            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Status filtern" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Status</SelectItem>
+                <SelectItem value="pending">Ausstehend</SelectItem>
+                <SelectItem value="processing">Verarbeitung</SelectItem>
+                <SelectItem value="completed">Abgeschlossen</SelectItem>
+                <SelectItem value="failed">Fehlgeschlagen</SelectItem>
+                <SelectItem value="refunded">Rückerstattung</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Erweiterte Filter
+            </Button>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                className="gap-2 text-red-600 hover:text-red-700"
+              >
+                <X className="w-4 h-4" />
+                Filter löschen
+              </Button>
+            )}
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <Card className="bg-gray-50 border-gray-200">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Search by Bond */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Nach Beteiligung suchen
+                    </label>
+                    <Input
+                      placeholder="z.B. Anleihe 2024"
+                      value={searchBond}
+                      onChange={(e) => setSearchBond(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Date Range */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Datum von
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Datum bis
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Amount Range */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Betrag von (€)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={amountMin}
+                      onChange={(e) => setAmountMin(e.target.value)}
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Betrag bis (€)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="999999.99"
+                      value={amountMax}
+                      onChange={(e) => setAmountMax(e.target.value)}
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+
+                  {/* Sort Options */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Sortieren nach
+                    </label>
+                    <div className="flex gap-2">
+                      <Select value={sortField} onValueChange={(value: any) => setSortField(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date">Datum</SelectItem>
+                          <SelectItem value="amount">Betrag</SelectItem>
+                          <SelectItem value="status">Status</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                        className="px-3"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    {filteredAndSortedPayments.length} Zahlungen gefunden
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Payments Table */}
@@ -194,9 +399,54 @@ export default function InvestorPaymentsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead>Beteiligung</TableHead>
-                <TableHead>Betrag</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => {
+                      if (sortField === "date") {
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("date");
+                        setSortOrder("desc");
+                      }
+                    }}
+                    className="flex items-center gap-2 hover:text-gray-900"
+                  >
+                    Beteiligung
+                    {sortField === "date" && <ArrowUpDown className="w-4 h-4" />}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => {
+                      if (sortField === "amount") {
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("amount");
+                        setSortOrder("desc");
+                      }
+                    }}
+                    className="flex items-center gap-2 hover:text-gray-900"
+                  >
+                    Betrag
+                    {sortField === "amount" && <ArrowUpDown className="w-4 h-4" />}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => {
+                      if (sortField === "status") {
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("status");
+                        setSortOrder("asc");
+                      }
+                    }}
+                    className="flex items-center gap-2 hover:text-gray-900"
+                  >
+                    Status
+                    {sortField === "status" && <ArrowUpDown className="w-4 h-4" />}
+                  </button>
+                </TableHead>
                 <TableHead>Datum</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
@@ -208,14 +458,14 @@ export default function InvestorPaymentsPage() {
                     Lädt...
                   </TableCell>
                 </TableRow>
-              ) : payments.length === 0 ? (
+              ) : filteredAndSortedPayments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                     Keine Zahlungen gefunden
                   </TableCell>
                 </TableRow>
               ) : (
-                payments.map((payment: any) => (
+                filteredAndSortedPayments.map((payment: any) => (
                   <TableRow key={payment.id} className="hover:bg-gray-50">
                     <TableCell className="font-medium">
                       <div>

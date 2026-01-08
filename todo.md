@@ -281,4 +281,9 @@
   - [x] Investor Payment History Komponente erstellen
   - [x] Vitest Tests schreiben (21/21 bestanden)
   - [x] Route und Navigation integrieren
+- [x] Erweiterte Filter- und Sortierfunktionen für Zahlungshistorie
+  - [x] Datum-Filter (von/bis)
+  - [x] Sortierung nach Datum, Betrag, Status
+  - [x] Betrag-Filter (min/max)
+  - [x] Suchfunktion nach Bond-Namen
 - [ ] Rechnungs-Download-Funktion implementieren
