@@ -231,7 +231,7 @@ export function LegacyCustomerImport() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout variant="admin">
       <div className="max-w-4xl mx-auto py-8">
         {/* Header */}
         <div className="mb-8">
