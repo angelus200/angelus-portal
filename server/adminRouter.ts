@@ -5,10 +5,18 @@ import { TRPCError } from "@trpc/server";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
-// Admin-only procedure
+// Admin-only procedure (admin or superadmin)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== 'admin') {
+  if (ctx.user.role !== 'admin' && ctx.user.role !== 'superadmin') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
+  }
+  return next({ ctx });
+});
+
+// Superadmin-only procedure
+const superadminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'superadmin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Superadmin access required' });
   }
   return next({ ctx });
 });
@@ -301,7 +309,7 @@ export const adminRouter = router({
   // Get payment statistics
   getPaymentStats: adminProcedure.query(async () => {
     const allSubscriptions = await db.getAllSubscriptions();
-    
+
     const stats = {
       total: allSubscriptions.length,
       completed: allSubscriptions.filter(s => s.paymentStatus === 'completed').length,
@@ -319,4 +327,58 @@ export const adminRouter = router({
 
     return stats;
   }),
+
+  // ==================== SUPERADMIN ENDPOINTS ====================
+
+  // Set user role (superadmin only)
+  setUserRole: superadminProcedure
+    .input(z.object({
+      userId: z.number(),
+      role: z.enum(['user', 'admin']),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Prevent changing own role
+      if (ctx.user?.id === input.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Sie können Ihre eigene Rolle nicht ändern",
+        });
+      }
+
+      const userToUpdate = await db.getUserById(input.userId);
+
+      if (!userToUpdate) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Benutzer nicht gefunden",
+        });
+      }
+
+      // Prevent changing superadmin role
+      if (userToUpdate.role === 'superadmin') {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Superadmin-Rollen können nicht geändert werden",
+        });
+      }
+
+      await db.updateUserRole(input.userId, input.role);
+
+      // Create audit log
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email || null,
+        action: "user.role_change",
+        entityType: "user",
+        entityId: input.userId,
+        details: {
+          oldRole: userToUpdate.role,
+          newRole: input.role,
+          targetUser: userToUpdate.email,
+        },
+        ipAddress: ctx.req.ip,
+      });
+
+      return { success: true };
+    }),
 });

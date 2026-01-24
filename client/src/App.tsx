@@ -38,6 +38,7 @@ import WalletManagement from "./pages/admin/WalletManagement";
 import Payments from "./pages/admin/Payments";
 import LegacyCustomerImport from '@/pages/admin/LegacyCustomerImport';
 import InterestParameters from '@/pages/admin/InterestParameters';
+import UserManagement from './pages/admin/UserManagement';
 
 function Router() {
   return (
@@ -79,7 +80,8 @@ function Router() {
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/legacy-customers/import" component={LegacyCustomerImport} />
       <Route path="/admin/interest-parameters" component={InterestParameters} />
-      
+      <Route path="/admin/user-management" component={UserManagement} />
+
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

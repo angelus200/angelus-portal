@@ -12,7 +12,7 @@ export const users = mysqlTable("users", {
 
   // Clerk auth fields
   emailVerified: boolean("emailVerified").default(false),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "superadmin"]).default("user").notNull(),
   
   // Personal data
   firstName: varchar("firstName", { length: 128 }),

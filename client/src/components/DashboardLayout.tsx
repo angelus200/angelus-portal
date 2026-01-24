@@ -38,7 +38,7 @@ import {
   Upload,
   Percent
 } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
+import React, { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -198,7 +198,23 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => {
+
+  // Add User Management for superadmins
+  const enhancedMenuItems = React.useMemo(() => {
+    if (variant === "admin" && user?.role === "superadmin") {
+      // Add User Management link for superadmins only
+      const hasUserManagement = menuItems.some(item => item.path === "/admin/user-management");
+      if (!hasUserManagement) {
+        return [
+          ...menuItems,
+          { icon: "Users", label: "User-Verwaltung", path: "/admin/user-management" },
+        ];
+      }
+    }
+    return menuItems;
+  }, [menuItems, variant, user?.role]);
+
+  const activeMenuItem = enhancedMenuItems.find(item => {
     // Exact match for dashboard routes
     if (item.path === "/admin" || item.path === "/investor") {
       return location === item.path;
@@ -291,8 +307,8 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
-                const isActive = location === item.path || 
+              {enhancedMenuItems.map(item => {
+                const isActive = location === item.path ||
                   (item.path !== "/investor" && item.path !== "/admin" && location.startsWith(item.path)) ||
                   (item.path === "/admin/products-and-contracts" && (location.startsWith("/admin/products-and-contracts") || location.startsWith("/admin/contracts")));
                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
