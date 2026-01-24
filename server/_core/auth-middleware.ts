@@ -1,11 +1,11 @@
 /**
  * Authentication Middleware für Express
- * 
- * Integriert OAuth-Authentifizierung mit Express Request
+ *
+ * Integriert Clerk-Authentifizierung mit Express Request
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { sdk } from './sdk';
+import { authenticateRequest } from './clerk-auth';
 import type { User } from '../../drizzle/schema';
 
 /**
@@ -22,19 +22,12 @@ declare global {
 
 /**
  * Authentifizierungs-Middleware
- * Authentifiziert Benutzer basierend auf Session Cookie
+ * Authentifiziert Benutzer basierend auf Clerk Session
  */
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  try {
-    const user = await sdk.authenticateRequest(req);
-    req.user = user;
-    req.userId = user?.id;
-  } catch (error) {
-    // Authentifizierung ist optional für öffentliche Routes
-    req.user = null;
-    req.userId = undefined;
-  }
-
+  const user = await authenticateRequest(req);
+  req.user = user;
+  req.userId = user?.id;
   next();
 }
 
@@ -43,16 +36,9 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
  * Authentifiziert Benutzer, aber erlaubt unauthentifizierte Requests
  */
 export async function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
-  try {
-    const user = await sdk.authenticateRequest(req);
-    req.user = user;
-    req.userId = user?.id;
-  } catch (error) {
-    // Fehler ignorieren, Benutzer bleibt null
-    req.user = null;
-    req.userId = undefined;
-  }
-
+  const user = await authenticateRequest(req);
+  req.user = user;
+  req.userId = user?.id;
   next();
 }
 
@@ -61,25 +47,18 @@ export async function optionalAuthMiddleware(req: Request, res: Response, next: 
  * Gibt 401 Fehler zurück wenn Benutzer nicht authentifiziert ist
  */
 export async function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) {
-  try {
-    const user = await sdk.authenticateRequest(req);
-    
-    if (!user || !user.id) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required. Please log in first.',
-      });
-    }
+  const user = await authenticateRequest(req);
 
-    req.user = user;
-    req.userId = user.id;
-    next();
-  } catch (error) {
+  if (!user || !user.id) {
     return res.status(401).json({
       success: false,
-      error: 'Authentication failed. Please log in again.',
+      error: 'Authentication required',
     });
   }
+
+  req.user = user;
+  req.userId = user.id;
+  next();
 }
 
 /**

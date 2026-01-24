@@ -3,13 +3,14 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
+import { clerkMiddleware } from "@clerk/clerk-sdk-node";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { authMiddleware } from "./auth-middleware";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import interestCalculationRouter from "../routers/interest-calculation.router";
+import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,13 +34,17 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
   // Configure body parser with larger size limit for file uploads
-  // Note: express.raw() for webhook is registered before express.json()
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
-  
+
+  // Clerk Middleware - Must be before auth middleware
+  app.use(clerkMiddleware({
+    publishableKey: ENV.clerkPublishableKey,
+    secretKey: ENV.clerkSecretKey,
+  }));
+
   // Authentication Middleware - Authentifiziert Benutzer für alle Routes
   app.use(authMiddleware);
   

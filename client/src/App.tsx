@@ -7,9 +7,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Public pages
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import Impressum from "./pages/Impressum";
 import AMLPolicy from "./pages/legal/AML";
 import PrivacyPolicy from "./pages/legal/Privacy";
@@ -45,9 +44,8 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route path="/forgot-password" component={ForgotPassword} />
-      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/sign-in" component={SignIn} />
+      <Route path="/sign-up" component={SignUp} />
       <Route path="/register" component={RegisterWithInvitation} />
       <Route path="/impressum" component={Impressum} />
       <Route path="/aml" component={AMLPolicy} />

@@ -1,13 +1,8 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
-import bcrypt from "bcryptjs";
-import { SignJWT } from "jose";
-import { ENV } from "./_core/env";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";
@@ -31,157 +26,14 @@ export const appRouter = router({
   interestParameters: interestParametersRouter,
   
   auth: router({
+    // Get current user
     me: publicProcedure.query(opts => opts.ctx.user),
+
+    // Logout - Clerk handles session, just clear local cookie if any
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie('__session');
       return { success: true } as const;
     }),
-    
-    // Email/Password Registration
-    register: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-        password: z.string().min(8),
-        name: z.string().min(1),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        // Check if email already exists
-        const existingUser = await db.getUserByEmail(input.email);
-        if (existingUser) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'E-Mail-Adresse bereits registriert' });
-        }
-        
-        // Hash password
-        const passwordHash = await bcrypt.hash(input.password, 12);
-        
-        // Generate verification token
-        const emailVerificationToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        
-        // Create user
-        const userId = await db.createUserWithPassword({
-          email: input.email,
-          passwordHash,
-          name: input.name,
-          emailVerificationToken,
-        });
-        
-        await db.createAuditLog({
-          userId,
-          userEmail: input.email,
-          action: "user.register",
-          entityType: "user",
-          entityId: userId,
-          details: { method: "email" },
-          ipAddress: ctx.req.ip,
-        });
-        
-        return { success: true, message: 'Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse.' };
-      }),
-    
-    // Email/Password Login
-    login: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-        password: z.string(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const user = await db.getUserByEmail(input.email);
-        
-        if (!user || !user.passwordHash) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Ungültige E-Mail oder Passwort' });
-        }
-        
-        const isValidPassword = await bcrypt.compare(input.password, user.passwordHash);
-        if (!isValidPassword) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Ungültige E-Mail oder Passwort' });
-        }
-        
-        // Update last signed in
-        await db.updateLastSignedIn(user.id);
-        
-        // Create JWT token
-        const secret = new TextEncoder().encode(ENV.jwtSecret);
-        const token = await new SignJWT({ 
-          sub: user.openId || '',
-          email: user.email || undefined,
-          name: user.name || undefined,
-          role: user.role,
-        })
-          .setProtectedHeader({ alg: 'HS256' })
-          .setIssuedAt()
-          .setExpirationTime('7d')
-          .sign(secret);
-        
-        // Set cookie
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, {
-          ...cookieOptions,
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-        
-        await db.createAuditLog({
-          userId: user.id,
-          userEmail: user.email,
-          action: "user.login",
-          entityType: "user",
-          entityId: user.id,
-          details: { method: "email" },
-          ipAddress: ctx.req.ip,
-        });
-        
-        return { 
-          success: true, 
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          }
-        };
-      }),
-    
-    // Request Password Reset
-    requestPasswordReset: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-      }))
-      .mutation(async ({ input }) => {
-        const user = await db.getUserByEmail(input.email);
-        
-        // Always return success to prevent email enumeration
-        if (!user) {
-          return { success: true, message: 'Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.' };
-        }
-        
-        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        
-        await db.setPasswordResetToken(input.email, token, expires);
-        
-        // TODO: Send email with reset link
-        // For now, just log the token (in production, send email)
-        console.log(`Password reset token for ${input.email}: ${token}`);
-        
-        return { success: true, message: 'Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.' };
-      }),
-    
-    // Reset Password
-    resetPassword: publicProcedure
-      .input(z.object({
-        token: z.string(),
-        newPassword: z.string().min(8),
-      }))
-      .mutation(async ({ input }) => {
-        const passwordHash = await bcrypt.hash(input.newPassword, 12);
-        const success = await db.resetPassword(input.token, passwordHash);
-        
-        if (!success) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Ungültiger oder abgelaufener Token' });
-        }
-        
-        return { success: true, message: 'Passwort erfolgreich zurückgesetzt' };
-      }),
   }),
 
   // ==================== BOND ROUTES ====================
