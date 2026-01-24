@@ -1,46 +1,17 @@
-import { clerkClient, verifyToken } from '@clerk/clerk-sdk-node';
+import { clerkClient, getAuth } from '@clerk/express';
 import type { Request } from 'express';
-import { parse as parseCookieHeader } from 'cookie';
 import type { User } from '../../drizzle/schema';
 import * as db from '../db';
-import { ENV } from './env';
-
-export async function verifyClerkSession(sessionToken: string | undefined): Promise<{
-  userId: string;
-  sessionId: string;
-} | null> {
-  if (!sessionToken) {
-    return null;
-  }
-
-  try {
-    const payload = await verifyToken(sessionToken, {
-      secretKey: ENV.clerkSecretKey,
-    });
-
-    return {
-      userId: payload.sub,
-      sessionId: payload.sid,
-    };
-  } catch (error) {
-    console.warn('[Clerk] Session verification failed:', error);
-    return null;
-  }
-}
 
 export async function authenticateRequest(req: Request): Promise<User | null> {
-  // Extract session token from cookie or Authorization header
-  const cookies = parseCookieHeader(req.headers.cookie || '');
-  const sessionToken = cookies['__session'] ||
-                      req.headers.authorization?.replace('Bearer ', '');
+  // Use getAuth from @clerk/express to get auth info
+  const auth = getAuth(req);
 
-  const session = await verifyClerkSession(sessionToken);
-
-  if (!session) {
+  if (!auth.userId) {
     return null;
   }
 
-  const clerkUserId = session.userId;
+  const clerkUserId = auth.userId;
   let user = await db.getUserByClerkId(clerkUserId);
 
   // If user not in DB, fetch from Clerk and sync
