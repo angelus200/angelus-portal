@@ -13,6 +13,7 @@ import Impressum from "./pages/Impressum";
 import AMLPolicy from "./pages/legal/AML";
 import PrivacyPolicy from "./pages/legal/Privacy";
 import { RegisterWithInvitation } from "./pages/RegisterWithInvitation";
+import ForInvestors from "./pages/ForInvestors";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -53,7 +54,10 @@ function Router() {
       <Route path="/impressum" component={Impressum} />
       <Route path="/aml" component={AMLPolicy} />
       <Route path="/datenschutz" component={PrivacyPolicy} />
-      
+
+      {/* Protected: For Investors (login required) */}
+      <Route path="/fuer-investoren" component={ForInvestors} />
+
       {/* Investor routes */}
       <Route path="/investor" component={InvestorDashboard} />
       <Route path="/investor/onboarding" component={InvestorOnboarding} />
