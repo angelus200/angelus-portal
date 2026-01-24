@@ -47,6 +47,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     throw new Error("User clerkId is required for upsert");
   }
 
+  console.log('[DB] upsertUser called with:', {
+    clerkId: user.clerkId,
+    email: user.email,
+    name: user.name
+  });
+
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot upsert user: database not available");
@@ -94,8 +100,20 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    console.log('[DB] Executing upsert with values:', {
+      clerkId: values.clerkId,
+      email: values.email,
+      name: values.name,
+      hasUpdateSet: Object.keys(updateSet).length > 0
+    });
+
+    const result = await db.insert(users).values(values).onDuplicateKeyUpdate({
       set: updateSet,
+    });
+
+    console.log('[DB] Upsert result:', {
+      affectedRows: result?.[0]?.affectedRows,
+      insertId: result?.[0]?.insertId
     });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
@@ -104,9 +122,23 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 }
 
 export async function getUserByClerkId(clerkId: string): Promise<User | undefined> {
+  console.log('[DB] getUserByClerkId called with:', clerkId);
+
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) {
+    console.log('[DB] getUserByClerkId: DB not available');
+    return undefined;
+  }
+
   const result = await db.select().from(users).where(eq(users.clerkId, clerkId)).limit(1);
+
+  console.log('[DB] getUserByClerkId result:', {
+    found: result.length > 0,
+    userId: result[0]?.id,
+    email: result[0]?.email,
+    clerkIdFromDb: result[0]?.clerkId
+  });
+
   return result.length > 0 ? result[0] : undefined;
 }
 

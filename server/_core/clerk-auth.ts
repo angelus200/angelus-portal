@@ -55,6 +55,9 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
 
       console.log('[Clerk Auth] User upserted successfully');
 
+      // Small delay to ensure DB write is committed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       user = await db.getUserByClerkId(clerkUserId);
       console.log('[Clerk Auth] User after upsert:', !!user);
     } catch (error) {
