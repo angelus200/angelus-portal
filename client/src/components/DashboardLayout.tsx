@@ -114,7 +114,8 @@ export default function DashboardLayout({
   // Redirect to appropriate dashboard based on role
   useEffect(() => {
     if (!loading && user) {
-      if (variant === "admin" && user.role !== "admin") {
+      // Allow both admin and superadmin to access admin area
+      if (variant === "admin" && user.role !== "admin" && user.role !== "superadmin") {
         setLocation("/investor");
       }
     }

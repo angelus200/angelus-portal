@@ -10,9 +10,9 @@ import { legacyInvitationsRouter } from "./legacyInvitationsRouter";
 import { interestParametersRouter } from "./interestParametersRouter";
 import interestCalculationRouter from "./routers/interest-calculation.router";
 
-// Admin-only procedure
+// Admin-only procedure (admin or superadmin)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== 'admin') {
+  if (ctx.user.role !== 'admin' && ctx.user.role !== 'superadmin') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
   }
   return next({ ctx });
