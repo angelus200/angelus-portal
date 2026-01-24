@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
@@ -6,17 +5,32 @@ import { Button } from "@/components/ui/button";
 
 export default function AMLPolicy() {
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="container flex items-center justify-between h-16">
+          <Link href="/">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <img
+                src="/logo.png"
+                alt="Angelus"
+                className="w-10 h-10 object-contain rounded bg-white/90 p-0.5"
+              />
+              <span className="font-semibold text-xl">Angelus</span>
+            </div>
+          </Link>
+          <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Zurück
+              Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">AML Richtlinie</h1>
         </div>
+      </header>
+
+      {/* Content */}
+      <main className="container max-w-4xl mx-auto px-4 pt-24 pb-16">
+        <h1 className="text-4xl font-bold mb-8">AML Richtlinie</h1>
 
         <Card>
           <CardHeader>
@@ -25,7 +39,7 @@ export default function AMLPolicy() {
           <CardContent className="space-y-6 text-sm leading-relaxed">
             <div>
               <p className="text-muted-foreground mb-4">
-                Anti-Money Laundering (AML) Richtlinie der Angelus Management Beratung und Service KG
+                Anti-Money Laundering (AML) Richtlinie der Blue Globe Finance, LLC
               </p>
             </div>
 
@@ -33,14 +47,14 @@ export default function AMLPolicy() {
               <div>
                 <h3 className="font-semibold text-base mb-2">1. Zielsetzung</h3>
                 <p className="text-muted-foreground">
-                  Die Angelus Management Beratung und Service KG (im Folgenden „das Unternehmen") verpflichtet sich zur Einhaltung aller gesetzlichen Anforderungen zur Bekämpfung von Geldwäsche und Terrorismusfinanzierung. Diese Richtlinie zielt darauf ab, die Risiken, die mit Geldwäsche und Terrorismusfinanzierung verbunden sind, zu minimieren und sicherzustellen, dass unser Unternehmen nicht zur Vortat dieser illegalen Aktivitäten wird.
+                  Blue Globe Finance, LLC (im Folgenden „das Unternehmen") verpflichtet sich zur Einhaltung aller gesetzlichen Anforderungen zur Bekämpfung von Geldwäsche und Terrorismusfinanzierung. Diese Richtlinie zielt darauf ab, die Risiken, die mit Geldwäsche und Terrorismusfinanzierung verbunden sind, zu minimieren und sicherzustellen, dass unser Unternehmen nicht zur Vortat dieser illegalen Aktivitäten wird.
                 </p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-base mb-2">2. Geltungsbereich</h3>
                 <p className="text-muted-foreground">
-                  Diese Richtlinie gilt für alle Mitarbeiter, Abteilungen, und Geschäftsprozesse der Angelus Management Beratung und Service KG.
+                  Diese Richtlinie gilt für alle Mitarbeiter, Abteilungen, und Geschäftsprozesse der Blue Globe Finance, LLC.
                 </p>
               </div>
 
@@ -104,7 +118,14 @@ export default function AMLPolicy() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </DashboardLayout>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-8 bg-secondary border-t border-border">
+        <div className="container text-center text-sm text-secondary-foreground/60">
+          © {new Date().getFullYear()} Blue Globe Finance, LLC. All rights reserved.
+        </div>
+      </footer>
+    </div>
   );
 }

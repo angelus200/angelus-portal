@@ -12,6 +12,7 @@ import SignUp from "./pages/SignUp";
 import Impressum from "./pages/Impressum";
 import AMLPolicy from "./pages/legal/AML";
 import PrivacyPolicy from "./pages/legal/Privacy";
+import RiskDisclosure from "./pages/legal/RiskDisclosure";
 import { RegisterWithInvitation } from "./pages/RegisterWithInvitation";
 import ForInvestors from "./pages/ForInvestors";
 
@@ -52,8 +53,9 @@ function Router() {
       <Route path="/sign-up" component={SignUp} />
       <Route path="/register" component={RegisterWithInvitation} />
       <Route path="/impressum" component={Impressum} />
+      <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/aml" component={AMLPolicy} />
-      <Route path="/datenschutz" component={PrivacyPolicy} />
+      <Route path="/risk-disclosure" component={RiskDisclosure} />
 
       {/* Protected: For Investors (login required) */}
       <Route path="/fuer-investoren" component={ForInvestors} />

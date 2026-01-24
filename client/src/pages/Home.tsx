@@ -98,7 +98,7 @@ export default function Home() {
             />
             <div>
               <span className="font-semibold text-lg">Angelus Group</span>
-              <p className="text-xs text-muted-foreground">Investorenportal</p>
+              <p className="text-xs text-muted-foreground">Investor Portal</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -107,11 +107,11 @@ export default function Home() {
             ) : (
               <>
                 <Link href="/sign-in">
-                  <Button variant="ghost">Anmelden</Button>
+                  <Button variant="ghost">Sign In</Button>
                 </Link>
                 <Link href="/sign-up">
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    Registrieren
+                    Register
                   </Button>
                 </Link>
               </>
@@ -125,10 +125,10 @@ export default function Home() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Angelus Group – Investorenportal
+              Angelus Group – Investor Portal
             </h1>
             <p className="text-lg text-muted-foreground mb-2">
-              Unternehmensgruppe mit Standorten in <strong>Deutschland</strong>, <strong>Österreich</strong>, <strong>Schweiz</strong>, <strong>Zypern</strong>, <strong>UK</strong>, <strong>Estland</strong>, <strong>Georgien</strong> und <strong>St. Vincent</strong>
+              International corporate group with offices in <strong>Germany</strong>, <strong>Austria</strong>, <strong>Switzerland</strong>, <strong>Cyprus</strong>, <strong>United Kingdom</strong>, <strong>Estonia</strong>, <strong>Georgia</strong>, and <strong>St. Vincent and the Grenadines</strong>
             </p>
           </div>
         </div>
@@ -138,9 +138,9 @@ export default function Home() {
       <section className="py-12 bg-muted/30">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Finanzrechner</h2>
+            <h2 className="text-3xl font-bold mb-3">Financial Calculators</h2>
             <p className="text-muted-foreground">
-              Nutzen Sie unsere Tools zur Finanzplanung
+              Use our tools for financial planning
             </p>
           </div>
 
@@ -150,13 +150,13 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-primary" />
-                  Kapitalrechner
+                  Capital Calculator
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">Wie lange reicht Ihr Kapital?</p>
+                <p className="text-sm text-muted-foreground">How long will your capital last?</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="capital">Vorhandenes Kapital (€)</Label>
+                  <Label htmlFor="capital">Available Capital (€)</Label>
                   <Input
                     id="capital"
                     type="number"
@@ -166,7 +166,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="withdrawal">Monatliche Entnahme (€)</Label>
+                  <Label htmlFor="withdrawal">Monthly Withdrawal (€)</Label>
                   <Input
                     id="withdrawal"
                     type="number"
@@ -176,7 +176,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="return">Erwartete jährliche Rendite (%)</Label>
+                  <Label htmlFor="return">Expected Annual Return (%)</Label>
                   <Input
                     id="return"
                     type="number"
@@ -187,19 +187,19 @@ export default function Home() {
                   />
                 </div>
                 <Button onClick={calculateCapitalDuration} className="w-full">
-                  Berechnen
+                  Calculate
                 </Button>
                 {yearsRemaining !== null && (
                   <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Ihr Kapital reicht für:</p>
+                    <p className="text-sm text-muted-foreground mb-1">Your capital will last:</p>
                     <p className="text-2xl font-bold text-primary">
                       {yearsRemaining === Infinity
-                        ? "Unbegrenzt"
-                        : `${yearsRemaining.toFixed(1)} Jahre`}
+                        ? "Indefinitely"
+                        : `${yearsRemaining.toFixed(1)} Years`}
                     </p>
                     {yearsRemaining !== Infinity && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        (ca. {Math.round(yearsRemaining * 12)} Monate)
+                        (approx. {Math.round(yearsRemaining * 12)} months)
                       </p>
                     )}
                   </div>
@@ -212,13 +212,13 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingDown className="w-5 h-5 text-primary" />
-                  Inflationsrechner
+                  Inflation Calculator
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">Was ist Ihr Geld in X Jahren wert?</p>
+                <p className="text-sm text-muted-foreground">What will your money be worth in X years?</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="amount">Betrag heute (€)</Label>
+                  <Label htmlFor="amount">Amount Today (€)</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -228,7 +228,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="years">Zeitraum (Jahre)</Label>
+                  <Label htmlFor="years">Time Period (Years)</Label>
                   <Input
                     id="years"
                     type="number"
@@ -238,7 +238,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="inflation">Erwartete Inflation p.a. (%)</Label>
+                  <Label htmlFor="inflation">Expected Inflation p.a. (%)</Label>
                   <Input
                     id="inflation"
                     type="number"
@@ -249,19 +249,19 @@ export default function Home() {
                   />
                 </div>
                 <Button onClick={calculateInflation} className="w-full">
-                  Berechnen
+                  Calculate
                 </Button>
                 {futureValue !== null && purchasingPowerLoss !== null && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Kaufkraft in {years} Jahren:</p>
+                    <p className="text-sm text-muted-foreground mb-1">Purchasing power in {years} years:</p>
                     <p className="text-2xl font-bold text-red-700">
-                      €{futureValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                      €{futureValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                     </p>
                     <p className="text-sm text-red-600 mt-2">
-                      Kaufkraftverlust: -€{purchasingPowerLoss.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                      Purchasing power loss: -€{purchasingPowerLoss.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      ({((purchasingPowerLoss / parseFloat(amount)) * 100).toFixed(1)}% weniger Kaufkraft)
+                      ({((purchasingPowerLoss / parseFloat(amount)) * 100).toFixed(1)}% less purchasing power)
                     </p>
                   </div>
                 )}
@@ -280,19 +280,19 @@ export default function Home() {
                 <div className="flex items-start gap-4">
                   <AlertTriangle className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-semibold mb-3">Zielgruppe</h3>
+                    <h3 className="text-xl font-semibold mb-3">Target Audience</h3>
                     <p className="text-muted-foreground mb-4">
-                      Dieses Portal richtet sich ausschließlich an <strong className="text-foreground">professionelle und semiprofessionelle Investoren</strong> mit entsprechender Risikobereitschaft.
+                      This portal is exclusively for <strong className="text-foreground">professional and semi-professional investors</strong> with appropriate risk tolerance.
                     </p>
                     <div className="space-y-2">
                       <p className="text-sm">
-                        <strong className="text-foreground">Mindestanlage:</strong> 100.000 €
+                        <strong className="text-foreground">Minimum Investment:</strong> €100,000
                       </p>
                       <p className="text-sm">
-                        <strong className="text-foreground">Zielgruppe:</strong> Unternehmer, Family Offices, Business Angels, institutionelle Investoren
+                        <strong className="text-foreground">Target Group:</strong> Entrepreneurs, family offices, business angels, institutional investors
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Nicht geeignet für Privatanleger, Verbraucher oder sicherheitsorientierte Anleger.
+                        Not suitable for retail investors, consumers, or security-oriented investors.
                       </p>
                     </div>
                   </div>
@@ -308,20 +308,20 @@ export default function Home() {
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4 text-secondary-foreground">
-              Bereit für exklusive Investitionsmöglichkeiten?
+              Ready for Exclusive Investment Opportunities?
             </h2>
             <p className="text-secondary-foreground/70 mb-8">
-              Registrieren Sie sich und erhalten Sie nach erfolgreicher KYC-Verifizierung Zugang zu unserem Investorenportal.
+              Register now and gain access to our investor portal after successful KYC verification.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/sign-up">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
-                  Jetzt registrieren
+                  Register Now
                 </Button>
               </Link>
               <Link href="/sign-in">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Anmelden
+                  Sign In
                 </Button>
               </Link>
             </div>
@@ -335,17 +335,17 @@ export default function Home() {
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-destructive" />
-              <h3 className="text-lg font-semibold">Risikohinweis</h3>
+              <h3 className="text-lg font-semibold">Risk Warning</h3>
             </div>
             <div className="text-sm text-muted-foreground space-y-2">
               <p>
-                Investitionen über dieses Portal sind mit <strong className="text-foreground">erheblichen Risiken</strong> verbunden und richten sich ausschließlich an professionelle Investoren.
+                Investments through this portal involve <strong className="text-foreground">significant risks</strong> and are exclusively intended for professional investors.
               </p>
               <p>
-                Es besteht die Möglichkeit eines <strong className="text-foreground">vollständigen Verlustes des eingesetzten Kapitals</strong>. Eine Rückzahlung oder Zinszahlung ist nicht garantiert.
+                There is a possibility of <strong className="text-foreground">total loss of invested capital</strong>. Repayment or interest payment is not guaranteed.
               </p>
               <p>
-                <strong className="text-foreground">Mindestzeichnung: 100.000 €</strong> – Prospektausnahme nach Art. 1 Abs. 4 lit. c EU-ProspektVO.
+                <strong className="text-foreground">Minimum subscription: €100,000</strong> – Prospectus exemption according to Art. 1 Para. 4 lit. c EU Prospectus Regulation.
               </p>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 bg-secondary border-t border-border">
         <div className="container">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
             <div className="flex items-center gap-2">
               <img
                 src="/logo.png"
@@ -364,14 +364,26 @@ export default function Home() {
               />
               <span className="font-semibold text-secondary-foreground">Angelus Group</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-secondary-foreground/60">
-              <Link href="/impressum" className="hover:text-primary">Impressum</Link>
-              <Link href="/datenschutz" className="hover:text-primary">Datenschutz</Link>
-              <Link href="/aml" className="hover:text-primary">AML Richtlinie</Link>
+            <div className="flex flex-wrap gap-6 text-sm text-secondary-foreground/60">
+              <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
+              <Link href="/aml" className="hover:text-primary">AML Policy</Link>
+              <Link href="/risk-disclosure" className="hover:text-primary">Risk Disclosure</Link>
             </div>
           </div>
-          <div className="text-center text-xs text-secondary-foreground/60 mt-6">
-            © {new Date().getFullYear()} Angelus Group. Alle Rechte vorbehalten.
+
+          <div className="border-t border-border/50 pt-6">
+            <div className="text-sm text-secondary-foreground/60 space-y-2">
+              <p className="font-semibold text-secondary-foreground">Operator:</p>
+              <p>
+                <strong>Blue Globe Finance, LLC</strong><br />
+                Lower Bay Street, Browne's Building 1st Floor, Suite 2131<br />
+                Kingstown, St. Vincent and the Grenadines
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-secondary-foreground/60 mt-6 pt-6 border-t border-border/50">
+            © {new Date().getFullYear()} Blue Globe Finance, LLC. All rights reserved.
           </div>
         </div>
       </footer>

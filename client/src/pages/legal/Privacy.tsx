@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
@@ -6,17 +5,32 @@ import { Button } from "@/components/ui/button";
 
 export default function PrivacyPolicy() {
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="container flex items-center justify-between h-16">
+          <Link href="/">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <img
+                src="/logo.png"
+                alt="Angelus"
+                className="w-10 h-10 object-contain rounded bg-white/90 p-0.5"
+              />
+              <span className="font-semibold text-xl">Angelus</span>
+            </div>
+          </Link>
+          <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Zurück
+              Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">Datenschutz</h1>
         </div>
+      </header>
+
+      {/* Content */}
+      <main className="container max-w-4xl mx-auto px-4 pt-24 pb-16">
+        <h1 className="text-4xl font-bold mb-8">Datenschutz</h1>
 
         <Card>
           <CardHeader>
@@ -61,16 +75,9 @@ export default function PrivacyPolicy() {
             <div>
               <h3 className="font-semibold text-base mb-2">Verantwortliche Stelle</h3>
               <div className="text-muted-foreground space-y-1">
-                <p>Angelus Managementberatungs und Service KG</p>
-                <p>Konrad Zuse Platz 8</p>
-                <p>81829 München</p>
-                <p>Handelsregister-Nr.: HRA 10405</p>
-                <p>Registergericht München</p>
-                <p>USt-IdNr.: DE 279532189</p>
-                <p className="mt-3">Komplementär:</p>
-                <p>Thomas Gross</p>
-                <p>Telefon: 0800 175 077 0</p>
-                <p>E-Mail: office@angelusgroup.de</p>
+                <p><strong>Blue Globe Finance, LLC</strong></p>
+                <p>Lower Bay Street, Browne's Building 1st Floor, Suite 2131</p>
+                <p>Kingstown, St. Vincent and the Grenadines</p>
               </div>
             </div>
 
@@ -112,7 +119,14 @@ export default function PrivacyPolicy() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </DashboardLayout>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-8 bg-secondary border-t border-border">
+        <div className="container text-center text-sm text-secondary-foreground/60">
+          © {new Date().getFullYear()} Blue Globe Finance, LLC. All rights reserved.
+        </div>
+      </footer>
+    </div>
   );
 }
