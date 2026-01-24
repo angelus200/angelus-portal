@@ -74,7 +74,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     const values: InsertUser = {
       clerkId: user.clerkId,
     };
-    const updateSet: Record<string, unknown> = {};
+    const updateSet: Record<string, unknown> = {
+      // CRITICAL: Must update clerkId on duplicate key (e.g., email match)
+      clerkId: user.clerkId,
+    };
 
     const textFields = ["name", "email", "loginMethod", "phone", "company", "address", "country"] as const;
     type TextField = (typeof textFields)[number];
@@ -107,7 +110,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.lastSignedIn = new Date();
     }
 
-    if (Object.keys(updateSet).length === 0) {
+    // Always update lastSignedIn on duplicate
+    if (!updateSet.lastSignedIn) {
       updateSet.lastSignedIn = new Date();
     }
 
