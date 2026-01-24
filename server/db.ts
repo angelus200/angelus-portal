@@ -1,7 +1,8 @@
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { 
-  InsertUser, users, 
+import mysql from 'mysql2/promise';
+import {
+  InsertUser, users,
   bonds, InsertBond, Bond,
   subscriptions, InsertSubscription, Subscription,
   contracts, InsertContract, Contract,
@@ -27,14 +28,24 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql.Pool | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      console.log('[DB] Creating mysql2 connection pool');
+      _pool = mysql.createPool({
+        uri: process.env.DATABASE_URL,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+      });
+      _db = drizzle(_pool);
+      console.log('[DB] Drizzle initialized with connection pool');
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _pool = null;
     }
   }
   return _db;
