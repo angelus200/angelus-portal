@@ -68,6 +68,7 @@ const investorMenuItems = [
   { icon: "CreditCard", label: "Zahlungen", path: "/investor/payments" },
   { icon: "Wallet", label: "Wallet", path: "/investor/wallet" },
   { icon: "Shield", label: "Risikoprofil", path: "/investor/risk-profile" },
+  { icon: "Newspaper", label: "Für Investoren", path: "/fuer-investoren" },
 ];
 
 // Admin menu items
