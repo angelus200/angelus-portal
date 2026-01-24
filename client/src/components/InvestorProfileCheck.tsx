@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { getLoginUrl } from "@/const";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -593,7 +592,7 @@ export default function InvestorProfileCheck({ onComplete, onClose }: InvestorPr
                 Profil wird gespeichert...
               </Button>
             ) : (
-              <Button className="flex-1" onClick={() => window.location.href = getLoginUrl()}>
+              <Button className="flex-1" onClick={() => window.location.href = '/sign-up'}>
                 Jetzt registrieren
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
