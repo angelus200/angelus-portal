@@ -44,7 +44,9 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
+      <Route path="/sign-in/:rest*" component={SignIn} />
       <Route path="/sign-in" component={SignIn} />
+      <Route path="/sign-up/:rest*" component={SignUp} />
       <Route path="/sign-up" component={SignUp} />
       <Route path="/register" component={RegisterWithInvitation} />
       <Route path="/impressum" component={Impressum} />
