@@ -30,50 +30,50 @@ export default function PrivacyPolicy() {
 
       {/* Content */}
       <main className="container max-w-4xl mx-auto px-4 pt-24 pb-16">
-        <h1 className="text-4xl font-bold mb-8">Datenschutz</h1>
+        <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
 
         <Card>
           <CardHeader>
-            <CardTitle>Datenschutzerklärung (DSGVO)</CardTitle>
+            <CardTitle>Privacy Policy (GDPR)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 text-sm leading-relaxed">
             <div>
-              <h3 className="font-semibold text-base mb-2">Allgemeine Hinweise</h3>
+              <h3 className="font-semibold text-base mb-2">General Information</h3>
               <p className="text-muted-foreground">
-                Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.
+                The following information provides a simple overview of what happens to your personal data when you visit our website. Personal data is any data that can personally identify you. For detailed information on data protection, please refer to our privacy policy below.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Datenerfassung auf unserer Website</h3>
+              <h3 className="font-semibold text-base mb-2">Data Collection on Our Website</h3>
               <p className="text-muted-foreground">
-                Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum dieser Website entnehmen.
+                Data processing on this website is carried out by the website operator. The operator's contact details can be found in the imprint of this website.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Wie erfassen wir Ihre Daten?</h3>
+              <h3 className="font-semibold text-base mb-2">How Do We Collect Your Data?</h3>
               <p className="text-muted-foreground">
-                Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z.B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs). Die Erfassung dieser Daten erfolgt automatisch, sobald Sie unsere Website betreten.
+                Your data is collected in part by you providing it to us. This may include data that you enter into a contact form, for example. Other data is collected automatically by our IT systems when you visit the website. This is primarily technical data (e.g., internet browser, operating system, or time of page access). This data is collected automatically as soon as you enter our website.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Wofür nutzen wir Ihre Daten?</h3>
+              <h3 className="font-semibold text-base mb-2">What Do We Use Your Data For?</h3>
               <p className="text-muted-foreground">
-                Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.
+                Part of the data is collected to ensure error-free provision of the website. Other data may be used to analyze your user behavior.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Welche Rechte haben Sie bezüglich Ihrer Daten?</h3>
+              <h3 className="font-semibold text-base mb-2">What Rights Do You Have Regarding Your Data?</h3>
               <p className="text-muted-foreground">
-                Sie haben jederzeit das Recht unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung, Sperrung oder Löschung dieser Daten zu verlangen. Hierzu sowie zu weiteren Fragen zum Thema Datenschutz können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden. Des Weiteren steht Ihnen ein Beschwerderecht bei der zuständigen Aufsichtsbehörde zu.
+                You have the right at any time to receive free information about the origin, recipient, and purpose of your stored personal data. You also have the right to request the correction, blocking, or deletion of this data. For this and other questions about data protection, you can contact us at any time using the address provided in the imprint. Furthermore, you have the right to lodge a complaint with the competent supervisory authority.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Verantwortliche Stelle</h3>
+              <h3 className="font-semibold text-base mb-2">Responsible Party</h3>
               <div className="text-muted-foreground space-y-1">
                 <p><strong>Blue Globe Finance, LLC</strong></p>
                 <p>Lower Bay Street, Browne's Building 1st Floor, Suite 2131</p>
@@ -82,39 +82,39 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">SSL- bzw. TLS-Verschlüsselung</h3>
+              <h3 className="font-semibold text-base mb-2">SSL/TLS Encryption</h3>
               <p className="text-muted-foreground">
-                Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von "http://" auf "https://" wechselt und an dem Schloss-Symbol in Ihrer Browserzeile. Wenn die SSL- bzw. TLS-Verschlüsselung aktiviert ist, können die Daten, die Sie an uns übermitteln, nicht von Dritten mitgelesen werden.
+                This site uses SSL/TLS encryption for security reasons and to protect the transmission of confidential content. You can recognize an encrypted connection by the fact that the browser address bar changes from "http://" to "https://" and by the lock symbol in your browser bar. When SSL/TLS encryption is activated, the data you transmit to us cannot be read by third parties.
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold text-base mb-2">Cookies</h3>
               <p className="text-muted-foreground">
-                Die Internetseiten verwenden teilweise so genannte Cookies. Cookies richten auf Ihrem Rechner keinen Schaden an und enthalten keine Viren. Cookies dienen dazu, unser Angebot nutzerfreundlicher, effektiver und sicherer zu machen. Cookies sind kleine Textdateien, die auf Ihrem Rechner abgelegt werden und die Ihr Browser speichert.
+                The website uses cookies in some cases. Cookies do not damage your computer and do not contain viruses. Cookies are used to make our website more user-friendly, effective, and secure. Cookies are small text files that are stored on your computer and saved by your browser.
               </p>
               <p className="text-muted-foreground mt-2">
-                Sie können ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder generell ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browser aktivieren.
+                You can configure your browser to inform you about the setting of cookies and to allow cookies only in individual cases, to exclude the acceptance of cookies for certain cases or generally, and to activate the automatic deletion of cookies when closing the browser.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Widerruf Ihrer Einwilligung</h3>
+              <h3 className="font-semibold text-base mb-2">Withdrawal of Your Consent</h3>
               <p className="text-muted-foreground">
-                Viele Datenverarbeitungsvorgänge sind nur mit Ihrer ausdrücklichen Einwilligung möglich. Sie können eine bereits erteilte Einwilligung jederzeit widerrufen. Dazu reicht eine formlose Mitteilung per E-Mail an uns. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Datenverarbeitung bleibt vom Widerruf unberührt.
+                Many data processing operations are only possible with your express consent. You can revoke consent you have already given at any time. An informal message by email to us is sufficient. The legality of data processing carried out until the revocation remains unaffected by the revocation.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-base mb-2">Auskunft, Sperrung, Löschung</h3>
+              <h3 className="font-semibold text-base mb-2">Information, Blocking, Deletion</h3>
               <p className="text-muted-foreground">
-                Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.
+                Within the framework of the applicable legal provisions, you have the right at any time to free information about your stored personal data, its origin and recipients, and the purpose of data processing, and, if applicable, a right to correction, blocking, or deletion of this data. For this and other questions about personal data, you can contact us at any time using the address provided in the imprint.
               </p>
             </div>
 
             <div className="border-t pt-4 mt-6">
               <p className="text-xs text-muted-foreground">
-                Quelle: <a href="https://kg.angelus.group/datenschutz/" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://kg.angelus.group/datenschutz/</a>
+                Source: <a href="https://kg.angelus.group/datenschutz/" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://kg.angelus.group/datenschutz/</a>
               </p>
             </div>
           </CardContent>
