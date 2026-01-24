@@ -35,6 +35,19 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Validate ENV variables
+  console.log('[Server] Environment check:', {
+    hasClerkPublishableKey: !!ENV.clerkPublishableKey,
+    hasClerkSecretKey: !!ENV.clerkSecretKey,
+    hasDatabaseUrl: !!ENV.databaseUrl,
+    clerkPublishableKeyPrefix: ENV.clerkPublishableKey?.substring(0, 8),
+    nodeEnv: process.env.NODE_ENV
+  });
+
+  if (!ENV.clerkPublishableKey || !ENV.clerkSecretKey) {
+    console.error('[Server] CRITICAL: Clerk keys not configured!');
+  }
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
