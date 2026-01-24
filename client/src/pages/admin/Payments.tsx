@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import DashboardLayout from "@/components/DashboardLayout";
 import {
   Table,
   TableBody,
@@ -136,12 +137,13 @@ export default function PaymentsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Zahlungen</h1>
-        <p className="text-gray-600 mt-2">Verwalten und überwachen Sie alle Investorenzahlungen</p>
-      </div>
+    <DashboardLayout variant="admin">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Zahlungen</h1>
+          <p className="text-gray-600 mt-2">Verwalten und überwachen Sie alle Investorenzahlungen</p>
+        </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -407,6 +409,7 @@ export default function PaymentsPage() {
           </Button>
         </div>
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
