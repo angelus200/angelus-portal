@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { getLoginUrl } from "@/const";
 import { 
   Shield, 
   TrendingUp, 
@@ -67,11 +66,11 @@ export default function Home() {
                 <Button>Dashboard</Button>
               </Link>
             ) : (
-              <a href={getLoginUrl()}>
+              <Link href="/sign-in">
                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                   Anmelden
                 </Button>
-              </a>
+              </Link>
             )}
           </div>
         </div>
@@ -92,12 +91,12 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {!isAuthenticated && (
                 <>
-                  <a href={getLoginUrl()}>
+                  <Link href="/sign-up">
                     <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                       Jetzt registrieren
                       <ArrowRight className="w-4 h-4" />
                     </Button>
-                  </a>
+                  </Link>
 <Dialog open={profileCheckOpen} onOpenChange={setProfileCheckOpen}>
                     <DialogTrigger asChild>
                       <Button className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50 gap-2 font-semibold">
@@ -626,12 +625,12 @@ export default function Home() {
               <p className="text-muted-foreground mb-8">
                 Registrieren Sie sich jetzt und erhalten Sie Zugang zu exklusiven Investitionsmöglichkeiten nach erfolgreicher KYC-Verifizierung.
               </p>
-              <a href={getLoginUrl()}>
+              <Link href="/sign-up">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                   Jetzt starten
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </section>
