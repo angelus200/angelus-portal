@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Wallet, ArrowUpRight, ArrowDownLeft, Bitcoin, DollarSign, Copy, CheckCircle } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownLeft, Bitcoin, DollarSign, Copy, CheckCircle, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { StripeDepositDialog } from "@/components/wallet/StripeDepositDialog";
 
 export default function InvestorWallet() {
   const { data: wallets, isLoading: walletsLoading, refetch: refetchWallets } = trpc.wallet.myWallets.useQuery();
@@ -36,6 +37,26 @@ export default function InvestorWallet() {
   const [withdrawCurrency, setWithdrawCurrency] = useState("EUR");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+
+  const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [selectedWalletForDeposit, setSelectedWalletForDeposit] = useState<typeof wallets extends (infer U)[] ? U : never | null>(null);
+
+  // Handle deposit success/cancelled query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const depositStatus = params.get("deposit");
+
+    if (depositStatus === "success") {
+      toast.success("Einzahlung erfolgreich! Ihr Wallet wird aktualisiert.");
+      refetchWallets();
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (depositStatus === "cancelled") {
+      toast.info("Einzahlung abgebrochen.");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [refetchWallets]);
 
   const fiatWallets = wallets?.filter(w => w.currencyType === "fiat") || [];
   const cryptoWallets = wallets?.filter(w => w.currencyType === "crypto") || [];
@@ -221,6 +242,17 @@ export default function InvestorWallet() {
                           </span>
                         </div>
                       </div>
+                      <Button
+                        className="w-full mt-4 gap-2"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedWalletForDeposit(wallet);
+                          setIsDepositOpen(true);
+                        }}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        Mit Kreditkarte einzahlen
+                      </Button>
                     </CardContent>
                   </Card>
                 ))
@@ -404,6 +436,15 @@ export default function InvestorWallet() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Stripe Deposit Dialog */}
+      {selectedWalletForDeposit && (
+        <StripeDepositDialog
+          wallet={selectedWalletForDeposit}
+          open={isDepositOpen}
+          onOpenChange={setIsDepositOpen}
+        />
+      )}
     </DashboardLayout>
   );
 }

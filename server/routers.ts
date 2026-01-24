@@ -898,7 +898,40 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return db.getOrCreateWallet(ctx.user.id, input.currency, input.currencyType);
       }),
-    
+
+    depositWithStripe: protectedProcedure
+      .input(z.object({
+        walletId: z.number(),
+        amount: z.number().min(1000).max(1000000), // €1,000 - €1,000,000
+        currency: z.string().default("EUR"),
+        successUrl: z.string(),
+        cancelUrl: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const walletService = await import("./wallet-service");
+
+        const { sessionId, url } = await walletService.createStripeCheckoutSession(
+          ctx.user.id,
+          input.walletId,
+          input.amount,
+          input.currency,
+          input.successUrl,
+          input.cancelUrl
+        );
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "wallet.depositInitiated",
+          entityType: "wallet",
+          entityId: input.walletId,
+          details: { amount: input.amount, currency: input.currency, sessionId },
+          ipAddress: ctx.req.ip,
+        });
+
+        return { sessionId, url };
+      }),
+
     transactions: protectedProcedure.query(async ({ ctx }) => {
       return db.getTransactionsByUser(ctx.user.id);
     }),

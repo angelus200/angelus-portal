@@ -466,6 +466,160 @@ export async function updateWalletBalance(walletId: number, balance: string, ava
   await db.update(wallets).set({ balance, availableBalance }).where(eq(wallets.id, walletId));
 }
 
+export async function getWalletById(walletId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateWalletStripeCustomer(walletId: number, stripeCustomerId: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(wallets).set({ stripeCustomerId }).where(eq(wallets.id, walletId));
+}
+
+export async function creditWalletBalance(
+  walletId: number,
+  amount: string,
+  transactionId: number,
+  stripePaymentIntentId: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Use transaction for atomic update
+  await db.transaction(async (tx) => {
+    // Get current wallet balance
+    const wallet = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (wallet.length === 0) throw new Error(`Wallet ${walletId} not found`);
+
+    const currentBalance = parseFloat(wallet[0].balance);
+    const currentAvailable = parseFloat(wallet[0].availableBalance);
+    const currentDeposited = parseFloat(wallet[0].totalDeposited);
+    const amountNum = parseFloat(amount);
+
+    const newBalance = (currentBalance + amountNum).toFixed(8);
+    const newAvailable = (currentAvailable + amountNum).toFixed(8);
+    const newDeposited = (currentDeposited + amountNum).toFixed(8);
+
+    // Update wallet balance
+    await tx.update(wallets).set({
+      balance: newBalance,
+      availableBalance: newAvailable,
+      totalDeposited: newDeposited,
+      lastDepositAt: new Date(),
+    }).where(eq(wallets.id, walletId));
+
+    // Update transaction status
+    await tx.update(walletTransactions).set({
+      status: "completed",
+      stripePaymentIntentId,
+    }).where(eq(walletTransactions.id, transactionId));
+  });
+}
+
+export async function debitWalletBalance(walletId: number, amount: string, transactionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Use transaction for atomic update
+  await db.transaction(async (tx) => {
+    // Get current wallet balance with row lock
+    const wallet = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (wallet.length === 0) throw new Error(`Wallet ${walletId} not found`);
+
+    const currentBalance = parseFloat(wallet[0].balance);
+    const currentAvailable = parseFloat(wallet[0].availableBalance);
+    const amountNum = parseFloat(amount);
+
+    if (currentAvailable < amountNum) {
+      throw new Error("Insufficient available balance");
+    }
+
+    const newBalance = (currentBalance - amountNum).toFixed(8);
+    const newAvailable = (currentAvailable - amountNum).toFixed(8);
+
+    // Update wallet balance
+    await tx.update(wallets).set({
+      balance: newBalance,
+      availableBalance: newAvailable,
+    }).where(eq(wallets.id, walletId));
+
+    // Update transaction status
+    await tx.update(walletTransactions).set({
+      status: "completed",
+    }).where(eq(walletTransactions.id, transactionId));
+  });
+}
+
+export async function reserveWalletBalance(walletId: number, amount: string, subscriptionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Phase 2: Reserve balance for pending approval
+  // Only reduces availableBalance, not total balance
+  await db.transaction(async (tx) => {
+    const wallet = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (wallet.length === 0) throw new Error(`Wallet ${walletId} not found`);
+
+    const currentAvailable = parseFloat(wallet[0].availableBalance);
+    const amountNum = parseFloat(amount);
+
+    if (currentAvailable < amountNum) {
+      throw new Error("Insufficient available balance to reserve");
+    }
+
+    const newAvailable = (currentAvailable - amountNum).toFixed(8);
+
+    await tx.update(wallets).set({
+      availableBalance: newAvailable,
+    }).where(eq(wallets.id, walletId));
+  });
+}
+
+export async function confirmReservedWalletBalance(walletId: number, amount: string, transactionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Phase 2: Confirm reservation and actually debit balance
+  await db.transaction(async (tx) => {
+    const wallet = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (wallet.length === 0) throw new Error(`Wallet ${walletId} not found`);
+
+    const currentBalance = parseFloat(wallet[0].balance);
+    const amountNum = parseFloat(amount);
+    const newBalance = (currentBalance - amountNum).toFixed(8);
+
+    await tx.update(wallets).set({
+      balance: newBalance,
+    }).where(eq(wallets.id, walletId));
+
+    await tx.update(walletTransactions).set({
+      status: "completed",
+    }).where(eq(walletTransactions.id, transactionId));
+  });
+}
+
+export async function releaseReservedWalletBalance(walletId: number, amount: string, subscriptionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Phase 2: Release reservation and restore availableBalance
+  await db.transaction(async (tx) => {
+    const wallet = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (wallet.length === 0) throw new Error(`Wallet ${walletId} not found`);
+
+    const currentAvailable = parseFloat(wallet[0].availableBalance);
+    const amountNum = parseFloat(amount);
+    const newAvailable = (currentAvailable + amountNum).toFixed(8);
+
+    await tx.update(wallets).set({
+      availableBalance: newAvailable,
+    }).where(eq(wallets.id, walletId));
+  });
+}
+
 // ==================== WALLET TRANSACTION FUNCTIONS ====================
 
 export async function createWalletTransaction(transaction: InsertWalletTransaction) {
@@ -473,6 +627,15 @@ export async function createWalletTransaction(transaction: InsertWalletTransacti
   if (!db) throw new Error("Database not available");
   const result = await db.insert(walletTransactions).values(transaction);
   return result[0].insertId;
+}
+
+export async function updateWalletTransactionStripeIds(
+  transactionId: number,
+  ids: { stripeCheckoutSessionId?: string; stripePaymentIntentId?: string }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(walletTransactions).set(ids).where(eq(walletTransactions.id, transactionId));
 }
 
 export async function getTransactionsByWallet(walletId: number) {

@@ -174,6 +174,70 @@ export async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
 }
 
 /**
+ * Handles checkout.session.completed event
+ * Phase 1: Wallet deposits via Stripe Checkout
+ */
+export async function handleCheckoutSessionCompleted(
+  event: Stripe.Event
+): Promise<void> {
+  const session = event.data.object as Stripe.Checkout.Session;
+
+  console.log(`[Stripe Webhook] Checkout Session Completed: ${session.id}`);
+
+  // Extract metadata
+  const walletId = session.metadata?.walletId;
+  const userId = session.metadata?.userId;
+  const transactionId = session.metadata?.transactionId;
+  const depositAmount = session.metadata?.depositAmount;
+  const currency = session.metadata?.currency;
+
+  if (!walletId || !userId || !transactionId || !depositAmount || !currency) {
+    console.error(
+      `[Stripe Webhook] Missing metadata in Checkout Session: ${session.id}`,
+      session.metadata
+    );
+    return;
+  }
+
+  // Get payment intent ID
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+
+  if (!paymentIntentId) {
+    console.error(
+      `[Stripe Webhook] No payment_intent in Checkout Session: ${session.id}`
+    );
+    return;
+  }
+
+  try {
+    // Credit wallet balance
+    await db.creditWalletBalance(
+      parseInt(walletId),
+      depositAmount,
+      parseInt(transactionId),
+      paymentIntentId
+    );
+
+    console.log(
+      `[Stripe Webhook] Wallet ${walletId} credited with ${depositAmount} ${currency}`
+    );
+
+    // TODO: Send deposit confirmation email to investor
+    // TODO: Log audit trail for wallet deposit
+  } catch (error) {
+    console.error(
+      `[Stripe Webhook] Error processing Checkout Session ${session.id}:`,
+      error
+    );
+    // Don't throw - we've already received the event
+    // Manual reconciliation will be needed
+  }
+}
+
+/**
  * Main webhook handler
  */
 export async function handleStripeWebhook(
@@ -200,6 +264,10 @@ export async function handleStripeWebhook(
   try {
     // Handle different event types
     switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event);
+        break;
+
       case "payment_intent.succeeded":
         await handlePaymentIntentSucceeded(event);
         break;

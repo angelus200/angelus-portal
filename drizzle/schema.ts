@@ -333,18 +333,24 @@ export type InsertPaymentSchedule = typeof paymentSchedules.$inferInsert;
 export const wallets = mysqlTable("wallets", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  
+
   // Currency type
   currency: varchar("currency", { length: 16 }).notNull(), // EUR, BTC, ETH, USDT
   currencyType: mysqlEnum("currencyType", ["fiat", "crypto"]).notNull(),
-  
+
   // Balance
   balance: decimal("balance", { precision: 24, scale: 8 }).default("0").notNull(),
   availableBalance: decimal("availableBalance", { precision: 24, scale: 8 }).default("0").notNull(),
-  
+
   // Crypto-specific
   depositAddress: varchar("depositAddress", { length: 128 }),
-  
+
+  // Stripe integration
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
+  lastDepositAt: timestamp("lastDepositAt"),
+  totalDeposited: decimal("totalDeposited", { precision: 24, scale: 8 }).default("0").notNull(),
+  totalWithdrawn: decimal("totalWithdrawn", { precision: 24, scale: 8 }).default("0").notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -359,29 +365,39 @@ export const walletTransactions = mysqlTable("wallet_transactions", {
   id: int("id").autoincrement().primaryKey(),
   walletId: int("walletId").notNull(),
   userId: int("userId").notNull(),
-  
+
   // Transaction details
   type: mysqlEnum("type", ["deposit", "withdrawal", "credit", "debit", "transfer"]).notNull(),
   amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
   currency: varchar("currency", { length: 16 }).notNull(),
-  
+
   // Status
   status: mysqlEnum("status", ["pending", "processing", "completed", "failed", "cancelled"]).default("pending").notNull(),
-  
+
   // External references
   externalTxHash: varchar("externalTxHash", { length: 128 }),
   externalAddress: varchar("externalAddress", { length: 128 }),
-  
+
   // Bank details for fiat
   bankReference: varchar("bankReference", { length: 128 }),
-  
+
+  // Stripe integration
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  stripeCheckoutSessionId: varchar("stripeCheckoutSessionId", { length: 255 }),
+
+  // Related entities
+  relatedSubscriptionId: int("relatedSubscriptionId"),
+
+  // Early withdrawal penalty
+  penaltyAmount: decimal("penaltyAmount", { precision: 24, scale: 8 }).default("0").notNull(),
+
   // Description
   description: text("description"),
-  
+
   // Admin approval for withdrawals
   approvedBy: int("approvedBy"),
   approvedAt: timestamp("approvedAt"),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
