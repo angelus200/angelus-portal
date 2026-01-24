@@ -28,7 +28,7 @@ export default function ForInvestors() {
   const [profileCheckOpen, setProfileCheckOpen] = useState(false);
 
   return (
-    <DashboardLayout variant={user?.role === "admin" || user?.role === "superadmin" ? "admin" : "investor"}>
+    <DashboardLayout variant="investor">
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
         <section className="pt-12 pb-20 bg-gradient-to-b from-secondary to-secondary/95">

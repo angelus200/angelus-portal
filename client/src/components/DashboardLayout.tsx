@@ -64,11 +64,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 // Default investor menu items
 const investorMenuItems = [
   { icon: "LayoutDashboard", label: "Dashboard", path: "/investor" },
+  { icon: "Newspaper", label: "Für Investoren", path: "/fuer-investoren" },
   { icon: "TrendingUp", label: "Meine Investments", path: "/investor/investments" },
   { icon: "CreditCard", label: "Zahlungen", path: "/investor/payments" },
   { icon: "Wallet", label: "Wallet", path: "/investor/wallet" },
   { icon: "Shield", label: "Risikoprofil", path: "/investor/risk-profile" },
-  { icon: "Newspaper", label: "Für Investoren", path: "/fuer-investoren" },
 ];
 
 // Admin menu items
