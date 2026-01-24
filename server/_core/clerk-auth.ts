@@ -7,21 +7,40 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
   // Use getAuth from @clerk/express to get auth info
   const auth = getAuth(req);
 
+  console.log('[Clerk Auth] getAuth result:', {
+    userId: auth.userId,
+    sessionId: auth.sessionId,
+    path: req.path
+  });
+
   if (!auth.userId) {
+    console.log('[Clerk Auth] No userId in auth, returning null');
     return null;
   }
 
   const clerkUserId = auth.userId;
   let user = await db.getUserByClerkId(clerkUserId);
 
+  console.log('[Clerk Auth] User lookup:', {
+    clerkUserId,
+    foundInDb: !!user
+  });
+
   // If user not in DB, fetch from Clerk and sync
   if (!user) {
+    console.log('[Clerk Auth] User not in DB, syncing from Clerk...');
     try {
       const clerkUser = await clerkClient.users.getUser(clerkUserId);
 
       const primaryEmail = clerkUser.emailAddresses.find(
         e => e.id === clerkUser.primaryEmailAddressId
       );
+
+      console.log('[Clerk Auth] Fetched Clerk user:', {
+        id: clerkUser.id,
+        email: primaryEmail?.emailAddress,
+        name: clerkUser.fullName
+      });
 
       await db.upsertUser({
         clerkId: clerkUserId,
@@ -34,7 +53,10 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
         lastSignedIn: new Date(),
       });
 
+      console.log('[Clerk Auth] User upserted successfully');
+
       user = await db.getUserByClerkId(clerkUserId);
+      console.log('[Clerk Auth] User after upsert:', !!user);
     } catch (error) {
       console.error('[Clerk] Failed to sync user from Clerk:', error);
       return null;
