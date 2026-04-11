@@ -19,4 +19,7 @@ export const ENV = {
 
   // Resend (Email)
   RESEND_API_KEY: process.env.Resend ?? "",
+
+  // Anthropic (KI-Extraktion)
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
 };

@@ -3,11 +3,12 @@
  * Bestandskunden-Verträge: Zeichnungsscheine, Einzahlungen, Zinszahlungen
  */
 
-import { router, protectedProcedure, publicProcedure } from './_core/trpc';
+import { router, protectedProcedure } from './_core/trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import * as db from './db';
 import { calculateContractStatus } from './legacy-calculation';
+import { ENV } from './_core/env';
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin' && ctx.user.role !== 'superadmin') {
@@ -118,6 +119,18 @@ export const legacyContractsRouter = router({
       return { success: true };
     }),
 
+  listPayments: adminProcedure
+    .input(z.object({ contractId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      return db.getLegacyPaymentsByContract(input.contractId);
+    }),
+
+  listInterestPayments: adminProcedure
+    .input(z.object({ contractId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      return db.getLegacyInterestPaymentsByContract(input.contractId);
+    }),
+
   calculateStatus: adminProcedure
     .input(z.object({ contractId: z.number().int().positive() }))
     .query(async ({ input }) => {
@@ -136,6 +149,81 @@ export const legacyContractsRouter = router({
     }));
     return enriched;
   }),
+
+  // ==================== KI-EXTRAKTION ====================
+
+  extractFromDocument: adminProcedure
+    .input(z.object({
+      base64: z.string().min(1),
+      mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ENV.anthropicApiKey) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'ANTHROPIC_API_KEY nicht konfiguriert' });
+      }
+
+      const contentBlock = input.mediaType === 'application/pdf'
+        ? { type: 'document', source: { type: 'base64', media_type: input.mediaType, data: input.base64 } }
+        : { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.base64 } };
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ENV.anthropicApiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 512,
+          messages: [{
+            role: 'user',
+            content: [
+              contentBlock,
+              {
+                type: 'text',
+                text: `Extrahiere aus diesem Dokument die folgenden Felder und gib sie als JSON zurück. Wenn ein Feld nicht vorhanden ist, setze null.
+
+Felder:
+- amount: Betrag/Investitionssumme als Zahl (nur Ziffern und Punkt, z.B. "100000.00")
+- date: Datum (YYYY-MM-DD Format)
+- interestRate: Zinssatz in Prozent als Zahl (z.B. "8.5")
+- name: Name des Investors oder Unternehmens
+- iban: IBAN-Nummer (ohne Leerzeichen)
+- txHash: Krypto-Transaktions-Hash (falls vorhanden)
+- bankReference: Bankreferenz oder Verwendungszweck
+
+Antworte NUR mit dem JSON-Objekt, keine Erklärungen.`,
+              },
+            ],
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Anthropic API Fehler: ${err}` });
+      }
+
+      const result = await response.json() as { content: Array<{ type: string; text: string }> };
+      const text = result.content.find(b => b.type === 'text')?.text ?? '{}';
+
+      try {
+        const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const extracted = JSON.parse(cleaned);
+        return {
+          amount: extracted.amount ?? null,
+          date: extracted.date ?? null,
+          interestRate: extracted.interestRate ?? null,
+          name: extracted.name ?? null,
+          iban: extracted.iban ?? null,
+          txHash: extracted.txHash ?? null,
+          bankReference: extracted.bankReference ?? null,
+        };
+      } catch {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KI-Antwort konnte nicht geparst werden' });
+      }
+    }),
 
   // ==================== INVESTOR ====================
 

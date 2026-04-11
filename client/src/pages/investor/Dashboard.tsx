@@ -25,6 +25,7 @@ export default function InvestorDashboard() {
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
   const { data: profileCheck } = trpc.profileCheck.getMyProfileCheck.useQuery();
   const { data: news } = trpc.news.published.useQuery();
+  const { data: legacyContracts = [] } = trpc.legacyContracts.myContracts.useQuery();
 
   const totalBalance = wallets?.reduce((sum, w) => {
     if (w.currency === "EUR") {
@@ -249,6 +250,50 @@ export default function InvestorDashboard() {
                     style={{ width: `${profileCheck.riskScore}%` }}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Legacy Contracts */}
+        {legacyContracts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Bestandsverträge</span>
+                <FileText className="w-5 h-5 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {legacyContracts.map((c: any) => {
+                  const paid = parseFloat(c.paidAmount ?? "0");
+                  const signed = parseFloat(c.signedAmount ?? "0");
+                  return (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">
+                          {c.status === "active" ? "Aktiv" : c.status === "completed" ? "Abgeschlossen" : "Storniert"}
+                          {" · "}
+                          {parseFloat(c.interestRate).toLocaleString("de-DE", { minimumFractionDigits: 2 })} % p.a.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.startDate ? new Date(c.startDate).toLocaleDateString("de-DE") : "—"}
+                          {" – "}
+                          {c.endDate ? new Date(c.endDate).toLocaleDateString("de-DE") : "—"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">
+                          {paid.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {c.currency}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          von {signed.toLocaleString("de-DE", { minimumFractionDigits: 2 })} gezeichnet
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

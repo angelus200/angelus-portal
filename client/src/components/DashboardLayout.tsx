@@ -90,6 +90,7 @@ const adminMenuItems = [
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
   { icon: "Mail", label: "Einladungen", path: "/admin/invitations" },
+  { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
   { icon: "Settings", label: "Sicherheit", path: "/admin/security" },
 ];

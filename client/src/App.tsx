@@ -44,6 +44,8 @@ import UserManagement from './pages/admin/UserManagement';
 import SecuritySettings from './pages/admin/SecuritySettings';
 import CryptoWallets from './pages/admin/CryptoWallets';
 import Invitations from './pages/admin/Invitations';
+import Bestandskunden from './pages/admin/Bestandskunden';
+import BestandskundenDetail from './pages/admin/BestandskundenDetail';
 
 function Router() {
   return (
@@ -93,6 +95,8 @@ function Router() {
       <Route path="/admin/security" component={SecuritySettings} />
       <Route path="/admin/crypto-wallets" component={CryptoWallets} />
       <Route path="/admin/invitations" component={Invitations} />
+      <Route path="/admin/bestandskunden" component={Bestandskunden} />
+      <Route path="/admin/bestandskunden/:userId" component={BestandskundenDetail} />
 
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
