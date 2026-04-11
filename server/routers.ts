@@ -228,7 +228,10 @@ export const appRouter = router({
           consentIpAddress: input.ipAddress,
           status: "pending",
         });
-        
+
+        // Phase 2: Wallet-Betrag abbuchen
+        await db.debitWalletForInvestment(ctx.user.id, input.amount, id);
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userEmail: ctx.user.email,

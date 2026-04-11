@@ -1377,3 +1377,62 @@ export async function getWalletTransactionsForAdmin(limit: number = 50) {
   .orderBy(desc(walletTransactions.createdAt))
   .limit(limit);
 }
+
+// ==================== PHASE 2: WALLET DEBIT FOR INVESTMENT ====================
+
+export async function debitWalletForInvestment(
+  userId: number,
+  amount: string,
+  subscriptionId: number
+): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+
+  // EUR Wallet holen
+  const userWallets = await dbConn
+    .select()
+    .from(wallets)
+    .where(and(eq(wallets.userId, userId), eq(wallets.currency, "EUR")))
+    .limit(1);
+
+  if (userWallets.length === 0) {
+    throw new Error("Kein EUR-Wallet gefunden");
+  }
+
+  const wallet = userWallets[0];
+  const currentBalance = parseFloat(wallet.balance ?? "0");
+  const debitAmount = parseFloat(amount);
+
+  // Balance-Check (zweite Absicherung nach Frontend)
+  if (currentBalance < debitAmount) {
+    throw new Error(
+      `Nicht genügend Guthaben. Verfügbar: €${currentBalance.toFixed(2)}, Benötigt: €${debitAmount.toFixed(2)}`
+    );
+  }
+
+  const newBalance = (currentBalance - debitAmount).toFixed(8);
+
+  // Balance abziehen
+  await dbConn
+    .update(wallets)
+    .set({
+      balance: newBalance,
+      availableBalance: newBalance,
+      updatedAt: new Date(),
+    })
+    .where(eq(wallets.id, wallet.id));
+
+  // Transaktion protokollieren
+  await dbConn.insert(walletTransactions).values({
+    walletId: wallet.id,
+    userId,
+    type: "debit",
+    amount,
+    currency: "EUR",
+    status: "completed",
+    relatedSubscriptionId: subscriptionId,
+    description: `Investment Zeichnung #${subscriptionId}`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+}
