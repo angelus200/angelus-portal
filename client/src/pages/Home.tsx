@@ -31,7 +31,7 @@ export default function Home() {
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      if (user.role === "admin") {
+      if (user.role === "admin" || user.role === "superadmin") {
         setLocation("/admin");
       } else {
         setLocation("/investor");

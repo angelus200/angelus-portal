@@ -366,7 +366,7 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                {user?.role === "admin" && variant === "investor" && (
+                {(user?.role === "admin" || user?.role === "superadmin") && variant === "investor" && (
                   <>
                     <DropdownMenuItem
                       onClick={() => setLocation("/admin")}
