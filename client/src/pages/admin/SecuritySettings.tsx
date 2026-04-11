@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { QRCodeSVG } from "qrcode.react";
+
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -149,6 +149,11 @@ export default function SecuritySettings() {
                   Als Admin-Account ist 2FA dringend empfohlen. Ohne 2FA ist Ihr Account weniger geschützt.
                 </AlertDescription>
               </Alert>
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <Button onClick={handleStartSetup} disabled={loading} className="gap-2">
                 <Smartphone className="w-4 h-4" />
                 {loading ? "Wird vorbereitet..." : "2FA jetzt einrichten"}
@@ -189,7 +194,12 @@ export default function SecuritySettings() {
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 bg-white border rounded-lg">
-                  <QRCodeSVG value={totpUri} size={200} />
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(totpUri)}`}
+                    alt="2FA QR Code"
+                    width={200}
+                    height={200}
+                  />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Kein QR-Code Scanner? Geben Sie den Secret manuell ein:
