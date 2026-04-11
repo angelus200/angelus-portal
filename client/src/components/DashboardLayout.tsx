@@ -38,6 +38,7 @@ import {
   Upload,
   Percent,
   Bitcoin,
+  Mail,
 } from "lucide-react";
 import React, { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -61,6 +62,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Upload,
   Percent,
   Bitcoin,
+  Mail,
 };
 
 // Default investor menu items
@@ -87,6 +89,7 @@ const adminMenuItems = [
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
+  { icon: "Mail", label: "Einladungen", path: "/admin/invitations" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
   { icon: "Settings", label: "Sicherheit", path: "/admin/security" },
 ];

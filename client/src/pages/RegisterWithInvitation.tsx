@@ -3,33 +3,15 @@ import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
-interface InvitationData {
-  invitation: {
-    id: number;
-    email: string;
-    status: string | null;
-    expiresAt: Date;
-  };
-  customer: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    birthDate: Date | null;
-    street: string | null;
-    houseNumber: string | null;
-    postalCode: string | null;
-    city: string | null;
-    country: string | null;
-    iban: string | null;
-    bic: string | null;
-    accountHolder: string | null;
-  } | null;
-}
+type InvitationSource = 'general' | 'legacy';
 
-interface FormData {
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
+interface ResolvedInvitation {
+  source: InvitationSource;
+  email: string;
+  name?: string | null;
+  firstName?: string;
+  lastName?: string;
+  expiresAt: Date;
 }
 
 export function RegisterWithInvitation() {
@@ -37,114 +19,123 @@ export function RegisterWithInvitation() {
   const searchParams = new URLSearchParams(location.split('?')[1] || '');
   const invitationToken = searchParams.get('invitation');
 
-  const [invitationData, setInvitationData] = useState<InvitationData | null>(null);
+  const [resolved, setResolved] = useState<ResolvedInvitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FormData>({
-    acceptTerms: false,
-    acceptPrivacy: false,
-  });
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const acceptInvitationMutation = trpc.legacyInvitations.accept.useMutation();
+  // General invitation query
+  const generalQuery = trpc.invitations.getByToken.useQuery(
+    { token: invitationToken || '' },
+    { enabled: !!invitationToken, retry: false }
+  );
 
-  const getInvitationQuery = trpc.legacyInvitations.getByToken.useQuery(
+  // Legacy invitation query (fallback)
+  const legacyQuery = trpc.legacyInvitations.getByToken.useQuery(
     { token: invitationToken || '' },
     {
-      enabled: !!invitationToken,
+      enabled: !!invitationToken && generalQuery.isError,
+      retry: false,
     }
   );
 
+  const acceptGeneralMutation = trpc.invitations.accept.useMutation();
+  const acceptLegacyMutation = trpc.legacyInvitations.accept.useMutation();
+
   useEffect(() => {
     if (!invitationToken) {
-      setError('Keine Einladungs-Token vorhanden');
+      setError('Kein Einladungs-Token vorhanden');
       setLoading(false);
-    } else if (getInvitationQuery.data) {
-      setInvitationData(getInvitationQuery.data);
+      return;
+    }
+
+    if (generalQuery.data) {
+      setResolved({
+        source: 'general',
+        email: generalQuery.data.email,
+        name: generalQuery.data.name,
+        expiresAt: new Date(generalQuery.data.expiresAt),
+      });
       setLoading(false);
-    } else if (getInvitationQuery.error) {
+    } else if (generalQuery.isError && legacyQuery.data) {
+      const c = legacyQuery.data.customer;
+      setResolved({
+        source: 'legacy',
+        email: legacyQuery.data.invitation.email,
+        firstName: c?.firstName,
+        lastName: c?.lastName,
+        expiresAt: new Date(legacyQuery.data.invitation.expiresAt),
+      });
+      setLoading(false);
+    } else if (generalQuery.isError && legacyQuery.isError) {
       setError('Einladung nicht gefunden oder abgelaufen');
       setLoading(false);
     }
-  }, [invitationToken, getInvitationQuery.data, getInvitationQuery.error]);
-
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const validateForm = (): string | null => {
-    if (!formData.acceptTerms) {
-      return 'Sie müssen den Bedingungen zustimmen';
-    }
-    if (!formData.acceptPrivacy) {
-      return 'Sie müssen der Datenschutzerklärung zustimmen';
-    }
-    return null;
-  };
+  }, [
+    invitationToken,
+    generalQuery.data,
+    generalQuery.isError,
+    legacyQuery.data,
+    legacyQuery.isError,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    if (!invitationData || !invitationToken) {
-      setError('Einladungsdaten nicht verfügbar');
-      return;
-    }
+    if (!acceptTerms) { setError('Bitte akzeptieren Sie die Bedingungen'); return; }
+    if (!acceptPrivacy) { setError('Bitte akzeptieren Sie die Datenschutzerklärung'); return; }
+    if (!resolved || !invitationToken) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      await acceptInvitationMutation.mutateAsync({
-        token: invitationToken,
-      });
+      if (resolved.source === 'general') {
+        await acceptGeneralMutation.mutateAsync({ token: invitationToken });
+      } else {
+        await acceptLegacyMutation.mutateAsync({ token: invitationToken });
+      }
 
+      // Allow sign-up page to open
+      localStorage.setItem('angelus_valid_invitation', '1');
       setSuccess(true);
 
-      // Redirect to Clerk sign-up with email pre-filled
       setTimeout(() => {
-        navigate(`/sign-up?email=${encodeURIComponent(invitationData.invitation.email)}`);
-      }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'Registrierung fehlgeschlagen');
+        navigate(`/sign-up?email=${encodeURIComponent(resolved.email)}`);
+      }, 1500);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen');
       setSubmitting(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-12 h-12 text-yellow-500 animate-spin mx-auto mb-4" />
-          <p className="text-white">Einladung wird geladen...</p>
+          <Loader className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Einladung wird geprüft...</p>
         </div>
       </div>
     );
   }
 
-  if (!invitationData) {
+  if (!resolved) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-          <div className="flex items-center mb-4">
-            <AlertCircle className="w-6 h-6 text-red-500 mr-2" />
-            <h1 className="text-2xl font-bold text-gray-900">Fehler</h1>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border rounded-lg shadow-sm p-8 max-w-md w-full">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-6 h-6 text-destructive" />
+            <h1 className="text-xl font-semibold">Einladung ungültig</h1>
           </div>
-          <p className="text-gray-700 mb-6">{error || 'Einladung nicht gefunden'}</p>
+          <p className="text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium py-2 px-4 rounded-lg transition-colors"
           >
-            Zur Startseite
+            Zurück
           </button>
         </div>
       </div>
@@ -153,120 +144,97 @@ export function RegisterWithInvitation() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border rounded-lg shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Registrierung erfolgreich!</h1>
-          <p className="text-gray-700 mb-6">
-            Sie werden in Kürze zur Anmeldung weitergeleitet...
-          </p>
+          <h1 className="text-xl font-semibold mb-2">Einladung bestätigt</h1>
+          <p className="text-muted-foreground">Sie werden weitergeleitet...</p>
         </div>
       </div>
     );
   }
 
+  const displayName =
+    resolved.source === 'general'
+      ? resolved.name || resolved.email
+      : `${resolved.firstName ?? ''} ${resolved.lastName ?? ''}`.trim() || resolved.email;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-yellow-500 px-8 py-12">
-            <h1 className="text-3xl font-bold mb-2">Willkommen!</h1>
-            <p className="text-gray-300">
-              Registrieren Sie sich im Angelus Investorenportal
-            </p>
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden max-w-md w-full">
+        <div className="bg-primary/5 border-b px-8 py-8">
+          <h1 className="text-2xl font-semibold mb-1">Willkommen</h1>
+          <p className="text-muted-foreground text-sm">
+            Sie wurden eingeladen, ein Konto zu erstellen.
+          </p>
+        </div>
+
+        <div className="p-8">
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg text-sm">
+            <p className="font-medium">{displayName}</p>
+            <p className="text-muted-foreground">{resolved.email}</p>
           </div>
 
-          <div className="p-8">
-            {invitationData.customer && (
-              <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h2 className="font-semibold text-gray-900 mb-3">Ihre Daten</h2>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Name</p>
-                    <p className="font-semibold text-gray-900">
-                      {invitationData.customer.firstName} {invitationData.customer.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Email</p>
-                    <p className="font-semibold text-gray-900">
-                      {invitationData.customer.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {error && (
+            <div className="mb-5 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-destructive text-sm">{error}</p>
+            </div>
+          )}
 
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="p-4 bg-muted/30 border rounded-lg text-sm text-muted-foreground">
+              Nach Bestätigung werden Sie zu einem sicheren Anmeldeportal weitergeleitet,
+              wo Sie Ihr Passwort festlegen können.
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                Nach Bestätigung werden Sie zum sicheren Clerk-Anmeldeportal weitergeleitet,
-                wo Sie Ihr Passwort festlegen können.
-              </div>
-
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onChange={(e) => handleInputChange('acceptTerms', e.target.checked)}
-                  className="mt-1 w-4 h-4 text-yellow-500 rounded focus:ring-yellow-500 border-gray-300"
-                  disabled={submitting}
-                />
-                <label htmlFor="acceptTerms" className="ml-3 text-sm text-gray-700">
-                  Ich akzeptiere die{' '}
-                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-700 font-semibold">
-                    Allgemeinen Geschäftsbedingungen
-                  </a>
-                </label>
-              </div>
-
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="acceptPrivacy"
-                  checked={formData.acceptPrivacy}
-                  onChange={(e) => handleInputChange('acceptPrivacy', e.target.checked)}
-                  className="mt-1 w-4 h-4 text-yellow-500 rounded focus:ring-yellow-500 border-gray-300"
-                  disabled={submitting}
-                />
-                <label htmlFor="acceptPrivacy" className="ml-3 text-sm text-gray-700">
-                  Ich akzeptiere die{' '}
-                  <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-700 font-semibold">
-                    Datenschutzerklärung
-                  </a>
-                </label>
-              </div>
-
-              <button
-                type="submit"
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
                 disabled={submitting}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-black font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-              >
-                {submitting ? (
-                  <>
-                    <Loader className="w-5 h-5 mr-2 animate-spin" />
-                    Wird registriert...
-                  </>
-                ) : (
-                  'Jetzt registrieren'
-                )}
-              </button>
-
-              <p className="text-center text-sm text-gray-600">
-                Haben Sie bereits ein Konto?{' '}
-                <a href="/login" className="text-yellow-600 hover:text-yellow-700 font-semibold">
-                  Hier anmelden
+                className="mt-0.5 w-4 h-4 rounded border-input"
+              />
+              <span className="text-sm text-muted-foreground">
+                Ich akzeptiere die{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
+                  Allgemeinen Geschäftsbedingungen
                 </a>
-              </p>
-            </form>
-          </div>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptPrivacy}
+                onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                disabled={submitting}
+                className="mt-0.5 w-4 h-4 rounded border-input"
+              />
+              <span className="text-sm text-muted-foreground">
+                Ich akzeptiere die{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
+                  Datenschutzerklärung
+                </a>
+              </span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Wird verarbeitet...
+                </>
+              ) : (
+                'Einladung annehmen & weiter'
+              )}
+            </button>
+          </form>
         </div>
       </div>
     </div>

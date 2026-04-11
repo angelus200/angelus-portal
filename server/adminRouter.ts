@@ -1,9 +1,11 @@
 import { router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import * as invDb from "./invitations-db";
 import { TRPCError } from "@trpc/server";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { sendInvitationEmail } from "./email/send-invitation";
 
 // Admin-only procedure (admin or superadmin)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -485,6 +487,66 @@ export const adminRouter = router({
         entityType: "walletTransaction",
         entityId: input.txId,
         details: { eurAmount: input.eurAmount },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  // ==================== GENERAL INVITATIONS ====================
+
+  createGeneralInvitation: adminProcedure
+    .input(z.object({
+      email: z.string().email(),
+      name: z.string().max(255).optional(),
+      expiresInDays: z.number().int().min(1).max(365).default(30),
+      sendEmail: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const inv = await invDb.createGeneralInvitation(
+        input.email,
+        input.name ?? null,
+        ctx.user.id,
+        input.expiresInDays
+      );
+      if (input.sendEmail) {
+        try {
+          await sendInvitationEmail({
+            email: inv.email,
+            firstName: input.name ?? 'Mitglied',
+            lastName: '',
+            invitationToken: inv.token,
+            expiresAt: inv.expiresAt,
+          });
+        } catch (e) {
+          console.error('[Invitations] Email send failed:', e);
+          // Don't throw - invitation was created, email failure is non-fatal
+        }
+      }
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'invitations.create',
+        entityType: 'invitation',
+        details: { email: inv.email, name: input.name },
+        ipAddress: ctx.req.ip,
+      });
+      return { token: inv.token, email: inv.email, expiresAt: inv.expiresAt };
+    }),
+
+  listGeneralInvitations: adminProcedure.query(async () => {
+    return invDb.listGeneralInvitations();
+  }),
+
+  cancelGeneralInvitation: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await invDb.cancelGeneralInvitation(input.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'invitations.cancel',
+        entityType: 'invitation',
+        entityId: input.id,
         ipAddress: ctx.req.ip,
       });
       return { success: true };

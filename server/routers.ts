@@ -3,6 +3,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import * as invDb from "./invitations-db";
 import bcrypt from "bcryptjs";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
@@ -25,6 +26,33 @@ export const appRouter = router({
   legacyCustomer: legacyCustomerRouter,
   legacyInvitations: legacyInvitationsRouter,
   interestParameters: interestParametersRouter,
+
+  invitations: router({
+    getByToken: publicProcedure
+      .input(z.object({ token: z.string().min(1) }))
+      .query(async ({ input }) => {
+        const inv = await invDb.getGeneralInvitationByToken(input.token);
+        if (!inv) throw new TRPCError({ code: 'NOT_FOUND', message: 'Einladung nicht gefunden' });
+        const isValid = await invDb.isGeneralInvitationValid(input.token);
+        if (!isValid) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Einladung ungültig oder abgelaufen' });
+        return {
+          id: inv.id,
+          email: inv.email,
+          name: inv.name,
+          expiresAt: inv.expiresAt,
+          status: inv.status,
+        };
+      }),
+
+    accept: publicProcedure
+      .input(z.object({ token: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const isValid = await invDb.isGeneralInvitationValid(input.token);
+        if (!isValid) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Einladung ungültig oder abgelaufen' });
+        await invDb.useGeneralInvitation(input.token);
+        return { success: true };
+      }),
+  }),
   
   auth: router({
     // Get current user
