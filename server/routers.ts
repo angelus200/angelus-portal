@@ -951,36 +951,32 @@ export const appRouter = router({
     requestWithdrawal: protectedProcedure
       .input(z.object({
         walletId: z.number(),
-        amount: z.string(),
+        amount: z.string().regex(/^\d+(\.\d+)?$/, "Ungültiger Betrag"),
         currency: z.string(),
         externalAddress: z.string().optional(),
         bankReference: z.string().optional(),
-        description: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const id = await db.createWalletTransaction({
-          walletId: input.walletId,
-          userId: ctx.user.id,
-          type: "withdrawal",
-          amount: input.amount,
-          currency: input.currency,
-          status: "pending",
-          externalAddress: input.externalAddress,
-          bankReference: input.bankReference,
-          description: input.description,
-        });
-        
+        const { transactionId, penalty, netAmount } = await db.requestWithdrawalWithPenalty(
+          input.walletId,
+          ctx.user.id,
+          input.amount,
+          input.currency,
+          input.externalAddress,
+          input.bankReference,
+        );
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userEmail: ctx.user.email,
           action: "wallet.withdrawalRequest",
           entityType: "walletTransaction",
-          entityId: id,
-          details: { amount: input.amount, currency: input.currency },
+          entityId: transactionId,
+          details: { amount: input.amount, currency: input.currency, penalty, netAmount },
           ipAddress: ctx.req.ip,
         });
-        
-        return { id };
+
+        return { id: transactionId, penalty, netAmount };
       }),
     
     pendingWithdrawals: adminProcedure.query(async () => {

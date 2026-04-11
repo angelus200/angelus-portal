@@ -32,6 +32,7 @@ export default function AdminWallets() {
     userId: number;
     amount: string;
     currency: string;
+    penaltyAmount: string | null;
     externalAddress?: string | null;
   } | null>(null);
 
@@ -99,9 +100,10 @@ export default function AdminWallets() {
                       <TableRow>
                         <TableHead>ID</TableHead>
                         <TableHead>Benutzer</TableHead>
-                        <TableHead>Betrag</TableHead>
+                        <TableHead>Brutto</TableHead>
+                        <TableHead>Penalty (20%)</TableHead>
+                        <TableHead>Netto</TableHead>
                         <TableHead>Währung</TableHead>
-                        <TableHead>Zieladresse</TableHead>
                         <TableHead>Datum</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Aktionen</TableHead>
@@ -113,7 +115,13 @@ export default function AdminWallets() {
                           <TableCell>#{withdrawal.id}</TableCell>
                           <TableCell>User #{withdrawal.userId}</TableCell>
                           <TableCell className="font-semibold">
-                            {parseFloat(withdrawal.amount).toLocaleString("de-DE")}
+                            {parseFloat(withdrawal.amount).toLocaleString("de-DE")} {withdrawal.currency}
+                          </TableCell>
+                          <TableCell className="text-destructive font-medium">
+                            −{parseFloat(withdrawal.penaltyAmount || "0").toLocaleString("de-DE")} {withdrawal.currency}
+                          </TableCell>
+                          <TableCell className="font-semibold text-green-700">
+                            {(parseFloat(withdrawal.amount) - parseFloat(withdrawal.penaltyAmount || "0")).toLocaleString("de-DE")} {withdrawal.currency}
                           </TableCell>
                           <TableCell>{withdrawal.currency}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
@@ -132,6 +140,7 @@ export default function AdminWallets() {
                                 userId: withdrawal.userId,
                                 amount: withdrawal.amount,
                                 currency: withdrawal.currency,
+                                penaltyAmount: withdrawal.penaltyAmount,
                                 externalAddress: withdrawal.externalAddress,
                               })}
                             >
@@ -165,30 +174,47 @@ export default function AdminWallets() {
                 Prüfen und verarbeiten Sie den Auszahlungsantrag.
               </DialogDescription>
             </DialogHeader>
-            {selectedWithdrawal && (
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Benutzer</Label>
-                    <p className="font-medium">User #{selectedWithdrawal.userId}</p>
+            {selectedWithdrawal && (() => {
+              const gross = parseFloat(selectedWithdrawal.amount);
+              const penalty = parseFloat(selectedWithdrawal.penaltyAmount || "0");
+              const net = gross - penalty;
+              return (
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <Label className="text-muted-foreground">Benutzer</Label>
+                      <p className="font-medium">User #{selectedWithdrawal.userId}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Währung</Label>
+                      <p className="font-medium">{selectedWithdrawal.currency}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground">Betrag</Label>
-                    <p className="font-medium text-lg">
-                      {parseFloat(selectedWithdrawal.amount).toLocaleString("de-DE")} {selectedWithdrawal.currency}
-                    </p>
+                  <div className="border rounded-lg divide-y">
+                    <div className="flex justify-between px-4 py-3">
+                      <span className="text-muted-foreground">Bruttobetrag</span>
+                      <span className="font-semibold">{gross.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {selectedWithdrawal.currency}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-3">
+                      <span className="text-muted-foreground">Penalty (20%)</span>
+                      <span className="font-semibold text-destructive">−{penalty.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {selectedWithdrawal.currency}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-3 bg-muted/30">
+                      <span className="font-semibold">Auszahlung an Investor</span>
+                      <span className="font-bold text-lg">{net.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {selectedWithdrawal.currency}</span>
+                    </div>
                   </div>
+                  {selectedWithdrawal.externalAddress && (
+                    <div>
+                      <Label className="text-muted-foreground">Zieladresse</Label>
+                      <p className="font-mono text-sm bg-muted p-2 rounded break-all">
+                        {selectedWithdrawal.externalAddress}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {selectedWithdrawal.externalAddress && (
-                  <div>
-                    <Label className="text-muted-foreground">Zieladresse</Label>
-                    <p className="font-mono text-sm bg-muted p-2 rounded break-all">
-                      {selectedWithdrawal.externalAddress}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })()}
             <DialogFooter className="gap-2">
               <Button
                 variant="outline"

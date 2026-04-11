@@ -37,6 +37,12 @@ export default function InvestorWallet() {
   const [withdrawCurrency, setWithdrawCurrency] = useState("EUR");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawStep, setWithdrawStep] = useState<"input" | "confirm">("input");
+
+  const PENALTY_RATE = 0.20;
+  const parsedWithdrawAmount = parseFloat(withdrawAmount) || 0;
+  const penaltyPreview = parsedWithdrawAmount * PENALTY_RATE;
+  const netAmountPreview = parsedWithdrawAmount - penaltyPreview;
 
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [selectedWalletForDeposit, setSelectedWalletForDeposit] = useState<typeof wallets extends (infer U)[] ? U : never | null>(null);
@@ -66,20 +72,30 @@ export default function InvestorWallet() {
     toast.success(`${currency} Wallet erstellt`);
   };
 
-  const handleWithdraw = async () => {
+  const handleWithdrawConfirm = async () => {
     const wallet = wallets?.find(w => w.currency === withdrawCurrency);
     if (!wallet) return;
-    
+
     await requestWithdrawal.mutateAsync({
       walletId: wallet.id,
       amount: withdrawAmount,
       currency: withdrawCurrency,
       externalAddress: withdrawAddress || undefined,
     });
-    
+
     setIsWithdrawOpen(false);
     setWithdrawAmount("");
     setWithdrawAddress("");
+    setWithdrawStep("input");
+  };
+
+  const handleWithdrawDialogClose = (open: boolean) => {
+    setIsWithdrawOpen(open);
+    if (!open) {
+      setWithdrawStep("input");
+      setWithdrawAmount("");
+      setWithdrawAddress("");
+    }
   };
 
   const getTransactionIcon = (type: string) => {
@@ -119,7 +135,7 @@ export default function InvestorWallet() {
               Verwalten Sie Ihre Einlagen in Fiat und Kryptowährungen
             </p>
           </div>
-          <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
+          <Dialog open={isWithdrawOpen} onOpenChange={handleWithdrawDialogClose}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <ArrowUpRight className="w-4 h-4" />
@@ -130,52 +146,112 @@ export default function InvestorWallet() {
               <DialogHeader>
                 <DialogTitle>Auszahlung beantragen</DialogTitle>
                 <DialogDescription>
-                  Beantragen Sie eine Auszahlung aus Ihrem Wallet. Auszahlungen werden nach Prüfung durch unser Team bearbeitet.
+                  {withdrawStep === "input"
+                    ? "Beantragen Sie eine Auszahlung aus Ihrem Wallet."
+                    : "Bitte bestätigen Sie die Auszahlung inkl. Penalty-Gebühr."}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Währung</Label>
-                  <Select value={withdrawCurrency} onValueChange={setWithdrawCurrency}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {wallets?.map(w => (
-                        <SelectItem key={w.currency} value={w.currency}>
-                          {w.currency} (Verfügbar: {parseFloat(w.availableBalance || "0").toLocaleString("de-DE")})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Betrag</Label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                  />
-                </div>
-                {cryptoWallets.some(w => w.currency === withdrawCurrency) && (
+
+              {withdrawStep === "input" && (
+                <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Zieladresse (Wallet)</Label>
-                    <Input
-                      placeholder="Ihre externe Wallet-Adresse"
-                      value={withdrawAddress}
-                      onChange={(e) => setWithdrawAddress(e.target.value)}
-                    />
+                    <Label>Währung</Label>
+                    <Select value={withdrawCurrency} onValueChange={setWithdrawCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wallets?.map(w => (
+                          <SelectItem key={w.currency} value={w.currency}>
+                            {w.currency} (Verfügbar: {parseFloat(w.availableBalance || "0").toLocaleString("de-DE")})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <Label>Betrag</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        className="pl-8"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        min="0"
+                        step="100"
+                      />
+                    </div>
+                  </div>
+                  {cryptoWallets.some(w => w.currency === withdrawCurrency) && (
+                    <div className="space-y-2">
+                      <Label>Zieladresse (Wallet)</Label>
+                      <Input
+                        placeholder="Ihre externe Wallet-Adresse"
+                        value={withdrawAddress}
+                        onChange={(e) => setWithdrawAddress(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {parsedWithdrawAmount > 0 && (
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Penalty (20%):</span>
+                        <span className="text-destructive">−€{penaltyPreview.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t pt-1">
+                        <span>Sie erhalten:</span>
+                        <span>€{netAmountPreview.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {withdrawStep === "confirm" && (
+                <div className="py-4 space-y-4">
+                  <div className="border rounded-lg divide-y">
+                    <div className="flex justify-between px-4 py-3">
+                      <span className="text-muted-foreground">Auszahlungsbetrag</span>
+                      <span className="font-semibold">€{parsedWithdrawAmount.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-3">
+                      <span className="text-muted-foreground">Penalty (20%)</span>
+                      <span className="font-semibold text-destructive">−€{penaltyPreview.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-3 bg-muted/30">
+                      <span className="font-semibold">Sie erhalten</span>
+                      <span className="font-bold text-lg">€{netAmountPreview.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Mit Klick auf "Verbindlich bestätigen" wird der Auszahlungsantrag eingereicht
+                    und der Betrag aus Ihrem Wallet reserviert.
+                  </p>
+                </div>
+              )}
+
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsWithdrawOpen(false)}>
+                <Button variant="outline" onClick={() => handleWithdrawDialogClose(false)}>
                   Abbrechen
                 </Button>
-                <Button onClick={handleWithdraw} disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}>
-                  Auszahlung beantragen
-                </Button>
+                {withdrawStep === "input" ? (
+                  <Button
+                    onClick={() => setWithdrawStep("confirm")}
+                    disabled={!withdrawAmount || parsedWithdrawAmount <= 0}
+                  >
+                    Weiter
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleWithdrawConfirm}
+                    disabled={requestWithdrawal.isPending}
+                    variant="destructive"
+                  >
+                    {requestWithdrawal.isPending ? "Wird eingereicht..." : "Verbindlich bestätigen"}
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>

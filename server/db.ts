@@ -653,19 +653,111 @@ export async function getTransactionsByUser(userId: number) {
 export async function getPendingWithdrawals() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(walletTransactions)
+  return db.select({
+    id: walletTransactions.id,
+    walletId: walletTransactions.walletId,
+    userId: walletTransactions.userId,
+    type: walletTransactions.type,
+    amount: walletTransactions.amount,
+    currency: walletTransactions.currency,
+    status: walletTransactions.status,
+    penaltyAmount: walletTransactions.penaltyAmount,
+    externalAddress: walletTransactions.externalAddress,
+    bankReference: walletTransactions.bankReference,
+    description: walletTransactions.description,
+    createdAt: walletTransactions.createdAt,
+  }).from(walletTransactions)
     .where(and(eq(walletTransactions.type, "withdrawal"), eq(walletTransactions.status, "pending")))
     .orderBy(walletTransactions.createdAt);
 }
 
+export async function requestWithdrawalWithPenalty(
+  walletId: number,
+  userId: number,
+  amount: string,
+  currency: string,
+  externalAddress?: string,
+  bankReference?: string
+): Promise<{ transactionId: number; penalty: string; netAmount: string }> {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+
+  const PENALTY_RATE = 0.20;
+  const amountNum = parseFloat(amount);
+  if (isNaN(amountNum) || amountNum <= 0) throw new Error("Ungültiger Betrag");
+
+  const penalty = (amountNum * PENALTY_RATE).toFixed(8);
+  const netAmount = (amountNum - parseFloat(penalty)).toFixed(8);
+
+  let transactionId: number;
+
+  await dbConn.transaction(async (tx) => {
+    // Wallet holen und Balance prüfen
+    const walletRows = await tx.select().from(wallets).where(eq(wallets.id, walletId)).limit(1);
+    if (walletRows.length === 0) throw new Error("Wallet nicht gefunden");
+
+    const wallet = walletRows[0];
+    const available = parseFloat(wallet.availableBalance);
+    if (available < amountNum) {
+      throw new Error(
+        `Nicht genügend Guthaben. Verfügbar: €${available.toFixed(2)}, Benötigt: €${amountNum.toFixed(2)}`
+      );
+    }
+
+    // availableBalance sperren (Gesamtbetrag inkl. Penalty reservieren)
+    const newAvailable = (available - amountNum).toFixed(8);
+    await tx.update(wallets).set({ availableBalance: newAvailable }).where(eq(wallets.id, walletId));
+
+    // Transaktion erstellen
+    const result = await tx.insert(walletTransactions).values({
+      walletId,
+      userId,
+      type: "withdrawal",
+      amount,
+      currency,
+      status: "pending",
+      penaltyAmount: penalty,
+      externalAddress: externalAddress ?? null,
+      bankReference: bankReference ?? null,
+      description: `Auszahlungsantrag: €${netAmount} (nach 20% Penalty)`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    transactionId = result[0].insertId;
+  });
+
+  return { transactionId: transactionId!, penalty, netAmount };
+}
+
 export async function approveWithdrawal(id: number, adminId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(walletTransactions).set({
-    status: "processing",
-    approvedBy: adminId,
-    approvedAt: new Date()
-  }).where(eq(walletTransactions.id, id));
+  const dbConn = await getDb();
+  if (!dbConn) return;
+
+  await dbConn.transaction(async (tx) => {
+    // Transaktion holen
+    const txRows = await tx.select().from(walletTransactions).where(eq(walletTransactions.id, id)).limit(1);
+    if (txRows.length === 0) throw new Error("Transaktion nicht gefunden");
+    const withdrawal = txRows[0];
+
+    // balance abziehen (availableBalance wurde bereits bei requestWithdrawal gesperrt)
+    const walletRows = await tx.select().from(wallets).where(eq(wallets.id, withdrawal.walletId)).limit(1);
+    if (walletRows.length === 0) throw new Error("Wallet nicht gefunden");
+
+    const currentBalance = parseFloat(walletRows[0].balance);
+    const withdrawalAmount = parseFloat(withdrawal.amount);
+    const newBalance = (currentBalance - withdrawalAmount).toFixed(8);
+
+    await tx.update(wallets)
+      .set({ balance: newBalance })
+      .where(eq(wallets.id, withdrawal.walletId));
+
+    // Status auf processing setzen
+    await tx.update(walletTransactions).set({
+      status: "processing",
+      approvedBy: adminId,
+      approvedAt: new Date(),
+    }).where(eq(walletTransactions.id, id));
+  });
 }
 
 // ==================== NEWS FUNCTIONS ====================
