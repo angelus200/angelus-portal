@@ -230,7 +230,16 @@ export const appRouter = router({
         });
 
         // Phase 2: Wallet-Betrag abbuchen
-        await db.debitWalletForInvestment(ctx.user.id, input.amount, id);
+        try {
+          await db.debitWalletForInvestment(ctx.user.id, input.amount, id);
+        } catch (err) {
+          // Subscription zurückrollen
+          await db.updateSubscriptionStatus(id, "cancelled");
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: err instanceof Error ? err.message : 'Wallet-Abbuchung fehlgeschlagen',
+          });
+        }
 
         await db.createAuditLog({
           userId: ctx.user.id,
