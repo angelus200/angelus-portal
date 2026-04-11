@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, Info, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import type { Wallet } from "../../../../../drizzle/schema";
+import type { Wallet } from "../../../../drizzle/schema";
 
 interface StripeDepositDialogProps {
   wallet: Wallet;

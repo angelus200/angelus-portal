@@ -45,7 +45,7 @@ export default function InvestorWallet() {
   const netAmountPreview = parsedWithdrawAmount - penaltyPreview;
 
   const [isDepositOpen, setIsDepositOpen] = useState(false);
-  const [selectedWalletForDeposit, setSelectedWalletForDeposit] = useState<typeof wallets extends (infer U)[] ? U : never | null>(null);
+  const [selectedWalletForDeposit, setSelectedWalletForDeposit] = useState<NonNullable<typeof wallets>[number] | null>(null);
 
   // Handle deposit success/cancelled query parameters
   useEffect(() => {
