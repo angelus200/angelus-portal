@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type SetupStep = "idle" | "qr" | "verify" | "backup" | "done";
+type SetupStep = "idle" | "password" | "qr" | "verify" | "backup" | "done";
 
 export default function SecuritySettings() {
   const { user, isLoaded } = useUser();
@@ -29,6 +29,7 @@ export default function SecuritySettings() {
   const [step, setStep] = useState<SetupStep>("idle");
   const [totpUri, setTotpUri] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
+  const [password, setPassword] = useState("");
   const [verifyCode, setVerifyCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -36,17 +37,30 @@ export default function SecuritySettings() {
 
   const isEnabled = user?.twoFactorEnabled ?? false;
 
-  const handleStartSetup = async () => {
+  const handleStartSetup = () => {
+    setError("");
+    setPassword("");
+    setStep("password");
+  };
+
+  const handleVerifyPassword = async () => {
+    if (!password) {
+      setError("Bitte geben Sie Ihr Passwort ein");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (user as any).verifyPassword({ password });
       const totp = await user?.createTOTP();
       if (!totp?.uri || !totp?.secret) throw new Error("TOTP konnte nicht generiert werden");
       setTotpUri(totp.uri);
       setTotpSecret(totp.secret);
+      setPassword("");
       setStep("qr");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Fehler beim Starten der 2FA-Einrichtung");
+      setError(err instanceof Error ? err.message : "Falsches Passwort oder Fehler bei der Verifikation");
     } finally {
       setLoading(false);
     }
@@ -179,13 +193,56 @@ export default function SecuritySettings() {
           )}
         </Card>
 
+        {/* Step: Password Verification */}
+        {step === "password" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5" />
+                Identität bestätigen
+              </CardTitle>
+              <CardDescription>
+                Geben Sie Ihr aktuelles Passwort ein, um die 2FA-Einrichtung zu starten.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Aktuelles Passwort</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  placeholder="Ihr Passwort"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyPassword()}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setStep("idle"); setError(""); }}>
+                  Abbrechen
+                </Button>
+                <Button onClick={handleVerifyPassword} disabled={loading || !password} className="gap-2">
+                  <Shield className="w-4 h-4" />
+                  {loading ? "Wird geprüft..." : "Bestätigen & Weiter"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Step: QR Code */}
         {step === "qr" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5" />
-                Schritt 1: QR-Code scannen
+                Schritt 2: QR-Code scannen
               </CardTitle>
               <CardDescription>
                 Scannen Sie den QR-Code mit Google Authenticator, Authy oder einer anderen TOTP-App.
@@ -227,7 +284,7 @@ export default function SecuritySettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
-                Schritt 2: Code bestätigen
+                Schritt 3: Code bestätigen
               </CardTitle>
               <CardDescription>
                 Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um die Einrichtung abzuschließen.
