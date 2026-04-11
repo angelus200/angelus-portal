@@ -3,6 +3,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import bcrypt from "bcryptjs";
 import { consentsRouter } from "./consentsRouter";
 import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";

@@ -28,8 +28,6 @@ interface InvitationData {
 }
 
 interface FormData {
-  password: string;
-  passwordConfirm: string;
   acceptTerms: boolean;
   acceptPrivacy: boolean;
 }
@@ -43,8 +41,6 @@ export function RegisterWithInvitation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    password: '',
-    passwordConfirm: '',
     acceptTerms: false,
     acceptPrivacy: false,
   });
@@ -52,7 +48,6 @@ export function RegisterWithInvitation() {
   const [success, setSuccess] = useState(false);
 
   const acceptInvitationMutation = trpc.legacyInvitations.accept.useMutation();
-  const registerMutation = trpc.auth.register.useMutation();
 
   const getInvitationQuery = trpc.legacyInvitations.getByToken.useQuery(
     { token: invitationToken || '' },
@@ -82,15 +77,6 @@ export function RegisterWithInvitation() {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.password) {
-      return 'Passwort ist erforderlich';
-    }
-    if (formData.password.length < 8) {
-      return 'Passwort muss mindestens 8 Zeichen lang sein';
-    }
-    if (formData.password !== formData.passwordConfirm) {
-      return 'Passwörter stimmen nicht überein';
-    }
     if (!formData.acceptTerms) {
       return 'Sie müssen den Bedingungen zustimmen';
     }
@@ -118,20 +104,15 @@ export function RegisterWithInvitation() {
     setError(null);
 
     try {
-      await registerMutation.mutateAsync({
-        email: invitationData.invitation.email,
-        password: formData.password,
-        name: `${invitationData.customer?.firstName || ''} ${invitationData.customer?.lastName || ''}`.trim(),
-      });
-
       await acceptInvitationMutation.mutateAsync({
         token: invitationToken,
       });
 
       setSuccess(true);
 
+      // Redirect to Clerk sign-up with email pre-filled
       setTimeout(() => {
-        navigate('/login');
+        navigate(`/sign-up?email=${encodeURIComponent(invitationData.invitation.email)}`);
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'Registrierung fehlgeschlagen');
@@ -224,32 +205,9 @@ export function RegisterWithInvitation() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Passwort
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  placeholder="Mindestens 8 Zeichen"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                  disabled={submitting}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Passwort wiederholen
-                </label>
-                <input
-                  type="password"
-                  value={formData.passwordConfirm}
-                  onChange={(e) => handleInputChange('passwordConfirm', e.target.value)}
-                  placeholder="Passwort wiederholen"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                  disabled={submitting}
-                />
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                Nach Bestätigung werden Sie zum sicheren Clerk-Anmeldeportal weitergeleitet,
+                wo Sie Ihr Passwort festlegen können.
               </div>
 
               <div className="flex items-start">
