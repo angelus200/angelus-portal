@@ -9,13 +9,29 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Plus, Trash2 } from 'lucide-react';
+
+const EMPTY_FORM = {
+  name: '',
+  annualInterestRate: '',
+  termMonths: '',
+  effectiveFrom: '',
+  effectiveUntil: '',
+  isActive: false,
+};
 
 export default function InterestParameters() {
   const [activeTab, setActiveTab] = useState('overview');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState('');
+
+  const utils = trpc.useUtils();
 
   // Queries
   const { data: allParams, isLoading, error } = trpc.interestParameters.getAll.useQuery();
@@ -24,6 +40,83 @@ export default function InterestParameters() {
   // Mutations
   const activateMutation = trpc.interestParameters.activate.useMutation();
   const deleteMutation = trpc.interestParameters.delete.useMutation();
+  const createMutation = trpc.interestParameters.create.useMutation({
+    onSuccess: () => {
+      utils.interestParameters.getAll.invalidate();
+      utils.interestParameters.getActive.invalidate();
+    },
+  });
+
+  // When termMonths changes, auto-compute effectiveUntil from effectiveFrom
+  const handleTermMonthsChange = (months: string) => {
+    setForm(prev => {
+      const updated = { ...prev, termMonths: months };
+      if (prev.effectiveFrom && months) {
+        const from = new Date(prev.effectiveFrom);
+        if (!isNaN(from.getTime())) {
+          const until = new Date(from);
+          until.setMonth(until.getMonth() + parseInt(months, 10));
+          updated.effectiveUntil = until.toISOString().slice(0, 10);
+        }
+      }
+      return updated;
+    });
+  };
+
+  // When effectiveFrom changes, re-compute effectiveUntil if termMonths is set
+  const handleEffectiveFromChange = (value: string) => {
+    setForm(prev => {
+      const updated = { ...prev, effectiveFrom: value };
+      if (value && prev.termMonths) {
+        const from = new Date(value);
+        if (!isNaN(from.getTime())) {
+          const until = new Date(from);
+          until.setMonth(until.getMonth() + parseInt(prev.termMonths, 10));
+          updated.effectiveUntil = until.toISOString().slice(0, 10);
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!form.name.trim()) {
+      setFormError('Bitte eine Bezeichnung eingeben.');
+      return;
+    }
+    const rate = parseFloat(form.annualInterestRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      setFormError('Zinssatz muss zwischen 0 und 100 liegen.');
+      return;
+    }
+    if (!form.effectiveFrom) {
+      setFormError('Bitte ein Startdatum (Gültig ab) eingeben.');
+      return;
+    }
+
+    try {
+      await createMutation.mutateAsync({
+        name: form.name.trim(),
+        annualInterestRate: rate,
+        effectiveFrom: new Date(form.effectiveFrom),
+        effectiveUntil: form.effectiveUntil ? new Date(form.effectiveUntil) : undefined,
+        isActive: form.isActive,
+        // defaults for required fields
+        defaultInterestRate: 17,
+        capitalGainsTax: 25,
+        solidaritySurcharge: 5.5,
+      });
+      setSuccessMessage('Zinsparameter erfolgreich erstellt');
+      setTimeout(() => setSuccessMessage(''), 4000);
+      setForm(EMPTY_FORM);
+      setActiveTab('overview');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Fehler beim Erstellen');
+    }
+  };
 
   const handleActivate = async (id: number) => {
     try {
@@ -273,19 +366,129 @@ export default function InterestParameters() {
           <TabsContent value="create" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Neue Zinsparameter erstellen</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Neue Zinsparameter erstellen
+                </CardTitle>
                 <CardDescription>
-                  Diese Funktion wird in Kürze implementiert
+                  Erstellt einen neuen Zinsparameter-Satz. Weitere Felder (Verzugszins, KESt etc.) werden mit Standardwerten befüllt und können danach bearbeitet werden.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">
-                  Sie können neue Zinsparameter über die API oder direkt in der Datenbank erstellen.
-                </p>
-                <Button disabled>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Neue Parameter erstellen
-                </Button>
+                <form onSubmit={handleCreate} className="space-y-5 max-w-lg">
+                  {formError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-sm text-red-800">
+                      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      {formError}
+                    </div>
+                  )}
+
+                  {/* Bezeichnung */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ip-name">Bezeichnung <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="ip-name"
+                      placeholder="z.B. Standard 2026"
+                      value={form.name}
+                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Zinssatz */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ip-rate">Zinssatz p.a. (%) <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <Input
+                        id="ip-rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="z.B. 8.50"
+                        value={form.annualInterestRate}
+                        onChange={e => setForm(p => ({ ...p, annualInterestRate: e.target.value }))}
+                        className="pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  </div>
+
+                  {/* Gültig ab + Laufzeit */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ip-from">Gültig ab <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="ip-from"
+                        type="date"
+                        value={form.effectiveFrom}
+                        onChange={e => handleEffectiveFromChange(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ip-term">Laufzeit (Monate)</Label>
+                      <Input
+                        id="ip-term"
+                        type="number"
+                        min="1"
+                        max="360"
+                        placeholder="z.B. 24"
+                        value={form.termMonths}
+                        onChange={e => handleTermMonthsChange(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gültig bis */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ip-until">
+                      Gültig bis
+                      <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                        (optional – wird aus Laufzeit berechnet)
+                      </span>
+                    </Label>
+                    <Input
+                      id="ip-until"
+                      type="date"
+                      value={form.effectiveUntil}
+                      onChange={e => setForm(p => ({ ...p, effectiveUntil: e.target.value, termMonths: '' }))}
+                    />
+                  </div>
+
+                  {/* Aktiv Toggle */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <Switch
+                      id="ip-active"
+                      checked={form.isActive}
+                      onCheckedChange={checked => setForm(p => ({ ...p, isActive: checked }))}
+                    />
+                    <Label htmlFor="ip-active" className="cursor-pointer">
+                      Sofort aktivieren
+                      <span className="block text-xs text-muted-foreground font-normal">
+                        Deaktiviert den aktuell aktiven Parametersatz
+                      </span>
+                    </Label>
+                  </div>
+
+                  {/* Defaults info */}
+                  <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">Automatisch gesetzte Standardwerte:</p>
+                    <p>Verzugszins 17 % · KESt 25 % · Solidaritätszuschlag 5,5 % · Zahlungsweise monatlich</p>
+                  </div>
+
+                  <div className="flex gap-3 pt-1">
+                    <Button type="submit" disabled={createMutation.isPending} className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      {createMutation.isPending ? 'Wird erstellt…' : 'Parameter erstellen'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => { setForm(EMPTY_FORM); setFormError(''); }}
+                    >
+                      Zurücksetzen
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
