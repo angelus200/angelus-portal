@@ -85,6 +85,7 @@ const adminMenuItems = [
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
+  { icon: "Settings", label: "Sicherheit", path: "/admin/security" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -194,8 +195,16 @@ function DashboardLayoutContent({
   menuItems,
   variant,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { user, clerkUser, logout } = useAuth();
   const [location, setLocation] = useLocation();
+
+  const needs2FASetup =
+    variant === "admin" &&
+    (user?.role === "admin" || user?.role === "superadmin") &&
+    clerkUser !== undefined &&
+    clerkUser !== null &&
+    !clerkUser.twoFactorEnabled &&
+    !location.startsWith("/admin/security");
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
@@ -423,6 +432,22 @@ function DashboardLayoutContent({
           </div>
         )}
         <div className="flex flex-col min-h-screen">
+          {needs2FASetup && (
+            <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-yellow-800 text-sm">
+                <Shield className="w-4 h-4 shrink-0" />
+                <span>
+                  <strong>2FA erforderlich:</strong> Ihr Admin-Account ist nicht durch Zwei-Faktor-Authentifizierung geschützt.
+                </span>
+              </div>
+              <button
+                onClick={() => setLocation("/admin/security")}
+                className="shrink-0 text-xs font-semibold bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded transition-colors"
+              >
+                Jetzt einrichten
+              </button>
+            </div>
+          )}
           <main className="flex-1 p-4 md:p-6">{children}</main>
           <Footer />
         </div>
