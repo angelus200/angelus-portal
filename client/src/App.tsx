@@ -42,6 +42,7 @@ import LegacyCustomerImport from '@/pages/admin/LegacyCustomerImport';
 import InterestParameters from '@/pages/admin/InterestParameters';
 import UserManagement from './pages/admin/UserManagement';
 import SecuritySettings from './pages/admin/SecuritySettings';
+import CryptoWallets from './pages/admin/CryptoWallets';
 
 function Router() {
   return (
@@ -89,6 +90,7 @@ function Router() {
       <Route path="/admin/interest-parameters" component={InterestParameters} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/security" component={SecuritySettings} />
+      <Route path="/admin/crypto-wallets" component={CryptoWallets} />
 
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

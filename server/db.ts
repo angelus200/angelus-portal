@@ -17,7 +17,8 @@ import {
   consents, InsertConsent, Consent,
   consentLogs, InsertConsentLog, ConsentLog,
   contractTemplates, InsertContractTemplate, ContractTemplate,
-  bondContractTemplates, InsertBondContractTemplate, BondContractTemplate
+  bondContractTemplates, InsertBondContractTemplate, BondContractTemplate,
+  companyWallets, InsertCompanyWallet, CompanyWallet,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -1535,4 +1536,208 @@ export async function debitWalletForInvestment(
     createdAt: new Date(),
     updatedAt: new Date(),
   });
+}
+
+// ==================== COMPANY WALLET FUNCTIONS ====================
+
+export async function getCompanyWallets() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companyWallets).orderBy(companyWallets.coin, companyWallets.network);
+}
+
+export async function getActiveCompanyWallets() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companyWallets)
+    .where(eq(companyWallets.isActive, true))
+    .orderBy(companyWallets.coin, companyWallets.network);
+}
+
+export async function getCompanyWalletByCoin(coin: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const results = await db.select().from(companyWallets)
+    .where(and(eq(companyWallets.coin, coin), eq(companyWallets.isActive, true)))
+    .limit(1);
+  return results[0] ?? null;
+}
+
+export async function createCompanyWallet(data: InsertCompanyWallet) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(companyWallets).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCompanyWallet(id: number, data: Partial<InsertCompanyWallet>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(companyWallets).set({ ...data, updatedAt: new Date() }).where(eq(companyWallets.id, id));
+}
+
+export async function toggleCompanyWallet(id: number, isActive: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(companyWallets).set({ isActive, updatedAt: new Date() }).where(eq(companyWallets.id, id));
+}
+
+export async function deleteCompanyWallet(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(companyWallets).where(eq(companyWallets.id, id));
+}
+
+// ==================== CRYPTO DEPOSIT FUNCTIONS ====================
+
+export async function reportCryptoDeposit(
+  userId: number,
+  walletId: number,
+  txHash: string,
+  amount: string,
+  currency: string,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check for duplicate txHash
+  const existing = await db.select().from(walletTransactions)
+    .where(eq(walletTransactions.externalTxHash, txHash)).limit(1);
+  if (existing.length > 0) throw new Error("Dieser TX-Hash wurde bereits gemeldet.");
+
+  const result = await db.insert(walletTransactions).values({
+    walletId,
+    userId,
+    type: "deposit",
+    amount,
+    currency,
+    status: "pending",
+    externalTxHash: txHash,
+    description: `Crypto Einzahlung gemeldet (${currency})`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  return result[0].insertId;
+}
+
+export async function getPendingCryptoDeposits() {
+  const db = await getDb();
+  if (!db) return [];
+  const txs = await db.select().from(walletTransactions)
+    .where(and(
+      eq(walletTransactions.type, "deposit"),
+      eq(walletTransactions.status, "pending"),
+      sql`${walletTransactions.externalTxHash} IS NOT NULL`
+    ))
+    .orderBy(desc(walletTransactions.createdAt));
+
+  // Enrich with user info
+  const enriched = await Promise.all(txs.map(async (tx) => {
+    const user = await getUserById(tx.userId);
+    return { ...tx, user: user ? { id: user.id, name: user.name, email: user.email } : null };
+  }));
+  return enriched;
+}
+
+export async function confirmCryptoDeposit(
+  txId: number,
+  eurAmount: string,
+  adminId: number,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Get the pending transaction
+  const txList = await db.select().from(walletTransactions)
+    .where(eq(walletTransactions.id, txId)).limit(1);
+  if (txList.length === 0) throw new Error("Transaktion nicht gefunden");
+  const tx = txList[0];
+  if (tx.status !== "pending") throw new Error("Transaktion ist nicht mehr ausstehend");
+
+  // Get or create EUR wallet for this user
+  const eurWalletObj = await getOrCreateWallet(tx.userId, "EUR", "fiat");
+  const eurWalletId = eurWalletObj.id;
+
+  // Credit EUR wallet directly (no Stripe, manual confirmation)
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  const eurWalletRows = await dbConn.select().from(wallets).where(eq(wallets.id, eurWalletId)).limit(1);
+  if (eurWalletRows.length === 0) throw new Error("EUR-Wallet nicht gefunden");
+  const eurWallet = eurWalletRows[0];
+  const newBalance = (parseFloat(eurWallet.balance ?? "0") + parseFloat(eurAmount)).toFixed(8);
+  const newAvailable = (parseFloat(eurWallet.availableBalance ?? "0") + parseFloat(eurAmount)).toFixed(8);
+  const newDeposited = (parseFloat(eurWallet.totalDeposited ?? "0") + parseFloat(eurAmount)).toFixed(8);
+  await dbConn.update(wallets).set({
+    balance: newBalance,
+    availableBalance: newAvailable,
+    totalDeposited: newDeposited,
+    lastDepositAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(wallets.id, eurWalletId));
+  // Record EUR credit transaction
+  await dbConn.insert(walletTransactions).values({
+    walletId: eurWalletId,
+    userId: tx.userId,
+    type: "credit",
+    amount: eurAmount,
+    currency: "EUR",
+    status: "completed",
+    description: `Crypto-Einzahlung (${tx.currency}) in EUR gutgeschrieben`,
+    approvedBy: adminId,
+    approvedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  // Update the original tx: mark completed + store EUR amount
+  await db.update(walletTransactions).set({
+    status: "completed",
+    approvedBy: adminId,
+    approvedAt: new Date(),
+    description: `Crypto Einzahlung bestätigt – ${eurAmount} EUR gutgeschrieben`,
+    updatedAt: new Date(),
+  }).where(eq(walletTransactions.id, txId));
+}
+
+// ==================== PAYMENT SCHEDULE (ADMIN) FUNCTIONS ====================
+
+export async function getAllPaymentSchedulesForAdmin() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const schedules = await db.select().from(paymentSchedules)
+    .orderBy(desc(paymentSchedules.dueDate));
+
+  // Enrich with subscription + investor + bond info
+  const enriched = await Promise.all(schedules.map(async (s) => {
+    const subList = await db.select().from(subscriptions)
+      .where(eq(subscriptions.id, s.subscriptionId)).limit(1);
+    const sub = subList[0] ?? null;
+    const investor = sub ? await getUserById(sub.userId) : null;
+    const bond = sub ? await getBondById(sub.bondId) : null;
+    return {
+      ...s,
+      subscription: sub,
+      investor: investor ? { id: investor.id, name: investor.name, email: investor.email } : null,
+      bond: bond ? { id: bond.id, name: bond.name } : null,
+    };
+  }));
+  return enriched;
+}
+
+export async function markPaymentSchedulePaidWithMethod(
+  id: number,
+  method: "bank_transfer" | "crypto",
+  cryptoTxHash?: string,
+  cryptoCoin?: string,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(paymentSchedules).set({
+    status: "paid",
+    paidAt: new Date(),
+    paymentMethod: method,
+    cryptoTxHash: cryptoTxHash ?? null,
+    cryptoCoin: cryptoCoin ?? null,
+    updatedAt: new Date(),
+  }).where(eq(paymentSchedules.id, id));
 }

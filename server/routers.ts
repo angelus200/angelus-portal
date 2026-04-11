@@ -983,7 +983,7 @@ export const appRouter = router({
     pendingWithdrawals: adminProcedure.query(async () => {
       return db.getPendingWithdrawals();
     }),
-    
+
     approveWithdrawal: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
@@ -998,6 +998,39 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    // Investor: report a crypto deposit (TX hash + amount)
+    reportCryptoDeposit: protectedProcedure
+      .input(z.object({
+        walletId: z.number(),
+        txHash: z.string().min(10).max(128),
+        amount: z.string().regex(/^\d+(\.\d+)?$/, "Ungültiger Betrag"),
+        currency: z.string().min(2).max(16),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const txId = await db.reportCryptoDeposit(
+          ctx.user.id,
+          input.walletId,
+          input.txHash,
+          input.amount,
+          input.currency,
+        );
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          action: "wallet.reportCryptoDeposit",
+          entityType: "walletTransaction",
+          entityId: txId,
+          details: { txHash: input.txHash, amount: input.amount, currency: input.currency },
+          ipAddress: ctx.req.ip,
+        });
+        return { id: txId };
+      }),
+
+    // Get active company cold wallet addresses (for investor deposit UI)
+    companyWallets: protectedProcedure.query(async () => {
+      return db.getActiveCompanyWallets();
+    }),
   }),
 
   // ==================== PAYMENT SCHEDULE ROUTES ====================

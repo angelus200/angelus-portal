@@ -2,20 +2,36 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Wallet, ArrowUpRight, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Wallet, ArrowUpRight, CheckCircle, XCircle, Clock, Bitcoin, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
 import { toast } from "sonner";
 
+const EXPLORER_URLS: Record<string, string> = {
+  BTC: "https://mempool.space/tx/",
+  ETH: "https://etherscan.io/tx/",
+  USDT: "https://etherscan.io/tx/",
+  USDC: "https://etherscan.io/tx/",
+  "USDT-TRC20": "https://tronscan.org/#/transaction/",
+};
+
+function getExplorerUrl(currency: string, txHash: string) {
+  const base = EXPLORER_URLS[currency] ?? "https://blockchair.com/search?q=";
+  return `${base}${txHash}`;
+}
+
 export default function AdminWallets() {
+  const utils = trpc.useUtils();
   const { data: pendingWithdrawals, isLoading: withdrawalsLoading, refetch: refetchWithdrawals } = trpc.wallet.pendingWithdrawals.useQuery();
-  
+  const { data: pendingCryptoDeposits, isLoading: depositsLoading } = trpc.admin.pendingCryptoDeposits.useQuery();
+
   const approveWithdrawal = trpc.wallet.approveWithdrawal.useMutation({
     onSuccess: () => {
       toast.success("Auszahlung genehmigt");
@@ -41,6 +57,31 @@ export default function AdminWallets() {
     await approveWithdrawal.mutateAsync({
       id: selectedWithdrawal.id,
     });
+  };
+
+  // Crypto deposit confirm state
+  const [selectedDeposit, setSelectedDeposit] = useState<{
+    id: number;
+    currency: string;
+    externalTxHash: string | null;
+    amount: string;
+    user: { id: number; name: string | null; email: string | null } | null;
+  } | null>(null);
+  const [eurAmount, setEurAmount] = useState("");
+
+  const confirmDeposit = trpc.admin.confirmCryptoDeposit.useMutation({
+    onSuccess: () => {
+      toast.success("Einzahlung bestätigt und EUR-Wallet gutgeschrieben");
+      utils.admin.pendingCryptoDeposits.invalidate();
+      setSelectedDeposit(null);
+      setEurAmount("");
+    },
+    onError: (e) => toast.error("Fehler: " + e.message),
+  });
+
+  const handleConfirmDeposit = async () => {
+    if (!selectedDeposit || !eurAmount) return;
+    await confirmDeposit.mutateAsync({ txId: selectedDeposit.id, eurAmount });
   };
 
   const getStatusBadge = (status: string) => {
@@ -78,6 +119,13 @@ export default function AdminWallets() {
               Auszahlungen
               {pendingWithdrawals && pendingWithdrawals.length > 0 && (
                 <Badge className="ml-1 bg-yellow-500 text-white">{pendingWithdrawals.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="crypto-deposits" className="gap-2">
+              <Bitcoin className="w-4 h-4" />
+              Crypto Einzahlungen
+              {pendingCryptoDeposits && pendingCryptoDeposits.length > 0 && (
+                <Badge className="ml-1 bg-orange-500 text-white">{pendingCryptoDeposits.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
@@ -163,7 +211,164 @@ export default function AdminWallets() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Crypto Deposits Tab */}
+          <TabsContent value="crypto-deposits">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bitcoin className="w-5 h-5" />
+                  Ausstehende Crypto Einzahlungen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {depositsLoading ? (
+                  <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}</div>
+                ) : pendingCryptoDeposits && pendingCryptoDeposits.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Investor</TableHead>
+                        <TableHead>Coin</TableHead>
+                        <TableHead>Gemeldeter Betrag</TableHead>
+                        <TableHead>TX-Hash</TableHead>
+                        <TableHead>Datum</TableHead>
+                        <TableHead className="text-right">Aktion</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingCryptoDeposits.map((d) => (
+                        <TableRow key={d.id}>
+                          <TableCell>#{d.id}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{d.user?.name ?? `User #${d.userId}`}</p>
+                              <p className="text-xs text-muted-foreground">{d.user?.email ?? ""}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono">{d.currency}</Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {parseFloat(d.amount).toLocaleString("de-DE", { minimumFractionDigits: 8 })} {d.currency}
+                          </TableCell>
+                          <TableCell>
+                            {d.externalTxHash ? (
+                              <a
+                                href={getExplorerUrl(d.currency, d.externalTxHash)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-primary hover:underline font-mono text-xs"
+                              >
+                                {d.externalTxHash.slice(0, 16)}…
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : "–"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(d.createdAt), "dd.MM.yyyy HH:mm", { locale: de })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedDeposit({
+                                  id: d.id,
+                                  currency: d.currency,
+                                  externalTxHash: d.externalTxHash ?? null,
+                                  amount: d.amount,
+                                  user: d.user,
+                                });
+                                setEurAmount("");
+                              }}
+                            >
+                              EUR gutschreiben
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <Bitcoin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Keine ausstehenden Crypto-Einzahlungen.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Confirm Crypto Deposit Dialog */}
+        <Dialog open={!!selectedDeposit} onOpenChange={(o) => { if (!o) { setSelectedDeposit(null); setEurAmount(""); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crypto Einzahlung bestätigen</DialogTitle>
+              <DialogDescription>
+                Prüfen Sie die Blockchain-Transaktion und geben Sie den EUR-Gegenwert ein, der dem Investor gutgeschrieben werden soll.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedDeposit && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Investor</Label>
+                    <p className="font-medium">{selectedDeposit.user?.name ?? `User #${selectedDeposit.id}`}</p>
+                    <p className="text-xs text-muted-foreground">{selectedDeposit.user?.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Gemeldeter Betrag</Label>
+                    <p className="font-medium font-mono">{parseFloat(selectedDeposit.amount).toLocaleString("de-DE", { minimumFractionDigits: 8 })} {selectedDeposit.currency}</p>
+                  </div>
+                </div>
+                {selectedDeposit.externalTxHash && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">TX-Hash</Label>
+                    <a
+                      href={getExplorerUrl(selectedDeposit.currency, selectedDeposit.externalTxHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary hover:underline font-mono text-xs break-all mt-1"
+                    >
+                      {selectedDeposit.externalTxHash}
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label>EUR-Gegenwert <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="0.00"
+                      className="pl-7"
+                      value={eurAmount}
+                      onChange={e => setEurAmount(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Dieser Betrag wird dem EUR-Wallet des Investors gutgeschrieben.</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setSelectedDeposit(null); setEurAmount(""); }}>Abbrechen</Button>
+              <Button
+                onClick={handleConfirmDeposit}
+                disabled={!eurAmount || confirmDeposit.isPending}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {confirmDeposit.isPending ? "Wird gutgeschrieben…" : "EUR gutschreiben"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Process Withdrawal Dialog */}
         <Dialog open={!!selectedWithdrawal} onOpenChange={() => setSelectedWithdrawal(null)}>

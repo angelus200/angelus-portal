@@ -306,26 +306,48 @@ export type InsertContract = typeof contracts.$inferInsert;
 export const paymentSchedules = mysqlTable("payment_schedules", {
   id: int("id").autoincrement().primaryKey(),
   subscriptionId: int("subscriptionId").notNull(),
-  
+
   // Payment details
   dueDate: timestamp("dueDate").notNull(),
   amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 8 }).default("EUR").notNull(),
   type: mysqlEnum("type", ["interest", "principal", "combined"]).notNull(),
-  
+
   // Status
   status: mysqlEnum("status", ["scheduled", "pending", "paid", "overdue"]).default("scheduled").notNull(),
   paidAt: timestamp("paidAt"),
-  
+
   // Transaction reference
   transactionId: int("transactionId"),
-  
+
+  // Crypto payment fields
+  paymentMethod: varchar("paymentMethod", { length: 32 }),  // "bank_transfer" | "crypto"
+  cryptoTxHash: varchar("cryptoTxHash", { length: 128 }),
+  cryptoCoin: varchar("cryptoCoin", { length: 16 }),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
 export type InsertPaymentSchedule = typeof paymentSchedules.$inferInsert;
+
+/**
+ * Company Cold Wallets (for crypto deposits/withdrawals)
+ */
+export const companyWallets = mysqlTable("company_wallets", {
+  id: int("id").autoincrement().primaryKey(),
+  coin: varchar("coin", { length: 16 }).notNull(),     // BTC, ETH, USDT, USDC, USDT-TRC20
+  network: varchar("network", { length: 64 }).notNull(), // Bitcoin, Ethereum, Tron, etc.
+  address: varchar("address", { length: 255 }).notNull(),
+  label: varchar("label", { length: 128 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanyWallet = typeof companyWallets.$inferSelect;
+export type InsertCompanyWallet = typeof companyWallets.$inferInsert;
 
 /**
  * Wallets for investors (Fiat and Crypto)

@@ -381,4 +381,144 @@ export const adminRouter = router({
 
       return { success: true };
     }),
+
+  // ==================== COMPANY CRYPTO WALLETS ====================
+
+  listCompanyWallets: adminProcedure.query(async () => {
+    return db.getCompanyWallets();
+  }),
+
+  createCompanyWallet: adminProcedure
+    .input(z.object({
+      coin: z.string().min(2).max(16),
+      network: z.string().min(2).max(64),
+      address: z.string().min(10).max(255),
+      label: z.string().max(128).optional(),
+      isActive: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const id = await db.createCompanyWallet(input);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "companyWallet.create",
+        entityType: "companyWallet",
+        entityId: id,
+        details: { coin: input.coin, network: input.network },
+        ipAddress: ctx.req.ip,
+      });
+      return { id };
+    }),
+
+  updateCompanyWallet: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      coin: z.string().min(2).max(16).optional(),
+      network: z.string().min(2).max(64).optional(),
+      address: z.string().min(10).max(255).optional(),
+      label: z.string().max(128).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...data } = input;
+      await db.updateCompanyWallet(id, data);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "companyWallet.update",
+        entityType: "companyWallet",
+        entityId: id,
+        details: data,
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  toggleCompanyWallet: adminProcedure
+    .input(z.object({ id: z.number(), isActive: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      await db.toggleCompanyWallet(input.id, input.isActive);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "companyWallet.toggle",
+        entityType: "companyWallet",
+        entityId: input.id,
+        details: { isActive: input.isActive },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  deleteCompanyWallet: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      await db.deleteCompanyWallet(input.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "companyWallet.delete",
+        entityType: "companyWallet",
+        entityId: input.id,
+        details: {},
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  // ==================== CRYPTO DEPOSIT MANAGEMENT ====================
+
+  pendingCryptoDeposits: adminProcedure.query(async () => {
+    return db.getPendingCryptoDeposits();
+  }),
+
+  confirmCryptoDeposit: adminProcedure
+    .input(z.object({
+      txId: z.number(),
+      eurAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Ungültiger EUR-Betrag"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.confirmCryptoDeposit(input.txId, input.eurAmount, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "wallet.confirmCryptoDeposit",
+        entityType: "walletTransaction",
+        entityId: input.txId,
+        details: { eurAmount: input.eurAmount },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  // ==================== PAYMENT SCHEDULE MANAGEMENT ====================
+
+  getPaymentSchedules: adminProcedure.query(async () => {
+    return db.getAllPaymentSchedulesForAdmin();
+  }),
+
+  markPaymentSchedulePaid: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      method: z.enum(["bank_transfer", "crypto"]),
+      cryptoTxHash: z.string().max(128).optional(),
+      cryptoCoin: z.string().max(16).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.markPaymentSchedulePaidWithMethod(
+        input.id,
+        input.method,
+        input.cryptoTxHash,
+        input.cryptoCoin,
+      );
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: "payment.markPaidWithMethod",
+        entityType: "paymentSchedule",
+        entityId: input.id,
+        details: { method: input.method, cryptoTxHash: input.cryptoTxHash, cryptoCoin: input.cryptoCoin },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
 });

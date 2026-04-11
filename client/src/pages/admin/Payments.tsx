@@ -18,29 +18,35 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import {
-  Download,
   RotateCcw,
   Eye,
   AlertCircle,
   CheckCircle2,
   Clock,
   XCircle,
+  Bitcoin,
+  Banknote,
+  CalendarCheck,
 } from "lucide-react";
 
 type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
+type ScheduleStatus = "scheduled" | "pending" | "paid" | "overdue";
 
 export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
@@ -48,6 +54,24 @@ export default function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [page, setPage] = useState(0);
+
+  // Payment Schedules (Zins & Rückzahlungen)
+  const utils = trpc.useUtils();
+  const { data: paymentSchedules, isLoading: schedulesLoading } = trpc.admin.getPaymentSchedules.useQuery();
+  const [scheduleFilter, setScheduleFilter] = useState<ScheduleStatus | "all">("all");
+  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const [payMethod, setPayMethod] = useState<"bank_transfer" | "crypto">("bank_transfer");
+  const [cryptoTxHash, setCryptoTxHash] = useState("");
+  const [cryptoCoin, setCryptoCoin] = useState("");
+
+  const markSchedulePaid = trpc.admin.markPaymentSchedulePaid.useMutation({
+    onSuccess: () => {
+      utils.admin.getPaymentSchedules.invalidate();
+      setSelectedSchedule(null);
+      setCryptoTxHash("");
+      setCryptoCoin("");
+    },
+  });
 
   // Fetch all payments
   const { data: paymentsData, isLoading, refetch } = useQuery({
@@ -136,6 +160,22 @@ export default function PaymentsPage() {
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
+  const filteredSchedules = (paymentSchedules ?? []).filter((s: any) => {
+    if (scheduleFilter === "all") return true;
+    return s.status === scheduleFilter;
+  });
+
+  const getScheduleStatusBadge = (status: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      scheduled: { label: "Geplant", className: "bg-blue-100 text-blue-800" },
+      pending:   { label: "Ausstehend", className: "bg-yellow-100 text-yellow-800" },
+      paid:      { label: "Bezahlt", className: "bg-green-100 text-green-800" },
+      overdue:   { label: "Überfällig", className: "bg-red-100 text-red-800" },
+    };
+    const v = map[status] ?? map.pending;
+    return <Badge className={v.className}>{v.label}</Badge>;
+  };
+
   return (
     <DashboardLayout variant="admin">
       <div className="space-y-6">
@@ -144,6 +184,22 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Zahlungen</h1>
           <p className="text-gray-600 mt-2">Verwalten und überwachen Sie alle Investorenzahlungen</p>
         </div>
+
+        <Tabs defaultValue="subscriptions" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="subscriptions">Zeichnungen (Stripe)</TabsTrigger>
+            <TabsTrigger value="schedules" className="gap-2">
+              <CalendarCheck className="w-4 h-4" />
+              Zins & Rückzahlungen
+              {(paymentSchedules ?? []).filter((s: any) => s.status !== "paid").length > 0 && (
+                <Badge className="ml-1 bg-yellow-500 text-white text-xs">
+                  {(paymentSchedules ?? []).filter((s: any) => s.status !== "paid").length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="subscriptions" className="space-y-4">
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -409,6 +465,198 @@ export default function PaymentsPage() {
           </Button>
         </div>
       </div>
+
+          </TabsContent>
+
+          {/* Zins & Rückzahlungen Tab */}
+          <TabsContent value="schedules" className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Select value={scheduleFilter} onValueChange={(v) => setScheduleFilter(v as ScheduleStatus | "all")}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Status</SelectItem>
+                  <SelectItem value="scheduled">Geplant</SelectItem>
+                  <SelectItem value="pending">Ausstehend</SelectItem>
+                  <SelectItem value="overdue">Überfällig</SelectItem>
+                  <SelectItem value="paid">Bezahlt</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">{filteredSchedules.length} Einträge</span>
+            </div>
+
+            <Card>
+              <CardContent className="pt-4">
+                {schedulesLoading ? (
+                  <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}</div>
+                ) : filteredSchedules.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Keine Zahlungsplaneinträge gefunden.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Investor</TableHead>
+                        <TableHead>Bond</TableHead>
+                        <TableHead>Typ</TableHead>
+                        <TableHead>Betrag</TableHead>
+                        <TableHead>Fälligkeit</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Zahlungsart</TableHead>
+                        <TableHead className="text-right">Aktion</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSchedules.map((s: any) => (
+                        <TableRow key={s.id}>
+                          <TableCell>#{s.id}</TableCell>
+                          <TableCell>
+                            <p className="font-medium">{s.investor?.name ?? `User #${s.subscription?.userId}`}</p>
+                            <p className="text-xs text-muted-foreground">{s.investor?.email}</p>
+                          </TableCell>
+                          <TableCell className="text-sm">{s.bond?.name ?? `Bond #${s.subscription?.bondId}`}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {s.type === "interest" ? "Zinsen" : s.type === "principal" ? "Rückzahlung" : "Kombiniert"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {parseFloat(s.amount).toLocaleString("de-DE", { minimumFractionDigits: 2 })} {s.currency}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {format(new Date(s.dueDate), "dd.MM.yyyy", { locale: de })}
+                          </TableCell>
+                          <TableCell>{getScheduleStatusBadge(s.status)}</TableCell>
+                          <TableCell>
+                            {s.paymentMethod === "crypto" ? (
+                              <span className="flex items-center gap-1 text-xs">
+                                <Bitcoin className="w-3 h-3" /> {s.cryptoCoin ?? "Crypto"}
+                              </span>
+                            ) : s.paymentMethod === "bank_transfer" ? (
+                              <span className="flex items-center gap-1 text-xs">
+                                <Banknote className="w-3 h-3" /> EUR
+                              </span>
+                            ) : "–"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {s.status !== "paid" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedSchedule(s);
+                                  setPayMethod("bank_transfer");
+                                  setCryptoTxHash("");
+                                  setCryptoCoin("");
+                                }}
+                              >
+                                Als bezahlt markieren
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Mark Schedule Paid Dialog */}
+        <Dialog open={!!selectedSchedule} onOpenChange={(o) => { if (!o) setSelectedSchedule(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Zahlung als bezahlt markieren</DialogTitle>
+              <DialogDescription>
+                Wählen Sie die Zahlungsart. Bei Crypto bitte TX-Hash und Coin eintragen.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedSchedule && (
+              <div className="space-y-4 py-2">
+                <div className="border rounded-lg divide-y text-sm">
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Investor</span>
+                    <span className="font-medium">{selectedSchedule.investor?.name ?? `#${selectedSchedule.subscription?.userId}`}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Betrag</span>
+                    <span className="font-semibold">{parseFloat(selectedSchedule.amount).toLocaleString("de-DE", { minimumFractionDigits: 2 })} {selectedSchedule.currency}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Fälligkeit</span>
+                    <span>{format(new Date(selectedSchedule.dueDate), "dd.MM.yyyy", { locale: de })}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Zahlungsart</Label>
+                  <Select value={payMethod} onValueChange={(v) => setPayMethod(v as "bank_transfer" | "crypto")}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bank_transfer">
+                        <span className="flex items-center gap-2"><Banknote className="w-4 h-4" /> EUR Überweisung</span>
+                      </SelectItem>
+                      <SelectItem value="crypto">
+                        <span className="flex items-center gap-2"><Bitcoin className="w-4 h-4" /> Crypto</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {payMethod === "crypto" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Coin <span className="text-destructive">*</span></Label>
+                      <Select value={cryptoCoin} onValueChange={setCryptoCoin}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Coin auswählen…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["BTC","ETH","USDT","USDC","USDT-TRC20"].map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>TX-Hash <span className="text-destructive">*</span></Label>
+                      <Input
+                        placeholder="0x… oder txid…"
+                        value={cryptoTxHash}
+                        onChange={e => setCryptoTxHash(e.target.value)}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedSchedule(null)}>Abbrechen</Button>
+              <Button
+                onClick={() => markSchedulePaid.mutateAsync({
+                  id: selectedSchedule.id,
+                  method: payMethod,
+                  cryptoTxHash: payMethod === "crypto" ? cryptoTxHash : undefined,
+                  cryptoCoin: payMethod === "crypto" ? cryptoCoin : undefined,
+                })}
+                disabled={markSchedulePaid.isPending || (payMethod === "crypto" && (!cryptoTxHash || !cryptoCoin))}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                {markSchedulePaid.isPending ? "Wird gespeichert…" : "Als bezahlt markieren"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </DashboardLayout>
   );

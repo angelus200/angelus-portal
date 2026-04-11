@@ -21,11 +21,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { 
-  LayoutDashboard, 
-  LogOut, 
-  PanelLeft, 
-  Users, 
+import {
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Users,
   TrendingUp,
   Wallet,
   Shield,
@@ -36,7 +36,8 @@ import {
   CheckSquare,
   CreditCard,
   Upload,
-  Percent
+  Percent,
+  Bitcoin,
 } from "lucide-react";
 import React, { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -59,6 +60,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   CreditCard,
   Upload,
   Percent,
+  Bitcoin,
 };
 
 // Default investor menu items
@@ -81,6 +83,7 @@ const adminMenuItems = [
   { icon: "Upload", label: "Bestandskunden", path: "/admin/legacy-customers/import" },
   { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
+  { icon: "Bitcoin", label: "Crypto-Wallets", path: "/admin/crypto-wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
