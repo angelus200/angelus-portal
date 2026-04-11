@@ -19,6 +19,9 @@ import {
   contractTemplates, InsertContractTemplate, ContractTemplate,
   bondContractTemplates, InsertBondContractTemplate, BondContractTemplate,
   companyWallets, InsertCompanyWallet, CompanyWallet,
+  legacyContracts, InsertLegacyContract, LegacyContract,
+  legacyPayments, InsertLegacyPayment, LegacyPayment,
+  legacyInterestPayments, InsertLegacyInterestPayment, LegacyInterestPayment,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -1740,4 +1743,78 @@ export async function markPaymentSchedulePaidWithMethod(
     cryptoCoin: cryptoCoin ?? null,
     updatedAt: new Date(),
   }).where(eq(paymentSchedules.id, id));
+}
+
+// ==================== LEGACY CONTRACTS ====================
+
+export async function createLegacyContract(data: InsertLegacyContract): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(legacyContracts).values(data);
+}
+
+export async function getLegacyContractById(id: number): Promise<LegacyContract | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(legacyContracts).where(eq(legacyContracts.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getLegacyContractsByUser(userId: number): Promise<LegacyContract[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyContracts)
+    .where(eq(legacyContracts.userId, userId))
+    .orderBy(desc(legacyContracts.startDate));
+}
+
+export async function updateLegacyContract(id: number, data: Partial<InsertLegacyContract>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(legacyContracts).set({ ...data, updatedAt: new Date() }).where(eq(legacyContracts.id, id));
+}
+
+export async function getAllLegacyContractsForAdmin(): Promise<LegacyContract[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyContracts).orderBy(desc(legacyContracts.createdAt));
+}
+
+// ==================== LEGACY PAYMENTS ====================
+
+export async function addLegacyPayment(data: InsertLegacyPayment): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(legacyPayments).values(data);
+  // Update paidAmount on contract
+  const existing = await db.select().from(legacyPayments)
+    .where(eq(legacyPayments.contractId, data.contractId));
+  const total = existing.reduce((s, p) => s + parseFloat(p.amount as string), 0);
+  await db.update(legacyContracts)
+    .set({ paidAmount: total.toFixed(8), updatedAt: new Date() })
+    .where(eq(legacyContracts.id, data.contractId));
+}
+
+export async function getLegacyPaymentsByContract(contractId: number): Promise<LegacyPayment[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyPayments)
+    .where(eq(legacyPayments.contractId, contractId))
+    .orderBy(desc(legacyPayments.paidAt));
+}
+
+// ==================== LEGACY INTEREST PAYMENTS ====================
+
+export async function addLegacyInterestPayment(data: InsertLegacyInterestPayment): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(legacyInterestPayments).values(data);
+}
+
+export async function getLegacyInterestPaymentsByContract(contractId: number): Promise<LegacyInterestPayment[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyInterestPayments)
+    .where(eq(legacyInterestPayments.contractId, contractId))
+    .orderBy(desc(legacyInterestPayments.paidAt));
 }

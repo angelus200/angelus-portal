@@ -645,6 +645,79 @@ export const invitations = mysqlTable("invitations", {
 export type Invitation = typeof invitations.$inferSelect;
 export type InsertInvitation = typeof invitations.$inferInsert;
 
+/**
+ * Legacy Contracts (Zeichnungsscheine)
+ * Bestandskunden-Verträge die vom Admin erfasst werden
+ */
+export const legacyContracts = mysqlTable("legacy_contracts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  subscriptionId: int("subscriptionId"),
+
+  signedAmount: decimal("signedAmount", { precision: 24, scale: 8 }).notNull(),
+  paidAmount: decimal("paidAmount", { precision: 24, scale: 8 }).notNull().default("0"),
+  interestRate: decimal("interestRate", { precision: 8, scale: 4 }).notNull(),
+  penaltyRatePerDay: decimal("penaltyRatePerDay", { precision: 8, scale: 6 }).notNull().default("0"),
+
+  startDate: date("startDate").notNull(),
+  endDate: date("endDate").notNull(),
+  paymentInterval: mysqlEnum("paymentInterval", ["monthly", "quarterly", "yearly", "end_of_term"]).notNull(),
+
+  currency: varchar("currency", { length: 16 }).notNull().default("EUR"),
+  status: mysqlEnum("status", ["active", "completed", "cancelled"]).notNull().default("active"),
+  notes: text("notes"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LegacyContract = typeof legacyContracts.$inferSelect;
+export type InsertLegacyContract = typeof legacyContracts.$inferInsert;
+
+/**
+ * Legacy Payments (Einzahlungen)
+ */
+export const legacyPayments = mysqlTable("legacy_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  contractId: int("contractId").notNull(),
+  userId: int("userId").notNull(),
+
+  amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
+  currency: varchar("currency", { length: 16 }).notNull().default("EUR"),
+  paidAt: date("paidAt").notNull(),
+
+  txHash: varchar("txHash", { length: 128 }),
+  bankReference: varchar("bankReference", { length: 128 }),
+  notes: text("notes"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LegacyPayment = typeof legacyPayments.$inferSelect;
+export type InsertLegacyPayment = typeof legacyPayments.$inferInsert;
+
+/**
+ * Legacy Interest Payments (Bereits ausgezahlte Zinsen)
+ */
+export const legacyInterestPayments = mysqlTable("legacy_interest_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  contractId: int("contractId").notNull(),
+  userId: int("userId").notNull(),
+
+  amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
+  currency: varchar("currency", { length: 16 }).notNull().default("EUR"),
+  paidAt: date("paidAt").notNull(),
+
+  paymentMethod: mysqlEnum("paymentMethod", ["bank_transfer", "crypto"]).notNull().default("bank_transfer"),
+  txHash: varchar("txHash", { length: 128 }),
+  notes: text("notes"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LegacyInterestPayment = typeof legacyInterestPayments.$inferSelect;
+export type InsertLegacyInterestPayment = typeof legacyInterestPayments.$inferInsert;
+
 // Import legacy customer schema
 export * from './legacy-schema';
 export * from './interest-schema';

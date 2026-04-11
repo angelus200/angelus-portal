@@ -10,6 +10,7 @@ import { adminRouter } from "./adminRouter";
 import { legacyCustomerRouter } from "./legacyCustomerRouter";
 import { legacyInvitationsRouter } from "./legacyInvitationsRouter";
 import { interestParametersRouter } from "./interestParametersRouter";
+import { legacyContractsRouter } from "./legacyContractsRouter";
 import interestCalculationRouter from "./routers/interest-calculation.router";
 
 // Admin-only procedure (admin or superadmin)
@@ -26,6 +27,7 @@ export const appRouter = router({
   legacyCustomer: legacyCustomerRouter,
   legacyInvitations: legacyInvitationsRouter,
   interestParameters: interestParametersRouter,
+  legacyContracts: legacyContractsRouter,
 
   invitations: router({
     getByToken: publicProcedure
