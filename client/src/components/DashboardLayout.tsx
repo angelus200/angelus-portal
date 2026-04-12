@@ -82,7 +82,7 @@ const adminMenuItems = [
   { icon: "TrendingUp", label: "Beteiligungen", path: "/admin/bonds" },
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "CreditCard", label: "Zahlungen", path: "/admin/payments" },
-  { icon: "Upload", label: "Bestandskunden", path: "/admin/legacy-customers/import" },
+  { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
   { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "Bitcoin", label: "Crypto-Wallets", path: "/admin/crypto-wallets" },
@@ -90,7 +90,6 @@ const adminMenuItems = [
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
   { icon: "Mail", label: "Einladungen", path: "/admin/invitations" },
-  { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },
   { icon: "Settings", label: "Sicherheit", path: "/admin/security" },
 ];

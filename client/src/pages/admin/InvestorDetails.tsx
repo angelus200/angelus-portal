@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { 
@@ -188,6 +188,12 @@ export default function InvestorDetails() {
           <div className="flex items-center gap-2">
             {getKycBadge(user.kycStatus || "pending")}
             <Badge variant="outline">{user.investorType || "professional"}</Badge>
+            <Link href={`/admin/bestandskunden/${investorId}`}>
+              <Button variant="outline" size="sm">
+                <FileText className="w-4 h-4 mr-2" />
+                Bestandsvertrag
+              </Button>
+            </Link>
           </div>
         </div>
         
