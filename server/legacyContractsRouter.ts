@@ -119,6 +119,12 @@ export const legacyContractsRouter = router({
       return { success: true };
     }),
 
+  listDocuments: adminProcedure
+    .input(z.object({ contractId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      return db.getDocumentsByContract(input.contractId);
+    }),
+
   listPayments: adminProcedure
     .input(z.object({ contractId: z.number().int().positive() }))
     .query(async ({ input }) => {

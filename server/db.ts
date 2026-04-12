@@ -22,6 +22,7 @@ import {
   legacyContracts, InsertLegacyContract, LegacyContract,
   legacyPayments, InsertLegacyPayment, LegacyPayment,
   legacyInterestPayments, InsertLegacyInterestPayment, LegacyInterestPayment,
+  documents, InsertDocument,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -1817,4 +1818,40 @@ export async function getLegacyInterestPaymentsByContract(contractId: number): P
   return db.select().from(legacyInterestPayments)
     .where(eq(legacyInterestPayments.contractId, contractId))
     .orderBy(desc(legacyInterestPayments.paidAt));
+}
+
+
+// ==================== DOCUMENTS ====================
+
+export async function createDocument(data: InsertDocument): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documents).values(data);
+  return result[0].insertId;
+}
+
+export async function getDocumentsByContract(contractId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documents)
+    .where(eq(documents.contractId, contractId))
+    .orderBy(desc(documents.createdAt));
+}
+
+export async function getDocumentByPath(filePath: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(documents)
+    .where(eq(documents.filePath, filePath))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(documents)
+    .where(eq(documents.id, id))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }

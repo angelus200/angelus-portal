@@ -718,6 +718,26 @@ export const legacyInterestPayments = mysqlTable("legacy_interest_payments", {
 export type LegacyInterestPayment = typeof legacyInterestPayments.$inferSelect;
 export type InsertLegacyInterestPayment = typeof legacyInterestPayments.$inferInsert;
 
+/**
+ * Documents - File uploads for users and contracts
+ */
+export const documents = mysqlTable("documents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  contractId: int("contractId"),
+  category: mysqlEnum("category", ["kyc", "contracts", "payments", "general"]).notNull().default("general"),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  originalName: varchar("originalName", { length: 255 }).notNull(),
+  mimeType: varchar("mimeType", { length: 128 }).notNull(),
+  size: int("size").notNull(),
+  filePath: varchar("filePath", { length: 500 }).notNull(),
+  uploadedBy: int("uploadedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof documents.$inferInsert;
+
 // Import legacy customer schema
 export * from './legacy-schema';
 export * from './interest-schema';

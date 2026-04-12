@@ -17,8 +17,9 @@ import { toast } from "sonner";
 import {
   FileText, Plus, Upload, Loader2, AlertTriangle,
   TrendingUp, Wallet, Calendar, CheckCircle2, Link2,
-  Banknote, ArrowUpRight
+  Banknote, ArrowUpRight, Paperclip
 } from "lucide-react";
+import { FileUpload, DocumentList } from "@/components/FileUpload";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -173,6 +174,10 @@ function PaymentsTab({ contract }: { contract: any }) {
     { contractId: contract.id }, { enabled: !!contract }
   );
 
+  const { data: docs = [], refetch: refetchDocs } = trpc.legacyContracts.listDocuments.useQuery(
+    { contractId: contract.id }, { enabled: !!contract }
+  );
+
   const addMutation = trpc.legacyContracts.addPayment.useMutation({
     onSuccess: () => { utils.legacyContracts.listPayments.invalidate(); toast.success("Einzahlung gespeichert"); setOpen(false); resetForm(); },
     onError: (e) => toast.error(e.message),
@@ -249,6 +254,20 @@ function PaymentsTab({ contract }: { contract: any }) {
           </Table>
         </div>
       )}
+
+      {/* Documents Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Paperclip className="w-4 h-4 text-muted-foreground" />
+          <p className="text-sm font-medium">Dokumente ({docs.length})</p>
+        </div>
+        <FileUpload
+          contractId={contract.id}
+          category="payments"
+          onUploaded={() => refetchDocs()}
+        />
+        <DocumentList docs={docs as any} />
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
