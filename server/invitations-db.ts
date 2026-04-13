@@ -20,7 +20,8 @@ export async function createGeneralInvitation(
   email: string,
   name: string | null,
   adminId: number,
-  expiresInDays: number = 30
+  expiresInDays: number = 30,
+  issuerKey: string = 'angelus'
 ) {
   const token = generateInvitationToken();
   const tokenHash = hashInvitationToken(token);
@@ -38,9 +39,10 @@ export async function createGeneralInvitation(
     sentByAdminId: adminId,
     status: 'pending',
     expiresAt,
+    issuerKey,
   });
 
-  return { token, email, name, expiresAt };
+  return { token, email, name, expiresAt, issuerKey };
 }
 
 export async function getGeneralInvitationByToken(token: string) {

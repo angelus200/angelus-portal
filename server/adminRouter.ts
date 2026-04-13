@@ -507,7 +507,8 @@ export const adminRouter = router({
         input.email,
         input.name ?? null,
         ctx.user.id,
-        input.expiresInDays
+        input.expiresInDays,
+        process.env.VITE_BRAND || 'angelus'
       );
       if (input.sendEmail) {
         try {
@@ -517,6 +518,7 @@ export const adminRouter = router({
             lastName: '',
             invitationToken: inv.token,
             expiresAt: inv.expiresAt,
+            issuerKey: inv.issuerKey,
           });
         } catch (e) {
           console.error('[Invitations] Email send failed:', e);

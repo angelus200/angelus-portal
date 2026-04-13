@@ -1,5 +1,5 @@
 /**
- * Send Invitation Email for Legacy Customer Onboarding
+ * Send Invitation Email — Brand-aware
  */
 
 import { Resend } from 'resend';
@@ -12,21 +12,30 @@ interface SendInvitationEmailParams {
   lastName: string;
   invitationToken: string;
   expiresAt: Date;
+  issuerKey?: string;
 }
 
 export async function sendInvitationEmail(params: SendInvitationEmailParams) {
-  const {
-    email,
-    firstName,
-    lastName,
-    invitationToken,
-    expiresAt,
-  } = params;
+  const { email, firstName, lastName, invitationToken, expiresAt } = params;
 
-  // Build registration URL
-  const registrationUrl = `${process.env.VITE_FRONTEND_URL || 'https://angelus.manus.space'}/register?invitation=${invitationToken}`;
+  const brandKey = params.issuerKey || process.env.VITE_BRAND || 'angelus';
 
-  // Format expiration date
+  const brandConfig: Record<string, { name: string; email: string; domain: string }> = {
+    'angelus': {
+      name: 'Angelus Investorenportal',
+      email: 'noreply@angelus.group',
+      domain: process.env.VITE_FRONTEND_URL || 'https://www.unternehmerrente.app',
+    },
+    'angelus-alpha': {
+      name: 'Angelus Alpha Investorenportal',
+      email: 'noreply@angelus.group',
+      domain: process.env.VITE_FRONTEND_URL_ALPHA || 'https://www.angelus-alpha.app',
+    },
+  };
+
+  const brand = brandConfig[brandKey] ?? brandConfig['angelus'];
+  const registrationUrl = `${brand.domain}/register?invitation=${invitationToken}`;
+
   const expirationDate = new Date(expiresAt).toLocaleDateString('de-DE', {
     year: 'numeric',
     month: 'long',
@@ -46,11 +55,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams) {
         line-height: 1.6;
         color: #333;
       }
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-      }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
       .header {
         background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
         color: #ffd700;
@@ -58,19 +63,9 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams) {
         text-align: center;
         border-radius: 8px 8px 0 0;
       }
-      .header h1 {
-        margin: 0;
-        font-size: 28px;
-      }
-      .content {
-        background: #f9f9f9;
-        padding: 30px;
-        border-radius: 0 0 8px 8px;
-      }
-      .greeting {
-        font-size: 16px;
-        margin-bottom: 20px;
-      }
+      .header h1 { margin: 0; font-size: 28px; }
+      .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+      .greeting { font-size: 16px; margin-bottom: 20px; }
       .button {
         display: inline-block;
         background: #ffd700;
@@ -81,9 +76,6 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams) {
         font-weight: bold;
         margin: 20px 0;
       }
-      .button:hover {
-        background: #ffed4e;
-      }
       .info-box {
         background: #fff;
         border-left: 4px solid #ffd700;
@@ -91,64 +83,47 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams) {
         margin: 20px 0;
         border-radius: 4px;
       }
-      .footer {
-        font-size: 12px;
-        color: #666;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #ddd;
-      }
-      .expiration-warning {
-        color: #d9534f;
-        font-weight: bold;
-      }
+      .footer { font-size: 12px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }
+      .expiration-warning { color: #d9534f; font-weight: bold; }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>Angelus Investorenportal</h1>
+        <h1>${brand.name}</h1>
       </div>
-      
       <div class="content">
         <div class="greeting">
           <p>Liebe/r ${firstName} ${lastName},</p>
-          <p>herzlich willkommen im Angelus Investorenportal! Sie wurden eingeladen, Ihr Bestandsinvestor-Konto zu registrieren und zu aktivieren.</p>
+          <p>herzlich willkommen im ${brand.name}! Sie wurden eingeladen, Ihr Bestandsinvestor-Konto zu registrieren und zu aktivieren.</p>
         </div>
-
         <p>Klicken Sie auf den folgenden Link, um sich zu registrieren:</p>
-        
         <div style="text-align: center;">
           <a href="${registrationUrl}" class="button">Jetzt registrieren</a>
         </div>
-
         <div class="info-box">
           <p><strong>Oder kopieren Sie diesen Link in Ihren Browser:</strong></p>
           <p style="word-break: break-all; font-size: 12px;">${registrationUrl}</p>
         </div>
-
         <div class="info-box">
           <p><strong>⏰ Wichtig:</strong> <span class="expiration-warning">Dieser Link ist gültig bis ${expirationDate}</span></p>
           <p>Nach diesem Datum müssen Sie eine neue Einladung anfordern.</p>
         </div>
-
         <p>Bei der Registrierung werden Sie aufgefordert:</p>
         <ul>
           <li>Ein sicheres Passwort zu erstellen</li>
           <li>Ihre Daten zu bestätigen</li>
           <li>Wichtige Dokumente zu akzeptieren</li>
         </ul>
-
         <p>Falls Sie Fragen haben oder Hilfe benötigen, kontaktieren Sie uns bitte unter:</p>
         <p>
-          <strong>Angelus Group</strong><br>
-          📧 office@angelus.group<br>
+          <strong>${brand.name}</strong><br>
+          📧 ${brand.email}<br>
           📞 0800 175 077 0
         </p>
-
         <div class="footer">
           <p>Dies ist eine automatisch generierte E-Mail. Bitte antworten Sie nicht auf diese E-Mail.</p>
-          <p>&copy; 2026 Angelus Group. Alle Rechte vorbehalten.</p>
+          <p>&copy; 2026 ${brand.name}. Alle Rechte vorbehalten.</p>
         </div>
       </div>
     </div>
@@ -157,11 +132,11 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams) {
   `;
 
   const textContent = `
-Angelus Investorenportal
+${brand.name}
 
 Liebe/r ${firstName} ${lastName},
 
-herzlich willkommen im Angelus Investorenportal! Sie wurden eingeladen, Ihr Bestandsinvestor-Konto zu registrieren und zu aktivieren.
+herzlich willkommen im ${brand.name}! Sie wurden eingeladen, Ihr Bestandsinvestor-Konto zu registrieren und zu aktivieren.
 
 Registrierungslink:
 ${registrationUrl}
@@ -175,20 +150,20 @@ Bei der Registrierung werden Sie aufgefordert:
 - Wichtige Dokumente zu akzeptieren
 
 Falls Sie Fragen haben oder Hilfe benötigen, kontaktieren Sie uns bitte unter:
-Angelus Group
-office@angelus.group
+${brand.name}
+${brand.email}
 0800 175 077 0
 
 ---
 Dies ist eine automatisch generierte E-Mail. Bitte antworten Sie nicht auf diese E-Mail.
-© 2026 Angelus Group. Alle Rechte vorbehalten.
+© 2026 ${brand.name}. Alle Rechte vorbehalten.
   `;
 
   try {
     const result = await resend.emails.send({
-      from: 'Angelus Investorenportal <noreply@angelus.group>',
+      from: `${brand.name} <${brand.email}>`,
       to: email,
-      subject: 'Einladung: Registrieren Sie sich im Angelus Investorenportal',
+      subject: `Einladung: Registrieren Sie sich im ${brand.name}`,
       html: htmlContent,
       text: textContent,
     });
