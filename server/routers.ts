@@ -71,9 +71,7 @@ export const appRouter = router({
   // ==================== BOND ROUTES ====================
   bonds: router({
     list: publicProcedure.query(async () => {
-      const brandKey = process.env.VITE_BRAND || 'angelus';
-      const allBonds = await db.getActiveBonds();
-      return allBonds.filter(b => (b.issuerKey || 'angelus') === brandKey);
+      return db.getActiveBonds();
     }),
 
     listAll: adminProcedure.query(async () => {

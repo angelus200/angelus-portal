@@ -232,6 +232,15 @@ export default function MyInvestments() {
                           {bond.isin && (
                             <p className="text-xs text-muted-foreground">ISIN: {bond.isin}</p>
                           )}
+                          {bond.issuer && (
+                            <Badge className={
+                              (bond as any).issuerKey === 'angelus-alpha'
+                                ? "mt-1 bg-purple-100 text-purple-800 text-xs"
+                                : "mt-1 bg-yellow-100 text-yellow-800 text-xs"
+                            }>
+                              {bond.issuer}
+                            </Badge>
+                          )}
                         </div>
                         <Badge className={
                           bond.riskCategory === "high"   ? "bg-red-100 text-red-800" :
