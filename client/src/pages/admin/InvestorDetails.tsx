@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InvestorTaxSettings } from "./InvestorTaxSettings";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -247,7 +248,7 @@ export default function InvestorDetails() {
         
         {/* Tabs */}
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="grid grid-cols-7 w-full max-w-4xl">
+          <TabsList className="grid grid-cols-8 w-full max-w-4xl">
             <TabsTrigger value="personal" className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Persönlich</span>
@@ -275,6 +276,10 @@ export default function InvestorDetails() {
             <TabsTrigger value="notes" className="flex items-center gap-1">
               <StickyNote className="w-4 h-4" />
               <span className="hidden sm:inline">Notizen</span>
+            </TabsTrigger>
+            <TabsTrigger value="steuer" className="flex items-center gap-1">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Steuer</span>
             </TabsTrigger>
           </TabsList>
           
@@ -902,6 +907,19 @@ export default function InvestorDetails() {
           {/* Notes Tab */}
           <TabsContent value="notes">
             <NotesTab investorId={investorId} />
+          </TabsContent>
+
+          {/* Steuer Tab */}
+          <TabsContent value="steuer">
+            <Card>
+              <CardHeader>
+                <CardTitle>Steuerdaten</CardTitle>
+                <CardDescription>Kapitalertragsteuer-Einstellungen für diesen Investor</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <InvestorTaxSettings userId={investorId} />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

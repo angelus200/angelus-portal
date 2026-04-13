@@ -1855,3 +1855,34 @@ export async function getDocumentById(id: number) {
     .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
+
+// ==================== STEUER / TAX ====================
+
+export async function getUserTaxData(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select({
+    kirchensteuer: users.kirchensteuer,
+    kirchensteuerSatz: users.kirchensteuerSatz,
+    steuerNummer: users.steuerNummer,
+    steuerId: users.steuerId,
+    finanzamt: users.finanzamt,
+    familienstand: users.familienstand,
+    freistellungsauftrag: users.freistellungsauftrag,
+  }).from(users).where(eq(users.id, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserTaxData(userId: number, data: {
+  kirchensteuer: "keine" | "evangelisch" | "katholisch" | "andere";
+  kirchensteuerSatz: string;
+  steuerNummer?: string | null;
+  steuerId?: string | null;
+  finanzamt?: string | null;
+  familienstand?: "ledig" | "verheiratet" | "geschieden" | "verwitwet" | null;
+  freistellungsauftrag: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set(data).where(eq(users.id, userId));
+}

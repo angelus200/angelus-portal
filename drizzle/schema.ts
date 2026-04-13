@@ -61,7 +61,16 @@ export const users = mysqlTable("users", {
   
   // Risk profile
   riskProfileId: int("riskProfileId"),
-  
+
+  // Steuerfelder (KeSt / Kapitalertragsteuer)
+  kirchensteuer: mysqlEnum("kirchensteuer", ["keine", "evangelisch", "katholisch", "andere"]).default("keine").notNull(),
+  kirchensteuerSatz: decimal("kirchensteuer_satz", { precision: 5, scale: 4 }).default("0.0000").notNull(),
+  steuerNummer: varchar("steuer_nummer", { length: 50 }),
+  steuerId: varchar("steuer_id", { length: 20 }),
+  finanzamt: varchar("finanzamt", { length: 100 }),
+  familienstand: mysqlEnum("familienstand", ["ledig", "verheiratet", "geschieden", "verwitwet"]),
+  freistellungsauftrag: decimal("freistellungsauftrag", { precision: 10, scale: 2 }).default("0.00").notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

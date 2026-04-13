@@ -2,6 +2,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { berechneKapitalertragsteuer, berechneAuszahlungsplan } from "./tax-service";
 import * as db from "./db";
 import * as invDb from "./invitations-db";
 import bcrypt from "bcryptjs";
@@ -1580,6 +1581,40 @@ export const appRouter = router({
   }),
   
   consents: consentsRouter,
+
+  tax: router({
+    berechne: publicProcedure
+      .input(z.object({
+        kapitalertrag: z.number().positive(),
+        kirchensteuerPflichtig: z.boolean(),
+        kirchensteuerSatz: z.number().min(0).max(0.2).optional(),
+        freistellungsauftrag: z.number().min(0).optional(),
+      }))
+      .query(({ input }) => {
+        return berechneKapitalertragsteuer(input);
+      }),
+
+    auszahlungsplan: protectedProcedure
+      .input(z.object({ subscriptionId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const [taxData, schedules] = await Promise.all([
+          db.getUserTaxData(ctx.user.id),
+          db.getPaymentSchedulesBySubscription(input.subscriptionId),
+        ]);
+        const kirchensteuerPflichtig = taxData?.kirchensteuer !== 'keine';
+        const kirchensteuerSatz = Number(taxData?.kirchensteuerSatz ?? 0.09);
+        const freistellungsauftrag = Number(taxData?.freistellungsauftrag ?? 0);
+        return berechneAuszahlungsplan(
+          schedules.map(s => ({
+            id: s.id,
+            dueDate: s.dueDate,
+            amount: Number(s.amount),
+            status: s.status,
+          })),
+          { kirchensteuerPflichtig, kirchensteuerSatz, freistellungsauftrag }
+        );
+      }),
+  }),
   
   // ==================== CONTRACT TEMPLATES ====================
   contractTemplates: router({

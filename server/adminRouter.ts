@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { sendInvitationEmail } from "./email/send-invitation";
+import { berechneAuszahlungsplan } from "./tax-service";
 
 // Admin-only procedure (admin or superadmin)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -582,5 +583,66 @@ export const adminRouter = router({
         ipAddress: ctx.req.ip,
       });
       return { success: true };
+    }),
+
+  // ==================== STEUER / TAX ====================
+
+  getInvestorTax: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      const taxData = await db.getUserTaxData(input.userId);
+      if (!taxData) throw new TRPCError({ code: 'NOT_FOUND', message: 'Investor nicht gefunden' });
+      return taxData;
+    }),
+
+  updateInvestorTax: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      kirchensteuer: z.enum(['keine', 'evangelisch', 'katholisch', 'andere']),
+      kirchensteuerSatz: z.number().min(0).max(0.15),
+      steuerNummer: z.string().max(50).optional(),
+      steuerId: z.string().max(20).optional(),
+      finanzamt: z.string().max(100).optional(),
+      familienstand: z.enum(['ledig', 'verheiratet', 'geschieden', 'verwitwet']).optional(),
+      freistellungsauftrag: z.number().min(0).max(2000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { userId, kirchensteuerSatz, freistellungsauftrag, ...rest } = input;
+      await db.updateUserTaxData(userId, {
+        ...rest,
+        kirchensteuerSatz: kirchensteuerSatz.toFixed(4),
+        freistellungsauftrag: freistellungsauftrag.toFixed(2),
+      });
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'investor.updateTax',
+        entityType: 'user',
+        entityId: userId,
+        details: { kirchensteuer: input.kirchensteuer, freistellungsauftrag },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  adminAuszahlungsplan: adminProcedure
+    .input(z.object({ subscriptionId: z.number(), userId: z.number() }))
+    .query(async ({ input }) => {
+      const [taxData, schedules] = await Promise.all([
+        db.getUserTaxData(input.userId),
+        db.getPaymentSchedulesBySubscription(input.subscriptionId),
+      ]);
+      const kirchensteuerPflichtig = taxData?.kirchensteuer !== 'keine';
+      const kirchensteuerSatz = Number(taxData?.kirchensteuerSatz ?? 0.09);
+      const freistellungsauftrag = Number(taxData?.freistellungsauftrag ?? 0);
+      return berechneAuszahlungsplan(
+        schedules.map(s => ({
+          id: s.id,
+          dueDate: s.dueDate,
+          amount: Number(s.amount),
+          status: s.status,
+        })),
+        { kirchensteuerPflichtig, kirchensteuerSatz, freistellungsauftrag }
+      );
     }),
 });

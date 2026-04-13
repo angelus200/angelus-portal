@@ -473,7 +473,12 @@ export default function InvestorPaymentsPage() {
                         <p className="text-sm text-gray-500">{payment.bond?.bondNumber}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold">€{parseFloat(payment.amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold">€{parseFloat(payment.amount).toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">Brutto</p>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(payment.paymentStatus)}
@@ -530,8 +535,12 @@ export default function InvestorPaymentsPage() {
                 {/* Payment Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Betrag</p>
+                    <p className="text-sm font-medium text-gray-600">Betrag (Brutto)</p>
                     <p className="text-lg font-semibold">€{parseFloat(selectedPayment.amount).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Kapitalertragsteuer (25% + Soli) wird vom Portal einbehalten und ans Finanzamt abgeführt.
+                      Den Netto-Auszahlungsplan sehen Sie unter „Meine Investments".
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600">Status</p>
