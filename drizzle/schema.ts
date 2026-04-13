@@ -172,6 +172,9 @@ export const bonds = mysqlTable("bonds", {
   sector: varchar("sector", { length: 128 }),
   country: varchar("country", { length: 64 }),
 
+  // Brand / Multi-Mandant
+  issuerKey: varchar("issuer_key", { length: 32 }).default("angelus").notNull(),
+
   // Documents
   prospectusUrl: text("prospectusUrl"),
   termsUrl: text("termsUrl"),
@@ -647,6 +650,7 @@ export const invitations = mysqlTable("invitations", {
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   expiresAt: timestamp("expiresAt").notNull(),
   usedAt: timestamp("usedAt"),
+  issuerKey: varchar("issuer_key", { length: 32 }).default("angelus").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

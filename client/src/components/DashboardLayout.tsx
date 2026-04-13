@@ -45,6 +45,7 @@ import { useLocation, Link } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import Footer from "./Footer";
+import { BRAND } from '@shared/brand';
 
 // Icon mapping
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -293,9 +294,9 @@ function DashboardLayoutContent({
                 aria-label="Toggle navigation"
               >
                 {isCollapsed ? (
-                  <img 
-                    src="/logo.png" 
-                    alt="Angelus" 
+                  <img
+                    src={BRAND.logo}
+                    alt={BRAND.name}
                     className="w-7 h-7 object-contain rounded bg-white/90 p-0.5"
                   />
                 ) : (
@@ -304,13 +305,13 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <img 
-                    src="/logo.png" 
-                    alt="Angelus" 
+                  <img
+                    src={BRAND.logo}
+                    alt={BRAND.name}
                     className="w-10 h-10 object-contain flex-shrink-0 rounded bg-white/90 p-0.5"
                   />
                   <span className="font-semibold tracking-tight truncate text-sidebar-foreground">
-                    Angelus
+                    {BRAND.name}
                   </span>
                   {variant === "admin" && (
                     <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">

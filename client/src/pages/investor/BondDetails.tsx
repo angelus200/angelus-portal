@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, AlertTriangle, FileText, Calendar, Percent, Shield } from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText, Calendar, Percent, Shield, Building2 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -58,6 +58,12 @@ export default function BondDetails() {
           <div>
             <h1 className="text-2xl font-bold">{bond.name}</h1>
             {bond.isin && <p className="text-muted-foreground">ISIN: {bond.isin}</p>}
+            {bond.issuer && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <Building2 className="w-3 h-3" />
+                {bond.issuer}
+              </p>
+            )}
           </div>
           <Badge className={`ml-auto ${
             bond.riskCategory === "high" ? "bg-red-100 text-red-800" :
@@ -144,6 +150,16 @@ export default function BondDetails() {
                     </div>
                   )}
                 </div>
+
+                {bond.issuer && (
+                  <div className="mt-4 flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Building2 className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Emittent</p>
+                      <p className="font-semibold">{bond.issuer}</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -158,8 +158,11 @@ export default function MyInvestments() {
                           <TrendingUp className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">Anleihe #{sub.bondId}</p>
+                          <p className="font-medium">{(sub as any).bond?.name || `Anleihe #${sub.bondId}`}</p>
                           <p className="text-sm text-muted-foreground">
+                            {(sub as any).bond?.issuer && (
+                              <span className="text-xs">{(sub as any).bond.issuer} · </span>
+                            )}
                             Gezeichnet am {format(new Date(sub.createdAt), "dd.MM.yyyy", { locale: de })}
                           </p>
                         </div>

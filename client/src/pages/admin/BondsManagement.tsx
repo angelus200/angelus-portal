@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { BRAND } from '@shared/brand';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -76,7 +77,7 @@ export function BondsManagement() {
         cancellationNoticeDay: "",
         couponPaymentFrequency: "annual",
         currency: "EUR",
-        issuer: "",
+        issuer: BRAND.fullName,
         sector: "",
         country: "Switzerland",
         status: "draft",
@@ -117,6 +118,7 @@ export function BondsManagement() {
           couponFrequency: formData.couponPaymentFrequency as any,
           currency: formData.currency,
           issuer: formData.issuer,
+          issuerKey: BRAND.key,
           sector: formData.sector,
           status: formData.status as any,
           riskCategory: formData.riskCategory as any,

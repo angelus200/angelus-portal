@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 import { Lock } from "lucide-react";
+import { BRAND } from '@shared/brand';
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -52,10 +53,10 @@ export default function Home() {
         <p className="text-xs text-muted-foreground text-center">
           Fragen?{" "}
           <a
-            href="mailto:office@angelus.group"
+            href={`mailto:${BRAND.contactEmail}`}
             className="underline underline-offset-4 hover:text-foreground transition-colors"
           >
-            office@angelus.group
+            {BRAND.contactEmail}
           </a>
         </p>
       </div>

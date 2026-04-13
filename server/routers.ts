@@ -71,11 +71,15 @@ export const appRouter = router({
   // ==================== BOND ROUTES ====================
   bonds: router({
     list: publicProcedure.query(async () => {
-      return db.getActiveBonds();
+      const brandKey = process.env.VITE_BRAND || 'angelus';
+      const allBonds = await db.getActiveBonds();
+      return allBonds.filter(b => (b.issuerKey || 'angelus') === brandKey);
     }),
-    
+
     listAll: adminProcedure.query(async () => {
-      return db.getAllBonds();
+      const brandKey = process.env.VITE_BRAND || 'angelus';
+      const allBonds = await db.getAllBonds();
+      return allBonds.filter(b => (b.issuerKey || 'angelus') === brandKey);
     }),
     
     getById: publicProcedure
@@ -98,6 +102,7 @@ export const appRouter = router({
         couponFrequency: z.string().optional(),
         currency: z.string().optional(),
         issuer: z.string().optional(),
+        issuerKey: z.string().optional(),
         sector: z.string().optional(),
         noticePeriod: z.string().optional(),
         noticeDate: z.date().optional(),
@@ -112,7 +117,10 @@ export const appRouter = router({
         hasInsolvencyReservation: z.boolean().default(true),
       }))
       .mutation(async ({ input, ctx }) => {
-        const id = await db.createBond(input);
+        const id = await db.createBond({
+          ...input,
+          issuerKey: input.issuerKey || process.env.VITE_BRAND || 'angelus',
+        });
         await db.createAuditLog({
           userId: ctx.user.id,
           userEmail: ctx.user.email,
@@ -216,7 +224,14 @@ export const appRouter = router({
   // ==================== SUBSCRIPTION ROUTES ====================
   subscriptions: router({
     mySubscriptions: protectedProcedure.query(async ({ ctx }) => {
-      return db.getSubscriptionsByUser(ctx.user.id);
+      const subs = await db.getSubscriptionsByUser(ctx.user.id);
+      const enriched = await Promise.all(
+        subs.map(async (sub) => {
+          const bond = await db.getBondById(sub.bondId);
+          return { ...sub, bond };
+        })
+      );
+      return enriched;
     }),
     
     listAll: adminProcedure.query(async () => {
