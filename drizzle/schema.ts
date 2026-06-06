@@ -751,6 +751,28 @@ export const documents = mysqlTable("documents", {
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = typeof documents.$inferInsert;
 
+/**
+ * Issuers (Emittenten) — dynamisch verwaltbar per Admin-UI (/admin/issuers)
+ * Löst die hardcodierten Brands in shared/brand.ts ab (Etappe 1).
+ */
+export const issuers = mysqlTable("issuers", {
+  id: int("id").autoincrement().primaryKey(),
+  issuerKey: varchar("issuer_key", { length: 32 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),            // z.B. "Angelus Alpha Beteiligungen GmbH"
+  shortName: varchar("short_name", { length: 64 }),            // z.B. "Angelus Alpha" (Anzeige)
+  country: varchar("country", { length: 64 }),                 // z.B. "Deutschland", "St. Vincent"
+  logoUrl: varchar("logo_url", { length: 500 }),               // optional, z.B. "/logo-alpha.png"
+  badgeColor: varchar("badge_color", { length: 24 }).default("yellow").notNull(),
+  // Erlaubte Werte: yellow | purple | blue | green | orange | red | teal | gray
+  language: varchar("language", { length: 5 }).default("en").notNull(), // "de" | "en"
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Issuer = typeof issuers.$inferSelect;
+export type InsertIssuer = typeof issuers.$inferInsert;
+
 // Import legacy customer schema
 export * from './legacy-schema';
 export * from './interest-schema';

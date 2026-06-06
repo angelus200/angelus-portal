@@ -46,6 +46,7 @@ import CryptoWallets from './pages/admin/CryptoWallets';
 import Invitations from './pages/admin/Invitations';
 import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
+import IssuersManagement from './pages/admin/IssuersManagement';
 
 function Router() {
   return (
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/products-and-contracts" component={ProductsAndContracts} />
       <Route path="/admin/bonds" component={ProductsAndContracts} />
+      <Route path="/admin/issuers" component={IssuersManagement} />
       <Route path="/admin/contracts" component={ProductsAndContracts} />
       <Route path="/admin/investors" component={AdminInvestors} />
       <Route path="/admin/news" component={AdminNews} />

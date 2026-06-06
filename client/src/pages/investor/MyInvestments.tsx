@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { issuerBadgeClass } from "@/lib/issuerBadge";
 import { TaxBreakdown } from "@/components/TaxBreakdown";
 import { TrendingUp, Calendar, ArrowRight, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "wouter";
@@ -105,6 +106,8 @@ function AuszahlungsplanRow({ subscriptionId }: { subscriptionId: number }) {
 export default function MyInvestments() {
   const { data: subscriptions, isLoading: subscriptionsLoading } = trpc.subscriptions.mySubscriptions.useQuery();
   const { data: bonds, isLoading: bondsLoading } = trpc.bonds.list.useQuery();
+  const { data: issuersList } = trpc.issuers.list.useQuery();
+  const issuerByKey = new Map((issuersList || []).map(i => [i.issuerKey, i]));
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpand = (id: number) => {
@@ -233,12 +236,8 @@ export default function MyInvestments() {
                             <p className="text-xs text-muted-foreground">ISIN: {bond.isin}</p>
                           )}
                           {bond.issuer && (
-                            <Badge className={
-                              (bond as any).issuerKey === 'angelus-alpha'
-                                ? "mt-1 bg-purple-100 text-purple-800 text-xs"
-                                : "mt-1 bg-yellow-100 text-yellow-800 text-xs"
-                            }>
-                              {bond.issuer}
+                            <Badge className={`mt-1 text-xs ${issuerBadgeClass(issuerByKey.get((bond as any).issuerKey)?.badgeColor)}`}>
+                              {issuerByKey.get((bond as any).issuerKey)?.name || bond.issuer}
                             </Badge>
                           )}
                         </div>

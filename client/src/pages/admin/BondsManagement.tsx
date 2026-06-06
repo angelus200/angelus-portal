@@ -29,6 +29,7 @@ export function BondsManagement() {
     couponPaymentFrequency: "annual",
     currency: "EUR",
     issuer: "",
+    issuerKey: "",
     sector: "",
     country: "Switzerland",
     status: "draft",
@@ -36,6 +37,7 @@ export function BondsManagement() {
   });
 
   const { data: bonds, isLoading, refetch } = trpc.bonds.list.useQuery();
+  const { data: issuersList } = trpc.issuers.list.useQuery();
   const createMutation = trpc.bonds.create.useMutation();
   const updateMutation = trpc.bonds.update.useMutation();
   const deleteMutation = trpc.bonds.delete.useMutation();
@@ -57,6 +59,7 @@ export function BondsManagement() {
         couponPaymentFrequency: bond.couponFrequency || "annual",
         currency: bond.currency || "EUR",
         issuer: bond.issuer || "",
+        issuerKey: bond.issuerKey || "",
         sector: bond.sector || "",
         country: bond.country || "Switzerland",
         status: bond.status || "draft",
@@ -78,6 +81,7 @@ export function BondsManagement() {
         couponPaymentFrequency: "annual",
         currency: "EUR",
         issuer: BRAND.fullName,
+        issuerKey: BRAND.key,
         sector: "",
         country: "Switzerland",
         status: "draft",
@@ -118,7 +122,7 @@ export function BondsManagement() {
           couponFrequency: formData.couponPaymentFrequency as any,
           currency: formData.currency,
           issuer: formData.issuer,
-          issuerKey: BRAND.key,
+          issuerKey: formData.issuerKey || BRAND.key,
           sector: formData.sector,
           status: formData.status as any,
           riskCategory: formData.riskCategory as any,
@@ -372,12 +376,22 @@ export function BondsManagement() {
 
               <div>
                 <Label htmlFor="issuer">Emittent</Label>
-                <Input
-                  id="issuer"
-                  value={formData.issuer}
-                  onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
-                  placeholder="z.B. Angelus Group"
-                />
+                <Select
+                  value={formData.issuerKey}
+                  onValueChange={(v) => {
+                    const issuer = (issuersList || []).find(i => i.issuerKey === v);
+                    setFormData({ ...formData, issuerKey: v, issuer: issuer?.name || "" });
+                  }}
+                >
+                  <SelectTrigger id="issuer">
+                    <SelectValue placeholder="Emittent wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(issuersList || []).map(i => (
+                      <SelectItem key={i.issuerKey} value={i.issuerKey}>{i.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

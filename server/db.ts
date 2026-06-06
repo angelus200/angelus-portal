@@ -23,6 +23,7 @@ import {
   legacyPayments, InsertLegacyPayment, LegacyPayment,
   legacyInterestPayments, InsertLegacyInterestPayment, LegacyInterestPayment,
   documents, InsertDocument,
+  issuers,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -263,6 +264,45 @@ export async function getActiveBonds() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(bonds).where(eq(bonds.status, "active")).orderBy(desc(bonds.createdAt));
+}
+
+// ==================== ISSUER (EMITTENTEN) FUNCTIONS ====================
+
+export async function getActiveIssuers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(issuers).where(eq(issuers.active, true));
+}
+
+export async function getAllIssuers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(issuers);
+}
+
+export async function getIssuerByKey(issuerKey: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(issuers).where(eq(issuers.issuerKey, issuerKey)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function createIssuer(data: {
+  issuerKey: string; name: string; shortName?: string; country?: string;
+  logoUrl?: string; badgeColor?: string; language?: string; active?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.insert(issuers).values(data);
+}
+
+export async function updateIssuer(id: number, data: Partial<{
+  name: string; shortName: string; country: string;
+  logoUrl: string; badgeColor: string; language: string; active: boolean;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(issuers).set(data).where(eq(issuers.id, id));
 }
 
 // ==================== SUBSCRIPTION FUNCTIONS ====================

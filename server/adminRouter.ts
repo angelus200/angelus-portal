@@ -647,4 +647,62 @@ export const adminRouter = router({
         { kirchensteuerPflichtig, kirchensteuerSatz, freistellungsauftrag }
       );
     }),
+
+  // ==================== EMITTENTEN-VERWALTUNG ====================
+
+  listIssuers: adminProcedure.query(async () => {
+    return db.getAllIssuers();
+  }),
+
+  createIssuer: adminProcedure
+    .input(z.object({
+      issuerKey: z.string().min(2).max(32).regex(/^[a-z0-9-]+$/, 'Nur Kleinbuchstaben, Zahlen, Bindestriche'),
+      name: z.string().min(2).max(255),
+      shortName: z.string().max(64).optional(),
+      country: z.string().max(64).optional(),
+      logoUrl: z.string().max(500).optional(),
+      badgeColor: z.enum(['yellow', 'purple', 'blue', 'green', 'orange', 'red', 'teal', 'gray']).default('yellow'),
+      language: z.enum(['de', 'en']).default('en'),
+      active: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.getIssuerByKey(input.issuerKey);
+      if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'issuerKey existiert bereits' });
+      await db.createIssuer(input);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'issuer.create',
+        entityType: 'issuer',
+        details: { issuerKey: input.issuerKey, name: input.name },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
+
+  updateIssuer: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(2).max(255).optional(),
+      shortName: z.string().max(64).optional(),
+      country: z.string().max(64).optional(),
+      logoUrl: z.string().max(500).optional(),
+      badgeColor: z.enum(['yellow', 'purple', 'blue', 'green', 'orange', 'red', 'teal', 'gray']).optional(),
+      language: z.enum(['de', 'en']).optional(),
+      active: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...data } = input;
+      await db.updateIssuer(id, data);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'issuer.update',
+        entityType: 'issuer',
+        entityId: id,
+        details: data,
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
 });

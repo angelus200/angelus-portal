@@ -68,6 +68,14 @@ export const appRouter = router({
     }),
   }),
 
+  // ==================== ISSUER ROUTES ====================
+  issuers: router({
+    // Aktive Emittenten — public, damit Badges + Bond-Karten die Daten ziehen können
+    list: publicProcedure.query(async () => {
+      return db.getActiveIssuers();
+    }),
+  }),
+
   // ==================== BOND ROUTES ====================
   bonds: router({
     list: publicProcedure.query(async () => {
