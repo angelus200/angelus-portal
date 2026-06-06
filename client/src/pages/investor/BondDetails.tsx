@@ -8,15 +8,29 @@ import { ArrowLeft, AlertTriangle, FileText, Calendar, Percent, Shield, Building
 import { Link, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { toast } from "sonner";
 
 export default function BondDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const bondId = parseInt(id || "0");
 
+  const utils = trpc.useUtils();
   const { data: bond, isLoading } = trpc.bonds.getById.useQuery({ id: bondId });
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
   const { data: contracts } = trpc.contracts.byBond.useQuery({ bondId }, { enabled: !!bond });
+  const { data: myAccess } = trpc.issuerAccess.mine.useQuery();
+
+  const requestAccess = trpc.issuerAccess.request.useMutation({
+    onSuccess: () => {
+      toast.success("Anfrage gesendet — Sie werden freigeschaltet.");
+      utils.issuerAccess.mine.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const bondIssuerKey = (bond as any)?.issuerKey || "angelus";
+  const access = (myAccess || []).find(a => a.issuerKey === bondIssuerKey);
 
   const canSubscribe = user?.kycStatus === "verified" && riskProfile;
   const minAmount = parseFloat(bond?.minSubscription || "100000");
@@ -264,11 +278,30 @@ export default function BondDetails() {
                       <p className="text-3xl font-bold text-primary">{bond.interestRate}%</p>
                       <p className="text-xs text-muted-foreground">pro Jahr</p>
                     </div>
-                    <Link href={`/investor/subscribe/${bond.id}`}>
-                      <Button className="w-full" size="lg">
-                        Jetzt zeichnen
+                    {access?.status === "approved" ? (
+                      <Link href={`/investor/subscribe/${bond.id}`}>
+                        <Button className="w-full" size="lg">
+                          Jetzt zeichnen
+                        </Button>
+                      </Link>
+                    ) : access?.status === "requested" ? (
+                      <Button disabled className="w-full" size="lg">
+                        Freischaltung angefragt — wird geprüft
                       </Button>
-                    </Link>
+                    ) : access?.status === "blocked" ? (
+                      <Button disabled variant="outline" className="w-full" size="lg">
+                        Zeichnung für diesen Emittenten nicht verfügbar
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        disabled={requestAccess.isPending}
+                        onClick={() => requestAccess.mutate({ issuerKey: bondIssuerKey })}
+                      >
+                        {requestAccess.isPending ? "Sende Anfrage…" : "Zugang anfragen"}
+                      </Button>
+                    )}
                     <p className="text-xs text-muted-foreground text-center">
                       Mindestzeichnung: €{minAmount.toLocaleString("de-DE")}
                     </p>

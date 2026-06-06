@@ -248,7 +248,7 @@ export default function InvestorDetails() {
         
         {/* Tabs */}
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="grid grid-cols-8 w-full max-w-4xl">
+          <TabsList className="grid grid-cols-9 w-full max-w-5xl">
             <TabsTrigger value="personal" className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Persönlich</span>
@@ -280,6 +280,10 @@ export default function InvestorDetails() {
             <TabsTrigger value="steuer" className="flex items-center gap-1">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Steuer</span>
+            </TabsTrigger>
+            <TabsTrigger value="access" className="flex items-center gap-1">
+              <BadgeCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">Freischaltungen</span>
             </TabsTrigger>
           </TabsList>
           
@@ -921,6 +925,11 @@ export default function InvestorDetails() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Freischaltungen Tab */}
+          <TabsContent value="access">
+            <FreischaltungenTab userId={investorId} />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
@@ -1260,6 +1269,92 @@ function NotesTab({ investorId }: { investorId: number }) {
               </Card>
             ))}
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Freischaltungen Tab Component (Modell B — Zugang je Emittent)
+function FreischaltungenTab({ userId }: { userId: number }) {
+  const utils = trpc.useUtils();
+  const { data: issuersList } = trpc.issuers.list.useQuery();
+  const { data: access, isLoading } = trpc.admin.listUserIssuerAccess.useQuery({ userId });
+
+  const decide = trpc.admin.decideIssuerAccess.useMutation({
+    onSuccess: () => {
+      utils.admin.listUserIssuerAccess.invalidate({ userId });
+      utils.admin.listPendingAccessRequests.invalidate();
+      toast.success("Freischaltung aktualisiert");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const accessByKey = new Map((access || []).map(a => [a.issuerKey, a]));
+
+  const statusBadge = (status?: string) => {
+    switch (status) {
+      case "approved": return <Badge className="bg-green-500">Freigeschaltet</Badge>;
+      case "requested": return <Badge className="bg-yellow-500">Angefragt</Badge>;
+      case "blocked": return <Badge className="bg-red-500">Blockiert</Badge>;
+      default: return <Badge variant="outline">Kein Zugang</Badge>;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Freischaltungen je Emittent</CardTitle>
+        <CardDescription>
+          Steuert, bei welchen Emittenten dieser Investor zeichnen darf (Modell B).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}</div>
+        ) : !issuersList || issuersList.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Keine aktiven Emittenten vorhanden.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Emittent</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {issuersList.map((i) => {
+                const a = accessByKey.get(i.issuerKey);
+                return (
+                  <TableRow key={i.issuerKey}>
+                    <TableCell className="font-medium">{i.name}</TableCell>
+                    <TableCell>{statusBadge(a?.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          disabled={decide.isPending || a?.status === "approved"}
+                          onClick={() => decide.mutate({ userId, issuerKey: i.issuerKey, status: "approved" })}
+                        >
+                          Freischalten
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          disabled={decide.isPending || a?.status === "blocked"}
+                          onClick={() => decide.mutate({ userId, issuerKey: i.issuerKey, status: "blocked" })}
+                        >
+                          Blockieren
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
     </Card>

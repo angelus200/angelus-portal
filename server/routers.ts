@@ -76,6 +76,36 @@ export const appRouter = router({
     }),
   }),
 
+  // ==================== ISSUER-ACCESS (Freischaltung je Emittent, Modell B) ====================
+  issuerAccess: router({
+    // Eigener Freischaltungs-Status (für UI: Buttons rendern)
+    mine: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserIssuerAccess(ctx.user.id);
+    }),
+
+    // Zugang anfragen
+    request: protectedProcedure
+      .input(z.object({ issuerKey: z.string().min(2).max(32) }))
+      .mutation(async ({ input, ctx }) => {
+        const issuer = await db.getIssuerByKey(input.issuerKey);
+        if (!issuer || !issuer.active) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Emittent nicht gefunden' });
+        }
+        await db.requestIssuerAccess(ctx.user.id, input.issuerKey);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== USER (eigene Einstellungen) ====================
+  user: router({
+    updateLanguage: protectedProcedure
+      .input(z.object({ language: z.enum(['de', 'en']) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateUserLanguage(ctx.user.id, input.language);
+        return { success: true };
+      }),
+  }),
+
   // ==================== BOND ROUTES ====================
   bonds: router({
     list: publicProcedure.query(async () => {
@@ -269,7 +299,19 @@ export const appRouter = router({
         if (!riskProfile || riskProfile.category === "conservative") {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Risk profile assessment required' });
         }
-        
+
+        // Modell B — Freischaltung je Emittent (server-seitiges Gate, VOR Wallet-Debit)
+        const bond = await db.getBondById(input.bondId);
+        if (!bond) throw new TRPCError({ code: 'NOT_FOUND', message: 'Anleihe nicht gefunden' });
+        const bondIssuerKey = (bond as any).issuerKey || 'angelus';
+        const accessOk = await db.hasIssuerAccess(ctx.user.id, bondIssuerKey);
+        if (!accessOk) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Für diesen Emittenten ist noch keine Freischaltung vorhanden. Bitte Zugang anfragen.',
+          });
+        }
+
         const id = await db.createSubscription({
           userId: ctx.user.id,
           bondId: input.bondId,

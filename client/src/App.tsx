@@ -47,6 +47,7 @@ import Invitations from './pages/admin/Invitations';
 import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
 import IssuersManagement from './pages/admin/IssuersManagement';
+import AccessRequests from './pages/admin/AccessRequests';
 
 function Router() {
   return (
@@ -89,6 +90,7 @@ function Router() {
       <Route path="/admin/investors/:id" component={AdminInvestorDetails} />
       <Route path="/admin/admin-management" component={AdminManagement} />
       <Route path="/admin/kyc-approval" component={InvestorKYCApproval} />
+      <Route path="/admin/access-requests" component={AccessRequests} />
       <Route path="/admin/wallet-management" component={WalletManagement} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/legacy-customers/import" component={LegacyCustomerImport} />

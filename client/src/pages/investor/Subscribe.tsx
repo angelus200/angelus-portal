@@ -37,6 +37,19 @@ export default function Subscribe() {
   );
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
   const { data: wallets } = trpc.wallet.myWallets.useQuery();
+  const { data: myAccess } = trpc.issuerAccess.mine.useQuery();
+
+  // Modell B — ohne Freischaltung für den Emittenten dieses Bonds zurück zur Detailseite
+  useEffect(() => {
+    if (bond && myAccess) {
+      const issuerKey = (bond as any).issuerKey || "angelus";
+      const acc = myAccess.find(a => a.issuerKey === issuerKey);
+      if (!acc || acc.status !== "approved") {
+        toast.error("Für diesen Emittenten ist keine Freischaltung vorhanden. Bitte Zugang anfragen.");
+        setLocation(`/investor/bond/${bond.id}`);
+      }
+    }
+  }, [bond, myAccess, setLocation]);
 
   const subscribe = trpc.subscriptions.create.useMutation({
     onSuccess: (result) => {

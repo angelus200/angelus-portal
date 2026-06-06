@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, date } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, date, uniqueIndex } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -61,6 +61,9 @@ export const users = mysqlTable("users", {
   
   // Risk profile
   riskProfileId: int("riskProfileId"),
+
+  // Sprache (User-Einstellung, Grundlage für i18n) — "de" | "en"
+  language: varchar("language", { length: 5 }).default("de").notNull(),
 
   // Steuerfelder (KeSt / Kapitalertragsteuer)
   kirchensteuer: mysqlEnum("kirchensteuer", ["keine", "evangelisch", "katholisch", "andere"]).default("keine").notNull(),
@@ -772,6 +775,28 @@ export const issuers = mysqlTable("issuers", {
 
 export type Issuer = typeof issuers.$inferSelect;
 export type InsertIssuer = typeof issuers.$inferInsert;
+
+/**
+ * Freischaltung je Emittent (Modell B): kein Eintrag = kein Zeichnungsrecht.
+ * Investor sieht alle Bonds, kann aber nur bei Emittenten mit status='approved' zeichnen.
+ */
+export const userIssuerAccess = mysqlTable("user_issuer_access", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  issuerKey: varchar("issuer_key", { length: 32 }).notNull(),
+  status: mysqlEnum("status", ["requested", "approved", "blocked"]).default("requested").notNull(),
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  decidedAt: timestamp("decided_at"),
+  decidedByAdminId: int("decided_by_admin_id"),
+  note: varchar("note", { length: 500 }),                    // optional: Admin-Notiz / Ablehnungsgrund
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (t) => [
+  uniqueIndex("uq_user_issuer").on(t.userId, t.issuerKey),   // genau 1 Eintrag pro User+Emittent
+]);
+
+export type UserIssuerAccess = typeof userIssuerAccess.$inferSelect;
+export type InsertUserIssuerAccess = typeof userIssuerAccess.$inferInsert;
 
 // Import legacy customer schema
 export * from './legacy-schema';

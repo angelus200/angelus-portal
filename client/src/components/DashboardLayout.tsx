@@ -40,6 +40,7 @@ import {
   Bitcoin,
   Mail,
   Building2,
+  UserCheck,
 } from "lucide-react";
 import React, { CSSProperties, useEffect, useRef, useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
@@ -66,6 +67,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Bitcoin,
   Mail,
   Building2,
+  UserCheck,
 };
 
 // Default investor menu items
@@ -92,6 +94,7 @@ const adminMenuItems = [
   { icon: "Bitcoin", label: "Crypto-Wallets", path: "/admin/crypto-wallets" },
   { icon: "CheckSquare", label: "Profil-Checks", path: "/admin/profile-checks" },
   { icon: "CheckSquare", label: "KYC-Genehmigung", path: "/admin/kyc-approval" },
+  { icon: "UserCheck", label: "Freischaltungen", path: "/admin/access-requests" },
   { icon: "Newspaper", label: "News", path: "/admin/news" },
   { icon: "Mail", label: "Einladungen", path: "/admin/invitations" },
   { icon: "Shield", label: "Admin-Verwaltung", path: "/admin/admin-management" },

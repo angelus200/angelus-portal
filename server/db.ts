@@ -24,6 +24,8 @@ import {
   legacyInterestPayments, InsertLegacyInterestPayment, LegacyInterestPayment,
   documents, InsertDocument,
   issuers,
+  userIssuerAccess,
+  invitations,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -137,6 +139,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       affectedRows: result?.[0]?.affectedRows,
       insertId: result?.[0]?.insertId
     });
+
+    // Neuer User (affectedRows===1 = INSERT, 2 = UPDATE) → Einladungs-Auto-Freischaltung.
+    // Best-effort: darf den Login niemals brechen.
+    if (result?.[0]?.affectedRows === 1 && values.email) {
+      try {
+        await autoGrantInvitationAccess(values.email);
+      } catch (e) {
+        console.error('[DB] autoGrantInvitationAccess failed (non-fatal):', e);
+      }
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -303,6 +315,116 @@ export async function updateIssuer(id: number, data: Partial<{
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db.update(issuers).set(data).where(eq(issuers.id, id));
+}
+
+// ==================== USER-ISSUER-ACCESS (Freischaltung je Emittent) ====================
+
+export async function getUserIssuerAccess(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(userIssuerAccess).where(eq(userIssuerAccess.userId, userId));
+}
+
+export async function hasIssuerAccess(userId: number, issuerKey: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select().from(userIssuerAccess)
+    .where(and(
+      eq(userIssuerAccess.userId, userId),
+      eq(userIssuerAccess.issuerKey, issuerKey),
+      eq(userIssuerAccess.status, 'approved'),
+    )).limit(1);
+  return rows.length > 0;
+}
+
+export async function requestIssuerAccess(userId: number, issuerKey: string) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  // Existiert schon ein Eintrag (egal welcher Status) → Status NICHT überschreiben, nur touchen
+  await db.insert(userIssuerAccess)
+    .values({ userId, issuerKey, status: 'requested' })
+    .onDuplicateKeyUpdate({ set: { updatedAt: new Date() } });
+}
+
+export async function decideIssuerAccess(
+  userId: number, issuerKey: string,
+  status: 'approved' | 'blocked', adminId: number, note?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.insert(userIssuerAccess)
+    .values({ userId, issuerKey, status, decidedAt: new Date(), decidedByAdminId: adminId, note })
+    .onDuplicateKeyUpdate({
+      set: { status, decidedAt: new Date(), decidedByAdminId: adminId, note },
+    });
+}
+
+export async function getPendingAccessRequests() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: userIssuerAccess.id,
+    userId: userIssuerAccess.userId,
+    issuerKey: userIssuerAccess.issuerKey,
+    status: userIssuerAccess.status,
+    requestedAt: userIssuerAccess.requestedAt,
+    userName: users.name,
+    userEmail: users.email,
+  }).from(userIssuerAccess)
+    .innerJoin(users, eq(userIssuerAccess.userId, users.id))
+    .where(eq(userIssuerAccess.status, 'requested'))
+    .orderBy(desc(userIssuerAccess.requestedAt));
+}
+
+// Sprache
+export async function updateUserLanguage(userId: number, language: 'de' | 'en') {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(users).set({ language }).where(eq(users.id, userId));
+}
+
+/**
+ * Auto-Freischaltung beim ersten Anlegen eines Users:
+ * Matcht offene/angenommene Einladung per E-Mail und schaltet den Emittenten
+ * der Einladung frei (approved) — nur wenn noch KEIN Access-Eintrag existiert
+ * (überschreibt also nie eine Admin-Entscheidung). Setzt zugleich die Sprache
+ * aus dem Emittenten. Best-effort: Fehler werden geschluckt (Login darf nie brechen).
+ */
+export async function autoGrantInvitationAccess(email: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const user = await getUserByEmail(email);
+  if (!user) return;
+
+  const invRows = await db.select().from(invitations)
+    .where(eq(invitations.email, email))
+    .orderBy(desc(invitations.createdAt))
+    .limit(1);
+  const inv = invRows[0];
+  if (!inv) return;
+  const issuerKey = inv.issuerKey || 'angelus';
+
+  const existing = await db.select().from(userIssuerAccess)
+    .where(and(
+      eq(userIssuerAccess.userId, user.id),
+      eq(userIssuerAccess.issuerKey, issuerKey),
+    )).limit(1);
+  if (existing.length > 0) return;
+
+  await db.insert(userIssuerAccess).values({
+    userId: user.id,
+    issuerKey,
+    status: 'approved',
+    decidedAt: new Date(),
+    decidedByAdminId: inv.sentByAdminId,
+    note: 'Auto-Freischaltung über Einladung',
+  });
+
+  // Sprache aus dem Emittenten übernehmen (de für KG, en für Auslandsfirmen)
+  const issuer = await getIssuerByKey(issuerKey);
+  if (issuer?.language) {
+    await db.update(users).set({ language: issuer.language }).where(eq(users.id, user.id));
+  }
 }
 
 // ==================== SUBSCRIPTION FUNCTIONS ====================

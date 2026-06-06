@@ -705,4 +705,37 @@ export const adminRouter = router({
       });
       return { success: true };
     }),
+
+  // ==================== FREISCHALTUNGS-VERWALTUNG (Modell B) ====================
+
+  listPendingAccessRequests: adminProcedure.query(async () => {
+    return db.getPendingAccessRequests();
+  }),
+
+  listUserIssuerAccess: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getUserIssuerAccess(input.userId);
+    }),
+
+  decideIssuerAccess: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      issuerKey: z.string().min(2).max(32),
+      status: z.enum(['approved', 'blocked']),
+      note: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.decideIssuerAccess(input.userId, input.issuerKey, input.status, ctx.user.id, input.note);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'issuerAccess.decide',
+        entityType: 'userIssuerAccess',
+        entityId: input.userId,
+        details: { issuerKey: input.issuerKey, status: input.status, note: input.note },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
 });
