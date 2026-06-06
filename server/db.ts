@@ -26,6 +26,7 @@ import {
   issuers,
   userIssuerAccess,
   invitations,
+  leads, InsertLead,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -381,6 +382,29 @@ export async function updateUserLanguage(userId: number, language: 'de' | 'en') 
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db.update(users).set({ language }).where(eq(users.id, userId));
+}
+
+// ==================== LEADS (Landingpage) ====================
+
+export async function createLead(data: Omit<InsertLead, 'id' | 'createdAt' | 'updatedAt' | 'status'>) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.insert(leads).values(data);
+}
+
+export async function getLeads() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(leads).orderBy(desc(leads.createdAt));
+}
+
+export async function updateLeadStatus(
+  id: number,
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'discarded'
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(leads).set({ status }).where(eq(leads.id, id));
 }
 
 /**

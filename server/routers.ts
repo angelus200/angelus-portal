@@ -96,6 +96,28 @@ export const appRouter = router({
       }),
   }),
 
+  // ==================== LEADS (Landingpage, public) ====================
+  leads: router({
+    submit: publicProcedure
+      .input(z.object({
+        firstName: z.string().min(1).max(100),
+        lastName: z.string().min(1).max(100),
+        email: z.string().email().max(255),
+        phone: z.string().max(50).optional(),
+        continent: z.string().max(32).optional(),
+        currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).optional(),
+        investmentRange: z.enum(['100k-250k', '250k-500k', '500k-1m', '1m+']).optional(),
+        message: z.string().max(1000).optional(),
+        website: z.string().max(0).optional(), // Honeypot: muss leer sein
+      }))
+      .mutation(async ({ input }) => {
+        if (input.website) return { success: true }; // Bot: still schlucken
+        const { website, ...data } = input;
+        await db.createLead(data);
+        return { success: true };
+      }),
+  }),
+
   // ==================== USER (eigene Einstellungen) ====================
   user: router({
     updateLanguage: protectedProcedure
@@ -110,6 +132,33 @@ export const appRouter = router({
   bonds: router({
     list: publicProcedure.query(async () => {
       return db.getActiveBonds();
+    }),
+
+    // Öffentliche Bond-Liste für die Landing/Middlepage — NUR EN-Emittenten, NUR whitelisted Felder
+    publicList: publicProcedure.query(async () => {
+      const [allBonds, issuersList] = await Promise.all([
+        db.getActiveBonds(),
+        db.getActiveIssuers(),
+      ]);
+      const enIssuerKeys = new Set(
+        issuersList.filter(i => i.language === 'en').map(i => i.issuerKey)
+      );
+      return allBonds
+        .filter(b => enIssuerKeys.has((b as any).issuerKey || 'angelus'))
+        .map(b => ({
+          id: b.id,
+          name: b.name,
+          isin: b.isin,
+          issuer: b.issuer,
+          issuerKey: (b as any).issuerKey,
+          interestRate: b.interestRate,
+          termMonths: b.termMonths,
+          minSubscription: b.minSubscription,
+          currency: b.currency,
+          riskCategory: b.riskCategory,
+          couponPaymentFrequency: (b as any).couponPaymentFrequency,
+          maturityDate: (b as any).maturityDate,
+        }));
     }),
 
     listAll: adminProcedure.query(async () => {

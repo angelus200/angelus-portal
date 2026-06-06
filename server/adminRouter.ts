@@ -738,4 +738,29 @@ export const adminRouter = router({
       });
       return { success: true };
     }),
+
+  // ==================== LEADS-VERWALTUNG ====================
+
+  listLeads: adminProcedure.query(async () => {
+    return db.getLeads();
+  }),
+
+  updateLeadStatus: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(['new', 'contacted', 'qualified', 'converted', 'discarded']),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.updateLeadStatus(input.id, input.status);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        action: 'lead.updateStatus',
+        entityType: 'lead',
+        entityId: input.id,
+        details: { status: input.status },
+        ipAddress: ctx.req.ip,
+      });
+      return { success: true };
+    }),
 });

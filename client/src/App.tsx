@@ -15,6 +15,7 @@ import PrivacyPolicy from "./pages/legal/Privacy";
 import RiskDisclosure from "./pages/legal/RiskDisclosure";
 import { RegisterWithInvitation } from "./pages/RegisterWithInvitation";
 import ForInvestors from "./pages/ForInvestors";
+import PublicBonds from "./pages/PublicBonds";
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -48,12 +49,14 @@ import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
 import IssuersManagement from './pages/admin/IssuersManagement';
 import AccessRequests from './pages/admin/AccessRequests';
+import LeadsManagement from './pages/admin/LeadsManagement';
 
 function Router() {
   return (
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
+      <Route path="/bonds" component={PublicBonds} />
       <Route path="/sign-in/:rest*" component={SignIn} />
       <Route path="/sign-in" component={SignIn} />
       <Route path="/sign-up/:rest*" component={SignUp} />
@@ -91,6 +94,7 @@ function Router() {
       <Route path="/admin/admin-management" component={AdminManagement} />
       <Route path="/admin/kyc-approval" component={InvestorKYCApproval} />
       <Route path="/admin/access-requests" component={AccessRequests} />
+      <Route path="/admin/leads" component={LeadsManagement} />
       <Route path="/admin/wallet-management" component={WalletManagement} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/legacy-customers/import" component={LegacyCustomerImport} />

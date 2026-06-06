@@ -798,6 +798,28 @@ export const userIssuerAccess = mysqlTable("user_issuer_access", {
 export type UserIssuerAccess = typeof userIssuerAccess.$inferSelect;
 export type InsertUserIssuerAccess = typeof userIssuerAccess.$inferInsert;
 
+/**
+ * Landingpage-Leads (mybonds.net) — nur DB, kein E-Mail-Versand / CRM.
+ */
+export const leads = mysqlTable("leads", {
+  id: int("id").autoincrement().primaryKey(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  continent: varchar("continent", { length: 32 }),                 // Europe | Asia | North America | ...
+  currency: varchar("currency", { length: 8 }),                    // EUR | USD | GBP | CHF
+  investmentRange: varchar("investment_range", { length: 32 }),    // "100k-250k" | "250k-500k" | "500k-1m" | "1m+"
+  message: varchar("message", { length: 1000 }),
+  status: mysqlEnum("lead_status", ["new", "contacted", "qualified", "converted", "discarded"]).default("new").notNull(),
+  source: varchar("source", { length: 64 }).default("landing").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;
+
 // Import legacy customer schema
 export * from './legacy-schema';
 export * from './interest-schema';
