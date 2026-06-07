@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import {
   Percent, UserCheck, CheckCircle2, ShieldCheck,
   FileText, Briefcase, Lock, CalendarClock, Coins, Calculator,
+  TrendingDown, Scale, CalendarCheck, ArrowRight,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import PublicHeader from "@/components/public/PublicHeader";
@@ -116,18 +117,32 @@ function IncomeCalculator() {
 }
 
 // ============ Lead form (B2B — legal entities only) ============
+type Prefill = { companyType?: string; investmentRange?: string; selfCheck?: string };
+
 const EMPTY_LEAD = {
   companyName: "", companyType: "", jobTitle: "",
   firstName: "", lastName: "", email: "", phone: "",
   continent: "", currency: "", investmentRange: "", message: "",
+  selfCheck: "",
   website: "", // honeypot
 };
 
-function LeadForm() {
+function LeadForm({ prefill }: { prefill: Prefill | null }) {
   const [form, setForm] = useState(EMPTY_LEAD);
   const [entityConfirm, setEntityConfirm] = useState(false);
   const [consent, setConsent] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Selbstcheck-Übergabe: Entity/Allocation vorbefüllen + Zusammenfassung mitsenden
+  useEffect(() => {
+    if (!prefill) return;
+    setForm(p => ({
+      ...p,
+      companyType: prefill.companyType ?? p.companyType,
+      investmentRange: prefill.investmentRange ?? p.investmentRange,
+      selfCheck: prefill.selfCheck ?? p.selfCheck,
+    }));
+  }, [prefill]);
 
   const submit = trpc.leads.submit.useMutation({
     onSuccess: () => setDone(true),
@@ -163,6 +178,7 @@ function LeadForm() {
       currency: (form.currency || undefined) as any,
       investmentRange: (form.investmentRange || undefined) as any,
       message: form.message || undefined,
+      selfCheck: form.selfCheck || undefined,
       entityConfirmation: true,
       website: form.website || undefined,
     });
@@ -285,9 +301,105 @@ function LeadForm() {
   );
 }
 
+// ============ Liquidity self-check (client-only qualifier) ============
+function assessProfile(horizon: string, priority: string): string {
+  if (priority === "preservation") {
+    return horizon === "12m"
+      ? "Short-term fixed-rate bonds with an annual coupon and conservative issuer selection fit your profile."
+      : "Fixed-rate bonds with conservative issuer selection over your chosen term prioritise capital stability.";
+  }
+  if (priority === "yield") {
+    return horizon === "12m"
+      ? "Short-dated high-yield bonds let you capture an elevated coupon over a shorter commitment."
+      : "Multi-year high-yield corporate bonds with quarterly or monthly coupons match your yield focus.";
+  }
+  // cashflow
+  return horizon === "12m"
+    ? "Short-term bonds with monthly or quarterly coupons provide a steady, near-term cash-flow line."
+    : "Multi-year bonds with monthly or quarterly coupons build a predictable, recurring cash-flow line for your treasury.";
+}
+
+function SelfCheck({ onApply }: { onApply: (p: Prefill) => void }) {
+  const [entity, setEntity] = useState("");
+  const [allocation, setAllocation] = useState("");
+  const [horizon, setHorizon] = useState("");
+  const [priority, setPriority] = useState("");
+  const complete = !!(entity && allocation && horizon && priority);
+
+  const summary = `Entity: ${entity} · Allocation: ${allocation} · Horizon: ${horizon} · Priority: ${priority}`;
+
+  const questions = [
+    {
+      label: "What type of entity are you?", value: entity, set: setEntity,
+      options: [["corporate", "Corporation"], ["family_office", "Family Office"], ["institutional", "Institutional Investor"]],
+    },
+    {
+      label: "How much liquidity could you allocate?", value: allocation, set: setAllocation,
+      options: [["100k-250k", "€100k – €250k"], ["250k-500k", "€250k – €500k"], ["500k-1m", "€500k – €1M"], ["1m+", "€1M+"]],
+    },
+    {
+      label: "What is your investment horizon?", value: horizon, set: setHorizon,
+      options: [["12m", "12 months"], ["24m", "24 months"], ["36m+", "36+ months"]],
+    },
+    {
+      label: "What matters most to you?", value: priority, set: setPriority,
+      options: [["yield", "Maximum yield"], ["cashflow", "Predictable cash flow"], ["preservation", "Capital preservation"]],
+    },
+  ];
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-2">
+      <div className="space-y-6">
+        {questions.map((q) => (
+          <div key={q.label} className="space-y-2">
+            <Label className="text-base">{q.label}</Label>
+            <Select value={q.value} onValueChange={q.set}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {q.options.map(([val, lbl]) => <SelectItem key={val} value={val}>{lbl}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl bg-[#0A1628] p-8 text-white shadow-xl">
+        {complete ? (
+          <>
+            <p className="text-sm uppercase tracking-wide text-amber-400">Your indication</p>
+            <p className="mt-3 text-lg leading-relaxed">{assessProfile(horizon, priority)}</p>
+            <p className="mt-6 text-xs text-slate-400">
+              This is an initial indication, not investment advice. Final terms depend on the specific bond
+              and your entity verification.
+            </p>
+            <Button
+              size="lg"
+              className="mt-8 w-full gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400"
+              onClick={() => onApply({ companyType: entity, investmentRange: allocation, selfCheck: summary })}
+            >
+              Discuss Your Setup — Request Information <ArrowRight className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center py-12 text-center">
+            <Scale className="mb-4 h-10 w-10 text-amber-400/70" />
+            <p className="text-slate-300">Answer all four questions to see which fixed-income setup fits your treasury profile.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
+
+  const applyFromSelfCheck = (p: Prefill) => {
+    setPrefill(p);
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   // Eingeloggte User: direkt ins jeweilige Portal (Bestands-Investoren/Admins)
   useEffect(() => {
@@ -340,11 +452,11 @@ export default function Home() {
                   <Calculator className="h-4 w-4" /> Calculate Your Yield
                 </Button>
               </a>
-              <Link href="/bonds">
+              <a href="#self-check">
                 <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
-                  View Current Bonds
+                  Find the Right Instrument
                 </Button>
-              </Link>
+              </a>
             </div>
             <div className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
               {["Fixed rates", "Terms from 12 months", "Minimum allocation €100,000", "Legal entities only"].map((s) => (
@@ -353,6 +465,37 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why reserve management drives profit */}
+      <section className="relative overflow-hidden bg-[#0A1628] text-white">
+        <img src="/img/growth-chart.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-10" />
+        <div className="container relative mx-auto px-4 py-20 md:py-28">
+          <p className="text-center text-sm font-semibold uppercase tracking-widest text-amber-400">Treasury Performance</p>
+          <h2 className="mx-auto mt-3 max-w-3xl text-center text-3xl font-bold tracking-tight md:text-4xl">
+            Your Reserves Are a Profit Center — or a Silent Loss
+          </h2>
+          <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
+            {[
+              { icon: TrendingDown, title: "Idle Cash Erodes", text: "Liquidity parked on low-interest accounts loses purchasing power every year. Inflation quietly taxes every euro that is not working." },
+              { icon: Scale, title: "Opportunity Cost Is Real Cost", text: "The difference between 0% and a fixed coupon is not abstract — it is measurable profit your company forgoes each quarter. Treasury performance flows straight into your bottom line." },
+              { icon: CalendarCheck, title: "Predictability Beats Speculation", text: "Fixed-rate instruments turn reserves into a plannable cash-flow line — without exposing working capital to market volatility." },
+            ].map((c) => (
+              <div key={c.title} className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/15">
+                  <c.icon className="h-6 w-6 text-amber-400" />
+                </div>
+                <h3 className="mt-4 font-semibold text-white">{c.title}</h3>
+                <p className="mt-2 text-sm text-slate-300">{c.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <a href="#calculator" className="inline-flex items-center gap-1 font-medium text-amber-400 transition-colors hover:text-amber-300">
+              Quantify it for your balance sheet ↓
+            </a>
           </div>
         </div>
       </section>
@@ -368,6 +511,21 @@ export default function Home() {
           </div>
           <div className="mx-auto max-w-5xl">
             <IncomeCalculator />
+          </div>
+        </div>
+      </section>
+
+      {/* Self-check */}
+      <section id="self-check" className="bg-white">
+        <div className="container mx-auto px-4 py-20 md:py-28">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Find the Right Instrument for Your Corporate Liquidity</h2>
+            <p className="mt-3 text-muted-foreground">
+              Answer four questions and see which fixed-income setup fits your treasury profile.
+            </p>
+          </div>
+          <div className="mx-auto max-w-5xl">
+            <SelfCheck onApply={applyFromSelfCheck} />
           </div>
         </div>
       </section>
@@ -506,7 +664,7 @@ export default function Home() {
             </div>
             <Card className="bg-white">
               <CardContent className="pt-6">
-                <LeadForm />
+                <LeadForm prefill={prefill} />
               </CardContent>
             </Card>
             <div className="mt-8 text-center">

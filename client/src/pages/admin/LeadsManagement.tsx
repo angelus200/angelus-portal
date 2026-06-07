@@ -155,6 +155,12 @@ export default function LeadsManagement() {
               <div className="flex justify-between"><span className="text-muted-foreground">Betragsspanne</span><span>{detail.investmentRange ? (RANGE_LABEL[detail.investmentRange] || detail.investmentRange) : "–"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Quelle</span><span>{detail.source}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge className={statusMeta(detail.status).cls}>{statusMeta(detail.status).label}</Badge></div>
+              {detail.selfCheck && (
+                <div className="pt-2">
+                  <p className="mb-1 text-muted-foreground">Selbstcheck</p>
+                  <p className="rounded-md bg-muted p-3">{detail.selfCheck}</p>
+                </div>
+              )}
               {detail.message && (
                 <div className="pt-2">
                   <p className="mb-1 text-muted-foreground">Nachricht</p>

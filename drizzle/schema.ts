@@ -815,6 +815,7 @@ export const leads = mysqlTable("leads", {
   currency: varchar("currency", { length: 8 }),                    // EUR | USD | GBP | CHF
   investmentRange: varchar("investment_range", { length: 32 }),    // "100k-250k" | "250k-500k" | "500k-1m" | "1m+"
   message: varchar("message", { length: 1000 }),
+  selfCheck: varchar("self_check", { length: 500 }),               // kompakte Selbstcheck-Zusammenfassung
   status: mysqlEnum("lead_status", ["new", "contacted", "qualified", "converted", "discarded"]).default("new").notNull(),
   source: varchar("source", { length: 64 }).default("landing").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

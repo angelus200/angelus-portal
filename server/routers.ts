@@ -111,6 +111,7 @@ export const appRouter = router({
         currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).optional(),
         investmentRange: z.enum(['100k-250k', '250k-500k', '500k-1m', '1m+']).optional(),
         message: z.string().max(1000).optional(),
+        selfCheck: z.string().max(500).optional(),
         entityConfirmation: z.literal(true), // Pflicht-Gate: handelt für juristische Person (nicht gespeichert)
         website: z.string().optional(), // Honeypot: bei Botbefüllung im Handler still schlucken
       }))
