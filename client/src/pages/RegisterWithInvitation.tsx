@@ -15,8 +15,8 @@ interface ResolvedInvitation {
 }
 
 export function RegisterWithInvitation() {
-  const [location, navigate] = useLocation();
-  const searchParams = new URLSearchParams(location.split('?')[1] || '');
+  const [, navigate] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
   const invitationToken = searchParams.get('invitation');
 
   const [resolved, setResolved] = useState<ResolvedInvitation | null>(null);
