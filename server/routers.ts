@@ -100,6 +100,9 @@ export const appRouter = router({
   leads: router({
     submit: publicProcedure
       .input(z.object({
+        companyName: z.string().min(2).max(255),
+        companyType: z.enum(['corporate', 'family_office', 'institutional', 'other']),
+        jobTitle: z.string().max(100).optional(),
         firstName: z.string().min(1).max(100),
         lastName: z.string().min(1).max(100),
         email: z.string().email().max(255),
@@ -108,11 +111,12 @@ export const appRouter = router({
         currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).optional(),
         investmentRange: z.enum(['100k-250k', '250k-500k', '500k-1m', '1m+']).optional(),
         message: z.string().max(1000).optional(),
+        entityConfirmation: z.literal(true), // Pflicht-Gate: handelt für juristische Person (nicht gespeichert)
         website: z.string().optional(), // Honeypot: bei Botbefüllung im Handler still schlucken
       }))
       .mutation(async ({ input }) => {
         if (input.website) return { success: true }; // Bot: still schlucken
-        const { website, ...data } = input;
+        const { website, entityConfirmation, ...data } = input;
         await db.createLead(data);
         return { success: true };
       }),

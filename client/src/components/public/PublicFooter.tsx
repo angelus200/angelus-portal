@@ -46,6 +46,10 @@ export default function PublicFooter() {
 
         <div className="space-y-3 text-xs text-slate-500">
           <p>
+            Offers on this site are directed exclusively at legal entities — corporations, family offices
+            and institutional investors. Not available to natural persons / retail investors.
+          </p>
+          <p>
             Capital at risk. Bonds are intended for professional and semi-professional investors only.
             Past performance is not indicative of future results.
           </p>

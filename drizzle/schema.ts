@@ -806,6 +806,9 @@ export const leads = mysqlTable("leads", {
   id: int("id").autoincrement().primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
+  companyName: varchar("company_name", { length: 255 }),
+  companyType: mysqlEnum("company_type", ["corporate", "family_office", "institutional", "other"]),
+  jobTitle: varchar("job_title", { length: 100 }),                 // z.B. CFO, Treasurer, Managing Director
   email: varchar("email", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 50 }),
   continent: varchar("continent", { length: 32 }),                 // Europe | Asia | North America | ...

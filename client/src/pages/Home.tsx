@@ -42,7 +42,7 @@ function IncomeCalculator() {
       <div className="space-y-8">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-base">Investment amount</Label>
+            <Label className="text-base">Allocation amount</Label>
             <span className="font-semibold tabular-nums text-slate-900">{eur.format(amount)}</span>
           </div>
           <Slider value={[amount]} min={100000} max={1000000} step={50000} onValueChange={(v) => setAmount(v[0])} />
@@ -84,16 +84,16 @@ function IncomeCalculator() {
 
       {/* Result card (dark) */}
       <div className="rounded-2xl bg-[#0A1628] p-8 text-white shadow-xl">
-        <p className="text-sm uppercase tracking-wide text-amber-400">Estimated monthly income</p>
+        <p className="text-sm uppercase tracking-wide text-amber-400">Estimated monthly yield</p>
         <p className="mt-2 text-5xl font-bold tabular-nums text-amber-400">{eur.format(monthlyIncome)}</p>
 
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <span className="text-slate-300">Income per {freqLabel}</span>
+            <span className="text-slate-300">Yield per {freqLabel}</span>
             <span className="font-semibold tabular-nums">{eur.format(perPayout)}</span>
           </div>
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <span className="text-slate-300">Total interest over term</span>
+            <span className="text-slate-300">Total yield over term</span>
             <span className="font-semibold tabular-nums">{eur.format(totalInterest)}</span>
           </div>
           <div className="flex items-center justify-between">
@@ -108,15 +108,16 @@ function IncomeCalculator() {
           </Button>
         </a>
         <p className="mt-4 text-xs text-slate-400">
-          For illustration only. Actual returns depend on the specific bond terms. Capital at risk.
+          For illustration only. Offers are available exclusively to legal entities. Capital at risk.
         </p>
       </div>
     </div>
   );
 }
 
-// ============ Lead form (logic unchanged from Etappe 3) ============
+// ============ Lead form (B2B — legal entities only) ============
 const EMPTY_LEAD = {
+  companyName: "", companyType: "", jobTitle: "",
   firstName: "", lastName: "", email: "", phone: "",
   continent: "", currency: "", investmentRange: "", message: "",
   website: "", // honeypot
@@ -124,6 +125,7 @@ const EMPTY_LEAD = {
 
 function LeadForm() {
   const [form, setForm] = useState(EMPTY_LEAD);
+  const [entityConfirm, setEntityConfirm] = useState(false);
   const [consent, setConsent] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -143,12 +145,16 @@ function LeadForm() {
   }
 
   const canSubmit =
-    form.firstName.trim() && form.lastName.trim() && form.email.trim() && consent && !submit.isPending;
+    form.companyName.trim() && form.companyType && form.firstName.trim() && form.lastName.trim() &&
+    form.email.trim() && entityConfirm && consent && !submit.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     submit.mutate({
+      companyName: form.companyName,
+      companyType: form.companyType as any,
+      jobTitle: form.jobTitle || undefined,
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
@@ -157,6 +163,7 @@ function LeadForm() {
       currency: (form.currency || undefined) as any,
       investmentRange: (form.investmentRange || undefined) as any,
       message: form.message || undefined,
+      entityConfirmation: true,
       website: form.website || undefined,
     });
   };
@@ -165,13 +172,35 @@ function LeadForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>First name *</Label>
+          <Label>Company name *</Label>
+          <Input value={form.companyName} onChange={(e) => setForm(p => ({ ...p, companyName: e.target.value }))} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Entity type *</Label>
+          <Select value={form.companyType} onValueChange={(v) => setForm(p => ({ ...p, companyType: v }))}>
+            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="corporate">Corporation</SelectItem>
+              <SelectItem value="family_office">Family Office</SelectItem>
+              <SelectItem value="institutional">Institutional Investor</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Contact first name *</Label>
           <Input value={form.firstName} onChange={(e) => setForm(p => ({ ...p, firstName: e.target.value }))} />
         </div>
         <div className="space-y-1.5">
-          <Label>Last name *</Label>
+          <Label>Contact last name *</Label>
           <Input value={form.lastName} onChange={(e) => setForm(p => ({ ...p, lastName: e.target.value }))} />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Job title <span className="text-xs text-muted-foreground">(e.g. CFO, Treasurer)</span></Label>
+        <Input value={form.jobTitle} onChange={(e) => setForm(p => ({ ...p, jobTitle: e.target.value }))} />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -212,7 +241,7 @@ function LeadForm() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Intended investment</Label>
+          <Label>Intended allocation</Label>
           <Select value={form.investmentRange} onValueChange={(v) => setForm(p => ({ ...p, investmentRange: v }))}>
             <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent>
@@ -233,6 +262,13 @@ function LeadForm() {
       <div className="hidden" aria-hidden="true">
         <Label>Website</Label>
         <Input tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => setForm(p => ({ ...p, website: e.target.value }))} />
+      </div>
+
+      <div className="flex items-start gap-3">
+        <Checkbox id="lead-entity" checked={entityConfirm} onCheckedChange={(c) => setEntityConfirm(!!c)} />
+        <Label htmlFor="lead-entity" className="cursor-pointer text-sm font-normal leading-relaxed text-muted-foreground">
+          I confirm that I am acting on behalf of a legal entity (corporation, family office or institutional investor).
+        </Label>
       </div>
 
       <div className="flex items-start gap-3">
@@ -261,22 +297,23 @@ export default function Home() {
     }
   }, [loading, isAuthenticated, user, setLocation]);
 
-  const steps = ["Request Information", "Personal Consultation", "Verification (KYC)", "Invest & Earn"];
+  const steps = ["Request Information", "Consultation with our team", "Entity Verification (KYB)", "Allocate & Earn"];
 
   const trust = [
     { icon: Briefcase, text: "Established corporate issuers" },
     { icon: FileText, text: "Transparent terms — fixed rate, fixed term" },
-    { icon: UserCheck, text: "Dedicated account management" },
+    { icon: UserCheck, text: "Built for legal entities — corporates, family offices and institutional investors" },
     { icon: ShieldCheck, text: "Secure investor portal" },
   ];
 
   const faqs = [
     { q: "What is the minimum investment?", a: "€100,000 per bond subscription." },
-    { q: "How do I get access?", a: "Access is by invitation after a personal consultation and KYC verification." },
+    { q: "Who is eligible to invest?", a: "MyBonds is available exclusively to legal entities: corporations, family offices and institutional investors. Natural persons are not eligible." },
     { q: "When do I receive interest payments?", a: "According to the coupon schedule of the bond — monthly, quarterly or annually." },
     { q: "What happens at maturity?", a: "The issuer repays the principal in full at the end of the term." },
     { q: "What are the risks?", a: "Corporate bonds carry issuer default risk. High-yield bonds offer higher rates to compensate for elevated risk. Capital is at risk." },
     { q: "Can I sell my bond early?", a: "Our bonds are designed to be held to maturity. Early redemption options depend on the specific bond terms." },
+    { q: "Which documents are required?", a: "Standard corporate documentation: certificate of incorporation, register extract, authorized-signatory identification and proof of the entity's source of funds. Our team guides you through the verification." },
   ];
 
   return (
@@ -289,18 +326,18 @@ export default function Home() {
         <div className="absolute inset-0 bg-slate-950/80" />
         <div className="container relative mx-auto px-4 py-28 md:py-36">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-widest text-amber-400">Fixed-Income Investments</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-amber-400">For Corporates &amp; Family Offices</p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-white md:text-6xl">
-              Earn Predictable Passive Income with Corporate Bonds
+              Put Corporate Liquidity to Work
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300">
-              Fixed interest rates. Fixed terms. Professional investors earn reliable returns with
-              high-yield corporate bonds from international issuers.
+              Fixed-income corporate bonds for companies and family offices seeking predictable yield
+              on treasury reserves. Fixed rates, fixed terms, professional onboarding.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#calculator">
                 <Button size="lg" className="gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400">
-                  <Calculator className="h-4 w-4" /> Calculate Your Income
+                  <Calculator className="h-4 w-4" /> Calculate Your Yield
                 </Button>
               </a>
               <Link href="/bonds">
@@ -309,8 +346,8 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            <div className="mt-12 grid max-w-xl grid-cols-1 gap-6 sm:grid-cols-3">
-              {["Fixed rates", "Terms from 12 months", "Minimum €100,000"].map((s) => (
+            <div className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
+              {["Fixed rates", "Terms from 12 months", "Minimum allocation €100,000", "Legal entities only"].map((s) => (
                 <div key={s} className="border-l-2 border-amber-400 pl-4">
                   <p className="text-sm font-medium text-white">{s}</p>
                 </div>
@@ -324,9 +361,9 @@ export default function Home() {
       <section id="calculator" className="bg-slate-50">
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="mx-auto mb-12 max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Calculate Your Passive Income</h2>
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Calculate Your Treasury Yield</h2>
             <p className="mt-3 text-muted-foreground">
-              See what fixed-rate corporate bonds could generate for your portfolio.
+              See what your company's idle liquidity could earn with fixed-rate corporate bonds.
             </p>
           </div>
           <div className="mx-auto max-w-5xl">
@@ -345,17 +382,18 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">What Are Corporate Bonds?</h2>
             <div className="mt-6 space-y-4 text-slate-300">
               <p>
-                A corporate bond is a loan you provide to a company. In return, the issuer pays you a fixed
-                rate of interest — the coupon — over a defined term, and repays your capital in full when the
-                bond reaches maturity.
+                Idle corporate liquidity loses real purchasing power over time. A corporate bond turns those
+                reserves into a working asset: your company lends to an issuer and receives a fixed rate of
+                interest — the coupon — over a defined term, with the principal repaid in full at maturity.
               </p>
               <p>
-                Unlike shares, bonds are not about chasing price appreciation. Your return is defined by
-                contract from the outset: a known interest rate, a known schedule, and a known maturity date.
+                Unlike equities, bonds are not about chasing price appreciation. The return is defined by
+                contract from the outset: a known rate, a known payment schedule, and a known maturity date —
+                planning certainty rather than volatility.
               </p>
               <p>
-                This makes bonds a cornerstone of income-oriented portfolios for investors who value
-                predictability over speculation.
+                That makes corporate bonds a natural building block for treasury allocations at companies and
+                family offices that value predictable cash flow over speculation.
               </p>
             </div>
             <ul className="mt-8 space-y-3">
@@ -377,11 +415,11 @@ export default function Home() {
       {/* 3d High-yield income */}
       <section className="bg-slate-50">
         <div className="container mx-auto px-4 py-20 md:py-28">
-          <h2 className="text-center text-3xl font-bold tracking-tight md:text-4xl">How High-Yield Bonds Generate Income</h2>
+          <h2 className="text-center text-3xl font-bold tracking-tight md:text-4xl">How High-Yield Bonds Strengthen Your Treasury</h2>
           <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
             {[
               { icon: Percent, title: "Higher Coupons", text: "High-yield issuers pay above-average interest to compensate investors for elevated risk." },
-              { icon: CalendarClock, title: "Regular Payouts", text: "Coupons are paid on a fixed schedule — monthly, quarterly or annually — creating a predictable income stream." },
+              { icon: CalendarClock, title: "Regular Payouts", text: "Coupons are paid on a fixed schedule — monthly, quarterly or annually — a predictable cash-flow line for your treasury planning." },
               { icon: ShieldCheck, title: "Principal at Maturity", text: "At the end of the term, the issuer repays the full principal amount." },
             ].map((c) => (
               <Card key={c.title} className="border-slate-200">
@@ -397,7 +435,7 @@ export default function Home() {
           </div>
           <p className="mx-auto mt-10 max-w-3xl text-center text-sm text-muted-foreground">
             High-yield bonds carry elevated default risk compared to investment-grade securities. They are
-            intended for professional investors who understand and can bear this risk.
+            intended for corporate and institutional investors who understand and can bear this risk.
           </p>
         </div>
       </section>
@@ -461,9 +499,9 @@ export default function Home() {
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Request Information</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Request Information for Your Company</h2>
               <p className="mt-3 text-slate-300">
-                Tell us about your investment goals and our team will get in touch.
+                Tell us about your company's treasury goals and our team will get in touch.
               </p>
             </div>
             <Card className="bg-white">

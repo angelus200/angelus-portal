@@ -35,6 +35,14 @@ const RANGE_LABEL: Record<string, string> = {
   "1m+": "€1M+",
 };
 
+const COMPANY_TYPE: Record<string, { label: string; cls: string }> = {
+  corporate: { label: "Unternehmen", cls: "bg-blue-100 text-blue-800" },
+  family_office: { label: "Family Office", cls: "bg-purple-100 text-purple-800" },
+  institutional: { label: "Institutionell", cls: "bg-teal-100 text-teal-800" },
+  other: { label: "Sonstige", cls: "bg-gray-100 text-gray-700" },
+};
+const companyTypeMeta = (t?: string | null) => (t ? COMPANY_TYPE[t] : undefined);
+
 export default function LeadsManagement() {
   const utils = trpc.useUtils();
   const { data: leads, isLoading } = trpc.admin.listLeads.useQuery();
@@ -70,6 +78,8 @@ export default function LeadsManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Firma</TableHead>
+                    <TableHead>Typ</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>E-Mail</TableHead>
                     <TableHead>Telefon</TableHead>
@@ -84,7 +94,13 @@ export default function LeadsManagement() {
                 <TableBody>
                   {leads.map((l) => (
                     <TableRow key={l.id}>
-                      <TableCell className="font-medium">{l.firstName} {l.lastName}</TableCell>
+                      <TableCell className="font-medium">{l.companyName || "–"}</TableCell>
+                      <TableCell>
+                        {companyTypeMeta(l.companyType)
+                          ? <Badge className={companyTypeMeta(l.companyType)!.cls}>{companyTypeMeta(l.companyType)!.label}</Badge>
+                          : <span className="text-sm text-muted-foreground">–</span>}
+                      </TableCell>
+                      <TableCell>{l.firstName} {l.lastName}</TableCell>
                       <TableCell className="text-sm">{l.email}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{l.phone || "–"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{l.continent || "–"}</TableCell>
@@ -129,6 +145,9 @@ export default function LeadsManagement() {
           </DialogHeader>
           {detail && (
             <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Firma</span><span>{detail.companyName || "–"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Typ</span><span>{companyTypeMeta(detail.companyType)?.label || "–"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Funktion</span><span>{detail.jobTitle || "–"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">E-Mail</span><span>{detail.email}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Telefon</span><span>{detail.phone || "–"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Kontinent</span><span>{detail.continent || "–"}</span></div>
