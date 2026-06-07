@@ -169,10 +169,10 @@ export default function Home() {
     }
   }, [loading, isAuthenticated, user, setLocation]);
 
-  const { data: bonds } = trpc.bonds.publicList.useQuery();
-  const { data: issuersList } = trpc.issuers.list.useQuery();
-  const badgeByKey = new Map((issuersList || []).map(i => [i.issuerKey, i.badgeColor]));
-  const teaser = (bonds || []).slice(0, 3);
+  const { data: catalog } = trpc.bonds.publicCatalog.useQuery();
+  const teaser = (catalog || [])
+    .flatMap(iss => iss.bonds.map(b => ({ b, issuerName: iss.shortName || iss.name, badgeColor: iss.badgeColor })))
+    .slice(0, 3);
 
   const usps = [
     { icon: Percent, title: "Fixed Interest Rates", text: "Predictable, contractually fixed returns over a defined term — no market volatility." },
@@ -240,14 +240,12 @@ export default function Home() {
         <h2 className="text-center text-3xl font-bold tracking-tight">Current Bond Offerings</h2>
         {teaser.length > 0 ? (
           <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
-            {teaser.map((b) => (
+            {teaser.map(({ b, issuerName, badgeColor }) => (
               <Card key={b.id} className="transition-colors hover:border-primary/50">
                 <CardContent className="space-y-4 pt-6">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold">{b.name}</h3>
-                    {b.issuer && (
-                      <Badge className={`text-xs ${issuerBadgeClass(badgeByKey.get(b.issuerKey))}`}>{b.issuer}</Badge>
-                    )}
+                    <Badge className={`text-xs ${issuerBadgeClass(badgeColor)}`}>{issuerName}</Badge>
                   </div>
                   <p className="text-3xl font-bold text-primary">{b.interestRate}% <span className="text-base font-normal text-muted-foreground">p.a. fixed</span></p>
                   <div className="space-y-1 text-sm text-muted-foreground">

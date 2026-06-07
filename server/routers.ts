@@ -134,31 +134,39 @@ export const appRouter = router({
       return db.getActiveBonds();
     }),
 
-    // Öffentliche Bond-Liste für die Landing/Middlepage — NUR EN-Emittenten, NUR whitelisted Felder
-    publicList: publicProcedure.query(async () => {
+    // Öffentlicher Katalog für Landing/Middlepage — nach EN-Emittenten gruppiert,
+    // NUR whitelisted Felder (Emittent UND Bonds). Emittenten ohne Bonds bleiben sichtbar.
+    publicCatalog: publicProcedure.query(async () => {
       const [allBonds, issuersList] = await Promise.all([
         db.getActiveBonds(),
         db.getActiveIssuers(),
       ]);
-      const enIssuerKeys = new Set(
-        issuersList.filter(i => i.language === 'en').map(i => i.issuerKey)
-      );
-      return allBonds
-        .filter(b => enIssuerKeys.has((b as any).issuerKey || 'angelus'))
-        .map(b => ({
-          id: b.id,
-          name: b.name,
-          isin: b.isin,
-          issuer: b.issuer,
-          issuerKey: (b as any).issuerKey,
-          interestRate: b.interestRate,
-          termMonths: b.termMonths,
-          minSubscription: b.minSubscription,
-          currency: b.currency,
-          riskCategory: b.riskCategory,
-          couponPaymentFrequency: (b as any).couponPaymentFrequency,
-          maturityDate: (b as any).maturityDate,
-        }));
+
+      const enIssuers = issuersList.filter(i => i.language === 'en');
+
+      return enIssuers.map(issuer => ({
+        issuerKey: issuer.issuerKey,
+        name: issuer.name,
+        shortName: issuer.shortName,
+        country: issuer.country,
+        description: issuer.description,
+        logoUrl: issuer.logoUrl,
+        badgeColor: issuer.badgeColor,
+        bonds: allBonds
+          .filter(b => ((b as any).issuerKey || 'angelus') === issuer.issuerKey)
+          .map(b => ({
+            id: b.id,
+            name: b.name,
+            isin: b.isin,
+            interestRate: b.interestRate,
+            termMonths: b.termMonths,
+            minSubscription: b.minSubscription,
+            currency: b.currency,
+            riskCategory: b.riskCategory,
+            couponPaymentFrequency: (b as any).couponPaymentFrequency,
+            maturityDate: (b as any).maturityDate,
+          })),
+      }));
     }),
 
     listAll: adminProcedure.query(async () => {

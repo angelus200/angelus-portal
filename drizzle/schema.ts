@@ -764,6 +764,7 @@ export const issuers = mysqlTable("issuers", {
   name: varchar("name", { length: 255 }).notNull(),            // z.B. "Angelus Alpha Beteiligungen GmbH"
   shortName: varchar("short_name", { length: 64 }),            // z.B. "Angelus Alpha" (Anzeige)
   country: varchar("country", { length: 64 }),                 // z.B. "Deutschland", "St. Vincent"
+  description: varchar("description", { length: 1000 }),       // EN-Kurzprofil für die Public-Seite
   logoUrl: varchar("logo_url", { length: 500 }),               // optional, z.B. "/logo-alpha.png"
   badgeColor: varchar("badge_color", { length: 24 }).default("yellow").notNull(),
   // Erlaubte Werte: yellow | purple | blue | green | orange | red | teal | gray

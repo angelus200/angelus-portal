@@ -302,7 +302,7 @@ export async function getIssuerByKey(issuerKey: string) {
 
 export async function createIssuer(data: {
   issuerKey: string; name: string; shortName?: string; country?: string;
-  logoUrl?: string; badgeColor?: string; language?: string; active?: boolean;
+  description?: string; logoUrl?: string; badgeColor?: string; language?: string; active?: boolean;
 }) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
@@ -310,7 +310,7 @@ export async function createIssuer(data: {
 }
 
 export async function updateIssuer(id: number, data: Partial<{
-  name: string; shortName: string; country: string;
+  name: string; shortName: string; country: string; description: string;
   logoUrl: string; badgeColor: string; language: string; active: boolean;
 }>) {
   const db = await getDb();

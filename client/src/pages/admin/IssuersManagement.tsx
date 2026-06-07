@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +42,7 @@ const EMPTY_FORM = {
   name: "",
   shortName: "",
   country: "",
+  description: "",
   logoUrl: "",
   badgeColor: "yellow" as (typeof BADGE_COLORS)[number],
   language: "en" as "de" | "en",
@@ -99,6 +101,7 @@ export default function IssuersManagement() {
       name: i.name,
       shortName: i.shortName ?? "",
       country: i.country ?? "",
+      description: i.description ?? "",
       logoUrl: i.logoUrl ?? "",
       badgeColor: (i.badgeColor as FormState["badgeColor"]) ?? "yellow",
       language: (i.language as "de" | "en") ?? "en",
@@ -116,6 +119,7 @@ export default function IssuersManagement() {
         name: form.name,
         shortName: form.shortName || undefined,
         country: form.country || undefined,
+        description: form.description || undefined,
         logoUrl: form.logoUrl || undefined,
         badgeColor: form.badgeColor,
         language: form.language,
@@ -127,6 +131,7 @@ export default function IssuersManagement() {
         name: form.name,
         shortName: form.shortName || undefined,
         country: form.country || undefined,
+        description: form.description || undefined,
         logoUrl: form.logoUrl || undefined,
         badgeColor: form.badgeColor,
         language: form.language,
@@ -284,6 +289,17 @@ export default function IssuersManagement() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Beschreibung (EN, öffentlich) <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Textarea
+                value={form.description}
+                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                placeholder="Kurzprofil des Emittenten, erscheint auf /bonds"
+                rows={3}
+                maxLength={1000}
+              />
             </div>
 
             <div className="space-y-1.5">

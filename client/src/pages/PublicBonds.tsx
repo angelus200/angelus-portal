@@ -6,8 +6,10 @@ import { trpc } from "@/lib/trpc";
 import { issuerBadgeClass } from "@/lib/issuerBadge";
 import PublicHeader from "@/components/public/PublicHeader";
 import PublicFooter from "@/components/public/PublicFooter";
-import { Percent, Calendar, FileText, ArrowRight } from "lucide-react";
+import { Percent, Calendar, FileText, ArrowRight, Building2 } from "lucide-react";
 import { format } from "date-fns";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../../server/routers";
 
 const RISK_LABEL: Record<string, { label: string; cls: string }> = {
   low: { label: "Low Risk", cls: "bg-green-100 text-green-800" },
@@ -22,10 +24,58 @@ const FREQ_LABEL: Record<string, string> = {
   annual: "Annual",
 };
 
+type CatalogIssuer = inferRouterOutputs<AppRouter>["bonds"]["publicCatalog"][number];
+
+function BondCard({ bond }: { bond: CatalogIssuer["bonds"][number] }) {
+  const risk = RISK_LABEL[bond.riskCategory || "high"] || RISK_LABEL.high;
+  return (
+    <Card className="flex flex-col transition-colors hover:border-primary/50">
+      <CardContent className="flex flex-1 flex-col space-y-4 pt-6">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="font-semibold">{bond.name}</h3>
+            {bond.isin && <p className="text-xs text-muted-foreground">ISIN: {bond.isin}</p>}
+          </div>
+          <Badge className={risk.cls}>{risk.label}</Badge>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Percent className="h-5 w-5 text-primary" />
+          <span className="text-3xl font-bold text-primary">{bond.interestRate}%</span>
+          <span className="text-sm text-muted-foreground">p.a. fixed</span>
+        </div>
+
+        <div className="space-y-1.5 text-sm text-muted-foreground">
+          <p className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Term: {bond.termMonths} months</p>
+          {bond.couponPaymentFrequency && (
+            <p>Coupon: {FREQ_LABEL[bond.couponPaymentFrequency] || bond.couponPaymentFrequency}</p>
+          )}
+          <p>Min. investment: {bond.currency} {parseFloat(bond.minSubscription).toLocaleString("en-US")}</p>
+          {bond.maturityDate && (
+            <p>Maturity: {format(new Date(bond.maturityDate as any), "dd MMM yyyy")}</p>
+          )}
+        </div>
+
+        <div className="mt-auto space-y-2 pt-2">
+          <a href="/#contact">
+            <Button className="w-full gap-2">Request Access <ArrowRight className="h-4 w-4" /></Button>
+          </a>
+          <Link href="/sign-in">
+            <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+              Already an investor? Sign in
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function PublicBonds() {
-  const { data: bonds, isLoading } = trpc.bonds.publicList.useQuery();
-  const { data: issuersList } = trpc.issuers.list.useQuery();
-  const badgeByKey = new Map((issuersList || []).map(i => [i.issuerKey, i.badgeColor]));
+  const { data: catalog, isLoading } = trpc.bonds.publicCatalog.useQuery();
+
+  // Emittenten mit Bonds zuerst
+  const issuers = [...(catalog || [])].sort((a, b) => b.bonds.length - a.bonds.length);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -44,10 +94,10 @@ export default function PublicBonds() {
 
         <section className="container mx-auto px-4 py-16">
           {isLoading ? (
-            <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map(i => <div key={i} className="h-72 animate-pulse rounded-lg bg-muted" />)}
+            <div className="mx-auto max-w-5xl space-y-10">
+              {[1, 2].map(i => <div key={i} className="h-80 animate-pulse rounded-lg bg-muted" />)}
             </div>
-          ) : !bonds || bonds.length === 0 ? (
+          ) : issuers.length === 0 ? (
             <div className="mx-auto max-w-xl rounded-lg border bg-muted/30 p-10 text-center">
               <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-muted-foreground">
@@ -58,57 +108,43 @@ export default function PublicBonds() {
               </a>
             </div>
           ) : (
-            <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {bonds.map((b) => {
-                const risk = RISK_LABEL[b.riskCategory || "high"] || RISK_LABEL.high;
-                return (
-                  <Card key={b.id} className="flex flex-col transition-colors hover:border-primary/50">
-                    <CardContent className="flex flex-1 flex-col space-y-4 pt-6">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold">{b.name}</h3>
-                          {b.isin && <p className="text-xs text-muted-foreground">ISIN: {b.isin}</p>}
-                        </div>
-                        <Badge className={risk.cls}>{risk.label}</Badge>
-                      </div>
-
-                      {b.issuer && (
-                        <Badge className={`w-fit text-xs ${issuerBadgeClass(badgeByKey.get(b.issuerKey))}`}>
-                          {b.issuer}
-                        </Badge>
+            <div className="mx-auto max-w-5xl space-y-12">
+              {issuers.map((issuer) => (
+                <div key={issuer.issuerKey} className="space-y-6">
+                  {/* Emittenten-Kopf */}
+                  <div className="flex items-start gap-4 border-b pb-6">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-card">
+                      {issuer.logoUrl ? (
+                        <img src={issuer.logoUrl} alt={issuer.name} className="h-full w-full object-contain p-1" />
+                      ) : (
+                        <Building2 className="h-7 w-7 text-muted-foreground" />
                       )}
-
-                      <div className="flex items-center gap-2">
-                        <Percent className="h-5 w-5 text-primary" />
-                        <span className="text-3xl font-bold text-primary">{b.interestRate}%</span>
-                        <span className="text-sm text-muted-foreground">p.a. fixed</span>
-                      </div>
-
-                      <div className="space-y-1.5 text-sm text-muted-foreground">
-                        <p className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Term: {b.termMonths} months</p>
-                        {b.couponPaymentFrequency && (
-                          <p>Coupon: {FREQ_LABEL[b.couponPaymentFrequency] || b.couponPaymentFrequency}</p>
-                        )}
-                        <p>Min. investment: {b.currency} {parseFloat(b.minSubscription).toLocaleString("en-US")}</p>
-                        {b.maturityDate && (
-                          <p>Maturity: {format(new Date(b.maturityDate as any), "dd MMM yyyy")}</p>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-xl font-bold">{issuer.shortName || issuer.name}</h2>
+                        {issuer.country && (
+                          <Badge className={`text-xs ${issuerBadgeClass(issuer.badgeColor)}`}>{issuer.country}</Badge>
                         )}
                       </div>
+                      {issuer.description && (
+                        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{issuer.description}</p>
+                      )}
+                    </div>
+                  </div>
 
-                      <div className="mt-auto space-y-2 pt-2">
-                        <a href="/#contact">
-                          <Button className="w-full gap-2">Request Access <ArrowRight className="h-4 w-4" /></Button>
-                        </a>
-                        <Link href="/sign-in">
-                          <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
-                            Already an investor? Sign in
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                  {/* Bonds oder Coming-soon */}
+                  {issuer.bonds.length > 0 ? (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {issuer.bonds.map((b) => <BondCard key={b.id} bond={b} />)}
+                    </div>
+                  ) : (
+                    <p className="rounded-lg border border-dashed bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                      New offerings coming soon.
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </section>
