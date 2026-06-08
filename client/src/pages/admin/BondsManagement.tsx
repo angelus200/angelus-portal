@@ -1,6 +1,5 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { BRAND } from '@shared/brand';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -80,8 +79,9 @@ export function BondsManagement() {
         cancellationNoticeDay: "",
         couponPaymentFrequency: "annual",
         currency: "EUR",
-        issuer: BRAND.fullName,
-        issuerKey: BRAND.key,
+        // Emittent wird im Dropdown gewählt (BRAND.key kann ein Marken-Key wie "mybonds" ohne Emittent sein)
+        issuer: "",
+        issuerKey: "",
         sector: "",
         country: "Switzerland",
         status: "draft",
@@ -122,7 +122,7 @@ export function BondsManagement() {
           couponFrequency: formData.couponPaymentFrequency as any,
           currency: formData.currency,
           issuer: formData.issuer,
-          issuerKey: formData.issuerKey || BRAND.key,
+          issuerKey: formData.issuerKey || "angelus",
           sector: formData.sector,
           status: formData.status as any,
           riskCategory: formData.riskCategory as any,

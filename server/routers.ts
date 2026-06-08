@@ -175,9 +175,8 @@ export const appRouter = router({
     }),
 
     listAll: adminProcedure.query(async () => {
-      const brandKey = process.env.VITE_BRAND || 'angelus';
-      const allBonds = await db.getAllBonds();
-      return allBonds.filter(b => (b.issuerKey || 'angelus') === brandKey);
+      // Gruppenweite Verwaltung: Admin sieht alle Bonds aller Emittenten (von VITE_BRAND entkoppelt)
+      return db.getAllBonds();
     }),
     
     getById: publicProcedure
@@ -217,7 +216,8 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const id = await db.createBond({
           ...input,
-          issuerKey: input.issuerKey || process.env.VITE_BRAND || 'angelus',
+          // issuerKey kommt aus dem UI-Emittenten-Dropdown; Fallback = realer Emittent, nicht Marken-Key
+          issuerKey: input.issuerKey || 'angelus',
         });
         await db.createAuditLog({
           userId: ctx.user.id,

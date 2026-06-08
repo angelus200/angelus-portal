@@ -508,7 +508,7 @@ export const adminRouter = router({
         input.name ?? null,
         ctx.user.id,
         input.expiresInDays,
-        process.env.VITE_BRAND || 'angelus'
+        'angelus' // realer Standard-Emittent; von VITE_BRAND-Marke entkoppelt
       );
       if (input.sendEmail) {
         try {

@@ -16,6 +16,11 @@ import RiskDisclosure from "./pages/legal/RiskDisclosure";
 import { RegisterWithInvitation } from "./pages/RegisterWithInvitation";
 import ForInvestors from "./pages/ForInvestors";
 import PublicBonds from "./pages/PublicBonds";
+import KGHome from "./pages/KGHome";
+import { BRAND } from "@shared/brand";
+
+// Build-Zeit-Brand-Weiche: KG-Instanz (VITE_BRAND=angelus) → deutsche KG-Landing, sonst MyBonds (EN)
+const LandingPage = BRAND.key === "angelus" ? KGHome : Home;
 
 // Investor pages
 import InvestorDashboard from "./pages/investor/Dashboard";
@@ -55,7 +60,7 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/" component={Home} />
+      <Route path="/" component={LandingPage} />
       <Route path="/bonds" component={PublicBonds} />
       <Route path="/sign-in/:rest*" component={SignIn} />
       <Route path="/sign-in" component={SignIn} />

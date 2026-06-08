@@ -31,6 +31,16 @@ const BRANDS: Record<string, BrandConfig> = {
     domain: 'angelus-alpha.app',
     issuer: 'Angelus Alpha Beteiligungen GmbH',
   },
+  // Steuert NUR Landing/Logo/Sprache/Footer — KEIN Emittent (Investizo ist Betreiber, nicht Emittent).
+  'mybonds': {
+    key: 'mybonds',
+    name: 'MyBonds',
+    fullName: 'Investizo LTD',
+    logo: '/logo.png',
+    contactEmail: 'office@angelus.group',
+    domain: 'mybonds.net',
+    issuer: '',
+  },
 };
 
 function getBrandKey(): string {

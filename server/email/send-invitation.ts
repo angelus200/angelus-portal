@@ -18,7 +18,7 @@ interface SendInvitationEmailParams {
 export async function sendInvitationEmail(params: SendInvitationEmailParams) {
   const { email, firstName, lastName, invitationToken, expiresAt } = params;
 
-  const brandKey = params.issuerKey || process.env.VITE_BRAND || 'angelus';
+  const brandKey = params.issuerKey || 'angelus';
 
   const brandConfig: Record<string, { name: string; email: string; domain: string }> = {
     'angelus': {
