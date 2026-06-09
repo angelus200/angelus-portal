@@ -16,12 +16,18 @@ interface ResolvedInvitation {
 
 export function RegisterWithInvitation() {
   const [, navigate] = useLocation();
+  // Token AUSSCHLIESSLICH aus der echten Browser-URL (wouter useLocation liefert kein ?param — Bug dd80531)
   const searchParams = new URLSearchParams(window.location.search);
   const invitationToken = searchParams.get('invitation');
 
   const [resolved, setResolved] = useState<ResolvedInvitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -42,8 +48,8 @@ export function RegisterWithInvitation() {
     }
   );
 
-  const acceptGeneralMutation = trpc.invitations.accept.useMutation();
-  const acceptLegacyMutation = trpc.legacyInvitations.accept.useMutation();
+  const registerGeneral = trpc.auth.registerWithInvitation.useMutation();
+  const registerLegacy = trpc.auth.registerWithLegacyInvitation.useMutation();
 
   useEffect(() => {
     if (!invitationToken) {
@@ -59,6 +65,12 @@ export function RegisterWithInvitation() {
         name: generalQuery.data.name,
         expiresAt: new Date(generalQuery.data.expiresAt),
       });
+      // Namen vorbefüllen falls vorhanden
+      if (generalQuery.data.name && !firstName && !lastName) {
+        const parts = generalQuery.data.name.trim().split(/\s+/);
+        setFirstName(parts.slice(0, -1).join(' ') || parts[0] || '');
+        setLastName(parts.length > 1 ? parts[parts.length - 1] : '');
+      }
       setLoading(false);
     } else if (generalQuery.isError && legacyQuery.data) {
       const c = legacyQuery.data.customer;
@@ -69,11 +81,14 @@ export function RegisterWithInvitation() {
         lastName: c?.lastName,
         expiresAt: new Date(legacyQuery.data.invitation.expiresAt),
       });
+      if (c?.firstName && !firstName) setFirstName(c.firstName);
+      if (c?.lastName && !lastName) setLastName(c.lastName);
       setLoading(false);
     } else if (generalQuery.isError && legacyQuery.isError) {
       setError('Einladung nicht gefunden oder abgelaufen');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     invitationToken,
     generalQuery.data,
@@ -84,27 +99,33 @@ export function RegisterWithInvitation() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!resolved || !invitationToken) return;
+    if (password.length < 10) { setError('Das Passwort muss mindestens 10 Zeichen lang sein'); return; }
+    if (password !== passwordConfirm) { setError('Die Passwörter stimmen nicht überein'); return; }
     if (!acceptTerms) { setError('Bitte akzeptieren Sie die Bedingungen'); return; }
     if (!acceptPrivacy) { setError('Bitte akzeptieren Sie die Datenschutzerklärung'); return; }
-    if (!resolved || !invitationToken) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
+      const payload = {
+        token: invitationToken,
+        password,
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+      };
       if (resolved.source === 'general') {
-        await acceptGeneralMutation.mutateAsync({ token: invitationToken });
+        await registerGeneral.mutateAsync(payload);
       } else {
-        await acceptLegacyMutation.mutateAsync({ token: invitationToken });
+        await registerLegacy.mutateAsync(payload);
       }
 
-      // Allow sign-up page to open
-      localStorage.setItem('angelus_valid_invitation', '1');
       setSuccess(true);
-
+      // Session-Cookie ist gesetzt → harter Reload ins Onboarding, damit auth.me frisch lädt
       setTimeout(() => {
-        navigate(`/sign-up?email=${encodeURIComponent(resolved.email)}`);
-      }, 1500);
+        window.location.href = '/investor/onboarding';
+      }, 1200);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen');
       setSubmitting(false);
@@ -147,8 +168,8 @@ export function RegisterWithInvitation() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="bg-card border rounded-lg shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold mb-2">Einladung bestätigt</h1>
-          <p className="text-muted-foreground">Sie werden weitergeleitet...</p>
+          <h1 className="text-xl font-semibold mb-2">Konto erstellt</h1>
+          <p className="text-muted-foreground">Sie werden angemeldet...</p>
         </div>
       </div>
     );
@@ -165,7 +186,7 @@ export function RegisterWithInvitation() {
         <div className="bg-primary/5 border-b px-8 py-8">
           <h1 className="text-2xl font-semibold mb-1">Willkommen</h1>
           <p className="text-muted-foreground text-sm">
-            Sie wurden eingeladen, ein Konto zu erstellen.
+            Sie wurden eingeladen. Legen Sie jetzt Ihr Passwort fest.
           </p>
         </div>
 
@@ -182,10 +203,58 @@ export function RegisterWithInvitation() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="p-4 bg-muted/30 border rounded-lg text-sm text-muted-foreground">
-              Nach Bestätigung werden Sie zu einem sicheren Anmeldeportal weitergeleitet,
-              wo Sie Ihr Passwort festlegen können.
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="firstName" className="text-sm font-medium">Vorname</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={submitting}
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="lastName" className="text-sm font-medium">Nachname</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={submitting}
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="text-sm font-medium">Passwort (mind. 10 Zeichen)</label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
+                required
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="passwordConfirm" className="text-sm font-medium">Passwort bestätigen</label>
+              <input
+                id="passwordConfirm"
+                type="password"
+                autoComplete="new-password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                disabled={submitting}
+                required
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+              />
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -228,10 +297,10 @@ export function RegisterWithInvitation() {
               {submitting ? (
                 <>
                   <Loader className="w-4 h-4 animate-spin" />
-                  Wird verarbeitet...
+                  Konto wird erstellt...
                 </>
               ) : (
-                'Einladung annehmen & weiter'
+                'Konto erstellen & anmelden'
               )}
             </button>
           </form>

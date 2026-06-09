@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,10 +22,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type SetupStep = "idle" | "password" | "qr" | "verify" | "backup" | "done";
+type SetupStep = "idle" | "qr" | "verify" | "backup" | "done" | "disable";
 
 export default function SecuritySettings() {
-  const { user, isLoaded } = useUser();
+  const { user, loading, refresh } = useAuth();
 
   const [step, setStep] = useState<SetupStep>("idle");
   const [totpUri, setTotpUri] = useState("");
@@ -33,36 +34,23 @@ export default function SecuritySettings() {
   const [verifyCode, setVerifyCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const isEnabled = user?.twoFactorEnabled ?? false;
+  const enrollStart = trpc.auth.totpEnrollStart.useMutation();
+  const enrollVerify = trpc.auth.totpEnrollVerify.useMutation();
+  const disableTotp = trpc.auth.totpDisable.useMutation();
 
-  const handleStartSetup = () => {
+  const busy = enrollStart.isPending || enrollVerify.isPending || disableTotp.isPending;
+  const isEnabled = user?.totpEnabled ?? false;
+
+  const handleStartSetup = async () => {
     setError("");
-    setPassword("");
-    setStep("password");
-  };
-
-  const handleVerifyPassword = async () => {
-    if (!password) {
-      setError("Bitte geben Sie Ihr Passwort ein");
-      return;
-    }
-    setError("");
-    setLoading(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (user as any).verifyPassword({ password });
-      const totp = await user?.createTOTP();
-      if (!totp?.uri || !totp?.secret) throw new Error("TOTP konnte nicht generiert werden");
-      setTotpUri(totp.uri);
-      setTotpSecret(totp.secret);
-      setPassword("");
+      const res = await enrollStart.mutateAsync();
+      setTotpUri(res.uri);
+      setTotpSecret(res.secret);
       setStep("qr");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Falsches Passwort oder Fehler bei der Verifikation");
-    } finally {
-      setLoading(false);
+      setError(err instanceof Error ? err.message : "2FA konnte nicht gestartet werden");
     }
   };
 
@@ -72,32 +60,30 @@ export default function SecuritySettings() {
       return;
     }
     setError("");
-    setLoading(true);
     try {
-      await user?.verifyTOTP({ code: verifyCode });
-      // Generate backup codes
-      const backup = await user?.createBackupCode();
-      const codes = (backup as { codes?: string[] })?.codes ?? [];
-      setBackupCodes(codes);
+      const res = await enrollVerify.mutateAsync({ code: verifyCode });
+      setBackupCodes(res.backupCodes);
       setStep("backup");
+      await refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Ungültiger Code — bitte erneut versuchen");
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleDisable = async () => {
+    if (!password) {
+      setError("Bitte geben Sie Ihr Passwort ein");
+      return;
+    }
     setError("");
-    setLoading(true);
     try {
-      await user?.disableTOTP();
+      await disableTotp.mutateAsync({ password });
+      setPassword("");
       setStep("idle");
+      await refresh();
       toast.success("2FA wurde deaktiviert");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Fehler beim Deaktivieren");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -111,7 +97,7 @@ export default function SecuritySettings() {
     toast.success("Backup-Codes kopiert");
   };
 
-  if (!isLoaded) {
+  if (loading) {
     return (
       <DashboardLayout variant="admin">
         <div className="h-32 bg-muted animate-pulse rounded-lg" />
@@ -168,9 +154,9 @@ export default function SecuritySettings() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              <Button onClick={handleStartSetup} disabled={loading} className="gap-2">
+              <Button onClick={handleStartSetup} disabled={busy} className="gap-2">
                 <Smartphone className="w-4 h-4" />
-                {loading ? "Wird vorbereitet..." : "2FA jetzt einrichten"}
+                {busy ? "Wird vorbereitet..." : "2FA jetzt einrichten"}
               </Button>
             </CardContent>
           )}
@@ -182,27 +168,27 @@ export default function SecuritySettings() {
               </p>
               <Button
                 variant="destructive"
-                onClick={handleDisable}
-                disabled={loading}
+                onClick={() => { setStep("disable"); setError(""); setPassword(""); }}
+                disabled={busy}
                 className="gap-2"
               >
                 <ShieldOff className="w-4 h-4" />
-                {loading ? "Wird deaktiviert..." : "2FA deaktivieren"}
+                2FA deaktivieren
               </Button>
             </CardContent>
           )}
         </Card>
 
-        {/* Step: Password Verification */}
-        {step === "password" && (
+        {/* Step: Disable (Passwort-Bestätigung) */}
+        {step === "disable" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
-                Identität bestätigen
+                2FA deaktivieren
               </CardTitle>
               <CardDescription>
-                Geben Sie Ihr aktuelles Passwort ein, um die 2FA-Einrichtung zu starten.
+                Geben Sie Ihr Passwort ein, um die Zwei-Faktor-Authentifizierung zu deaktivieren.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -212,24 +198,24 @@ export default function SecuritySettings() {
                 </Alert>
               )}
               <div className="space-y-2">
-                <Label htmlFor="current-password">Aktuelles Passwort</Label>
+                <Label htmlFor="disable-password">Aktuelles Passwort</Label>
                 <Input
-                  id="current-password"
+                  id="disable-password"
                   type="password"
                   placeholder="Ihr Passwort"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleVerifyPassword()}
+                  onKeyDown={(e) => e.key === "Enter" && handleDisable()}
                   autoFocus
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => { setStep("idle"); setError(""); }}>
+                <Button variant="outline" onClick={() => { setStep("idle"); setError(""); setPassword(""); }}>
                   Abbrechen
                 </Button>
-                <Button onClick={handleVerifyPassword} disabled={loading || !password} className="gap-2">
-                  <Shield className="w-4 h-4" />
-                  {loading ? "Wird geprüft..." : "Bestätigen & Weiter"}
+                <Button variant="destructive" onClick={handleDisable} disabled={busy || !password} className="gap-2">
+                  <ShieldOff className="w-4 h-4" />
+                  {busy ? "Wird deaktiviert..." : "Deaktivieren"}
                 </Button>
               </div>
             </CardContent>
@@ -242,7 +228,7 @@ export default function SecuritySettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5" />
-                Schritt 2: QR-Code scannen
+                Schritt 1: QR-Code scannen
               </CardTitle>
               <CardDescription>
                 Scannen Sie den QR-Code mit Google Authenticator, Authy oder einer anderen TOTP-App.
@@ -271,7 +257,7 @@ export default function SecuritySettings() {
                 </div>
               </div>
               <Separator />
-              <Button onClick={() => setStep("verify")} className="w-full gap-2">
+              <Button onClick={() => { setStep("verify"); setError(""); }} className="w-full gap-2">
                 QR-Code gescannt — Weiter
               </Button>
             </CardContent>
@@ -284,7 +270,7 @@ export default function SecuritySettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
-                Schritt 3: Code bestätigen
+                Schritt 2: Code bestätigen
               </CardTitle>
               <CardDescription>
                 Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um die Einrichtung abzuschließen.
@@ -317,10 +303,10 @@ export default function SecuritySettings() {
                 </Button>
                 <Button
                   onClick={handleVerify}
-                  disabled={loading || verifyCode.length !== 6}
+                  disabled={busy || verifyCode.length !== 6}
                   className="gap-2"
                 >
-                  {loading ? "Wird verifiziert..." : "Code bestätigen"}
+                  {busy ? "Wird verifiziert..." : "Code bestätigen"}
                 </Button>
               </div>
             </CardContent>

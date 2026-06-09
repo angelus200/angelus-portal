@@ -1,4 +1,3 @@
-import { useUser, useClerk } from "@clerk/clerk-react";
 import { trpc } from "@/lib/trpc";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -9,16 +8,16 @@ type UseAuthOptions = {
 
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = '/sign-in' } = options ?? {};
-  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
-  const { signOut } = useClerk();
   const utils = trpc.useUtils();
 
-  // Query backend for full user profile (with KYC, role, etc.)
+  // Einzige Auth-Quelle (Custom-Auth, Session-Cookie angelus_session):
+  // auth.me liefert die volle DB-User-Zeile oder null.
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    enabled: isSignedIn,
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const logoutMutation = trpc.auth.logout.useMutation();
 
   // Profile check linking
   const linkProfileCheck = trpc.profileCheck.linkToUser.useMutation();
@@ -26,29 +25,30 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      await signOut();
-      utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
+      await logoutMutation.mutateAsync();
     } catch (error) {
       console.error('[Auth] Logout error:', error);
+    } finally {
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+      if (typeof window !== "undefined") window.location.href = '/sign-in';
     }
-  }, [signOut, utils]);
+  }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
     // Sync to localStorage (backward compatibility)
     localStorage.setItem(
       "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
+      JSON.stringify(meQuery.data ?? null)
     );
 
     return {
       user: meQuery.data ?? null,
-      clerkUser,
-      loading: !isLoaded || meQuery.isLoading,
+      loading: meQuery.isLoading,
       error: meQuery.error ?? null,
-      isAuthenticated: isSignedIn && Boolean(meQuery.data),
+      isAuthenticated: Boolean(meQuery.data),
     };
-  }, [meQuery.data, meQuery.error, meQuery.isLoading, clerkUser, isLoaded, isSignedIn]);
+  }, [meQuery.data, meQuery.error, meQuery.isLoading]);
 
   // Link profile check to user after login
   useEffect(() => {
@@ -71,13 +71,13 @@ export function useAuth(options?: UseAuthOptions) {
   // Redirect if unauthenticated
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
-    if (!isLoaded || state.loading) return;
+    if (state.loading) return;
     if (state.user) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
 
     window.location.href = redirectPath;
-  }, [redirectOnUnauthenticated, redirectPath, isLoaded, state.loading, state.user]);
+  }, [redirectOnUnauthenticated, redirectPath, state.loading, state.user]);
 
   return {
     ...state,

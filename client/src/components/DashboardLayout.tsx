@@ -211,15 +211,13 @@ function DashboardLayoutContent({
   menuItems,
   variant,
 }: DashboardLayoutContentProps) {
-  const { user, clerkUser, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
 
   const needs2FASetup =
     variant === "admin" &&
     (user?.role === "admin" || user?.role === "superadmin") &&
-    clerkUser !== undefined &&
-    clerkUser !== null &&
-    !clerkUser.twoFactorEnabled &&
+    !user?.totpEnabled &&
     !location.startsWith("/admin/security");
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";

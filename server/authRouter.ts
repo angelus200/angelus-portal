@@ -6,6 +6,7 @@ import * as OTPAuth from "otpauth";
 import { Resend } from "resend";
 import * as db from "./db";
 import * as invDb from "./invitations-db";
+import * as legacyInvDb from "./legacy-invitations-db";
 import {
   generateSessionToken, hashSessionToken, generateOpaqueToken,
   encryptSecret, decryptSecret, generateBackupCodes, hashBackupCode,
@@ -89,6 +90,46 @@ export const authRouter = router({
       return { success: true };
     }),
 
+  // Registrierung über Legacy-Bestandskunden-Einladung (separates Token-System, CC247-Import).
+  // Spiegelt registerWithInvitation, validiert aber gegen legacyCustomerInvitations.
+  registerWithLegacyInvitation: publicProcedure
+    .input(z.object({
+      token: z.string().min(1),
+      password: z.string().min(10).max(200),
+      firstName: z.string().max(128).optional(),
+      lastName: z.string().max(128).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const inv = await legacyInvDb.getInvitationByToken(input.token);
+      if (!inv) throw new TRPCError({ code: "NOT_FOUND", message: "Einladung nicht gefunden" });
+      const valid = await legacyInvDb.isInvitationValid(inv.id);
+      if (!valid) throw new TRPCError({ code: "BAD_REQUEST", message: "Einladung ungültig oder abgelaufen" });
+
+      const passwordHash = await bcrypt.hash(input.password, 12);
+      const name = [input.firstName, input.lastName].filter(Boolean).join(" ") || inv.email;
+
+      const existing = await db.getUserByEmail(inv.email);
+      let userId: number;
+      if (existing) {
+        if (existing.passwordHash) {
+          throw new TRPCError({ code: "CONFLICT", message: "Für diese E-Mail existiert bereits ein Passwort-Konto" });
+        }
+        await db.setUserPassword(existing.id, passwordHash);
+        await db.updateUserProfile(existing.id, { emailVerified: true, name } as any);
+        userId = existing.id;
+      } else {
+        userId = await db.createUserWithPassword({
+          email: inv.email, passwordHash, name, emailVerified: true, role: "user",
+        });
+      }
+
+      await legacyInvDb.useInvitation(inv.id);
+      try { await db.autoGrantInvitationAccess(inv.email); } catch (e) { console.error("[Auth] autoGrant (legacy) fehlgeschlagen (non-fatal):", e); }
+
+      await issueSession(ctx, userId);
+      return { success: true };
+    }),
+
   login: publicProcedure
     .input(z.object({
       email: z.string().email(),
@@ -130,15 +171,20 @@ export const authRouter = router({
     .input(z.object({ email: z.string().email() }))
     .mutation(async ({ input, ctx }) => {
       const user = await db.getUserByEmail(input.email);
-      if (user && user.passwordHash) {
+      // Auch für bestehende Accounts OHNE passwordHash (Clerk-Herkunft) → "Passwort festlegen".
+      // Das ist der Bootstrap-Pfad nach dem Clerk-Cutover (Admins hatten nie ein Custom-Passwort).
+      if (user) {
+        const isInitial = !user.passwordHash;
         const token = generateOpaqueToken();
         await db.setPasswordResetToken(input.email, token, new Date(Date.now() + 1000 * 60 * 60)); // 1h
         const link = `${baseUrl(ctx)}/reset-password?token=${token}`;
         try {
           await resend.emails.send({
             from: `Angelus <${FROM}>`, to: input.email,
-            subject: "Passwort zurücksetzen",
-            text: `Setzen Sie Ihr Passwort zurück (Link 1 Stunde gültig):\n${link}\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese E-Mail.`,
+            subject: isInitial ? "Passwort festlegen" : "Passwort zurücksetzen",
+            text: isInitial
+              ? `Legen Sie Ihr Passwort fest, um sich künftig anzumelden (Link 1 Stunde gültig):\n${link}\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese E-Mail.`
+              : `Setzen Sie Ihr Passwort zurück (Link 1 Stunde gültig):\n${link}\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese E-Mail.`,
           });
         } catch (e) { console.error("[Auth] Reset-Mail fehlgeschlagen:", e); }
       }

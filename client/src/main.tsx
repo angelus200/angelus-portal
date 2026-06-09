@@ -6,10 +6,6 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
-import { ClerkProvider } from '@clerk/clerk-react';
-import { deDE } from '@clerk/localizations';
-
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 const queryClient = new QueryClient();
 
@@ -57,20 +53,9 @@ const trpcClient = trpc.createClient({
 });
 
 createRoot(document.getElementById("root")!).render(
-  <ClerkProvider
-    publishableKey={CLERK_PUBLISHABLE_KEY}
-    localization={deDE}
-    appearance={{
-      variables: {
-        colorPrimary: '#0F172A',
-        colorBackground: '#FFFFFF',
-      },
-    }}
-  >
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </trpc.Provider>
-  </ClerkProvider>
+  <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </trpc.Provider>
 );
