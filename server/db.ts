@@ -27,6 +27,7 @@ import {
   userIssuerAccess,
   invitations,
   leads, InsertLead,
+  sessions,
 } from "../drizzle/schema";
 import {
   legacyCustomers,
@@ -1036,90 +1037,154 @@ export async function getDashboardStats() {
 
 // ==================== EMAIL/PASSWORD AUTH FUNCTIONS ====================
 
+// ==================== CUSTOM AUTH: USER + PASSWORD (sauber, neues Schema) ====================
+
 export async function createUserWithPassword(userData: {
   email: string;
   passwordHash: string;
   name?: string;
+  emailVerified?: boolean;
   emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  role?: "user" | "admin" | "superadmin";
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Generate a unique openId for email users
-  const openId = `email_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-  
-  // @ts-ignore — Legacy email/password fields (openId, passwordHash, emailVerificationToken)
-  // removed from schema after Clerk migration. Functions kept for legacy import compatibility.
   const result = await db.insert(users).values({
-    openId,
     email: userData.email,
     passwordHash: userData.passwordHash,
     name: userData.name,
-    loginMethod: "email",
-    emailVerified: false,
+    loginMethod: "password",
+    emailVerified: userData.emailVerified ?? false,
     emailVerificationToken: userData.emailVerificationToken,
-    role: "user",
+    emailVerificationExpires: userData.emailVerificationExpires,
+    role: userData.role ?? "user",
     lastSignedIn: new Date(),
-  } as any);
-  
+  });
   return result[0].insertId;
 }
 
-export async function verifyUserEmail(token: string) {
+export async function setUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
-  if (!db) return false;
-  
-  // @ts-ignore — emailVerificationToken removed from schema after Clerk migration
-  const result = await db.select().from(users)
-    .where(eq((users as any).emailVerificationToken, token))
-    .limit(1);
-
-  if (result.length === 0) return false;
-
-  // @ts-ignore
-  await db.update(users).set({
-    emailVerified: true,
-    emailVerificationToken: null,
-  } as any).where(eq(users.id, result[0].id));
-  
-  return true;
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
 
-export async function setPasswordResetToken(email: string, token: string, expires: Date) {
+export async function setEmailVerificationToken(userId: number, token: string, expires: Date) {
   const db = await getDb();
-  if (!db) return false;
-  
-  // @ts-ignore — passwordResetToken/passwordResetExpires removed from schema after Clerk migration
-  const result = await db.update(users).set({
-    passwordResetToken: token,
-    passwordResetExpires: expires,
-  } as any).where(eq(users.email, email));
-  
-  return true;
+  if (!db) return;
+  await db.update(users).set({ emailVerificationToken: token, emailVerificationExpires: expires }).where(eq(users.id, userId));
 }
 
-export async function resetPassword(token: string, newPasswordHash: string) {
+export async function verifyUserEmail(token: string): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
-  
   const now = new Date();
-  // @ts-ignore — passwordResetToken/passwordResetExpires/passwordHash removed from schema after Clerk migration
-  const result = await db.select().from(users)
-    .where(and(
-      eq((users as any).passwordResetToken, token),
-      gte((users as any).passwordResetExpires, now)
-    ))
+  const rows = await db.select().from(users)
+    .where(and(eq(users.emailVerificationToken, token), gte(users.emailVerificationExpires, now)))
     .limit(1);
-
-  if (result.length === 0) return false;
-
-  // @ts-ignore
+  if (rows.length === 0) return false;
   await db.update(users).set({
-    passwordHash: newPasswordHash,
-    passwordResetToken: null,
-    passwordResetExpires: null,
-  } as any).where(eq(users.id, result[0].id));
-  
+    emailVerified: true, emailVerificationToken: null, emailVerificationExpires: null,
+  }).where(eq(users.id, rows[0].id));
+  return true;
+}
+
+export async function setPasswordResetToken(email: string, token: string, expires: Date): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({ passwordResetToken: token, passwordResetExpires: expires }).where(eq(users.email, email));
+  return true;
+}
+
+/** Setzt das neue Passwort, gibt die userId zurück (für Session-Revoke) oder null. */
+export async function resetPassword(token: string, newPasswordHash: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const now = new Date();
+  const rows = await db.select().from(users)
+    .where(and(eq(users.passwordResetToken, token), gte(users.passwordResetExpires, now)))
+    .limit(1);
+  if (rows.length === 0) return null;
+  await db.update(users).set({
+    passwordHash: newPasswordHash, passwordResetToken: null, passwordResetExpires: null,
+  }).where(eq(users.id, rows[0].id));
+  return rows[0].id;
+}
+
+// ==================== CUSTOM AUTH: SESSIONS ====================
+
+export async function createSession(data: {
+  userId: number; tokenHash: string; expiresAt: Date; userAgent?: string | null; ipAddress?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(sessions).values({
+    userId: data.userId,
+    tokenHash: data.tokenHash,
+    expiresAt: data.expiresAt,
+    userAgent: data.userAgent ?? null,
+    ipAddress: data.ipAddress ?? null,
+  });
+}
+
+/** Löst einen Session-Token-Hash zur DB-User-Zeile auf; null wenn unbekannt/abgelaufen. */
+export async function getUserBySessionTokenHash(tokenHash: string): Promise<User | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({ user: users, expiresAt: sessions.expiresAt, sid: sessions.id })
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.tokenHash, tokenHash))
+    .limit(1);
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  if (new Date(row.expiresAt).getTime() < Date.now()) {
+    await db.delete(sessions).where(eq(sessions.id, row.sid));
+    return null;
+  }
+  await db.update(sessions).set({ lastUsedAt: new Date() }).where(eq(sessions.id, row.sid));
+  return row.user as User;
+}
+
+export async function deleteSession(tokenHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
+}
+
+export async function deleteUserSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
+// ==================== CUSTOM AUTH: TOTP / 2FA ====================
+
+export async function setUserTotpSecret(userId: number, encryptedSecret: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ totpSecret: encryptedSecret, totpEnabled: false }).where(eq(users.id, userId));
+}
+export async function enableUserTotp(userId: number, backupCodesHashed: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ totpEnabled: true, backupCodes: backupCodesHashed }).where(eq(users.id, userId));
+}
+export async function disableUserTotp(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ totpEnabled: false, totpSecret: null, backupCodes: null }).where(eq(users.id, userId));
+}
+/** Verbraucht einen Backup-Code (Hash); true wenn gültig + entfernt. */
+export async function consumeBackupCode(userId: number, codeHash: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const u = await getUserById(userId);
+  if (!u) return false;
+  const codes: string[] = Array.isArray((u as any).backupCodes) ? (u as any).backupCodes : [];
+  if (!codes.includes(codeHash)) return false;
+  await db.update(users).set({ backupCodes: codes.filter(c => c !== codeHash) }).where(eq(users.id, userId));
   return true;
 }
 

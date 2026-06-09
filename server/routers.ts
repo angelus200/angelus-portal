@@ -13,6 +13,7 @@ import { legacyInvitationsRouter } from "./legacyInvitationsRouter";
 import { interestParametersRouter } from "./interestParametersRouter";
 import { legacyContractsRouter } from "./legacyContractsRouter";
 import interestCalculationRouter from "./routers/interest-calculation.router";
+import { authRouter } from "./authRouter";
 
 // Admin-only procedure (admin or superadmin)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -57,16 +58,8 @@ export const appRouter = router({
       }),
   }),
   
-  auth: router({
-    // Get current user
-    me: publicProcedure.query(opts => opts.ctx.user),
-
-    // Logout - Clerk handles session, just clear local cookie if any
-    logout: publicProcedure.mutation(({ ctx }) => {
-      ctx.res.clearCookie('__session');
-      return { success: true } as const;
-    }),
-  }),
+  // Custom-Auth (Etappe B): register/login/logout/verify/reset/TOTP — ersetzt den inline-auth-Router
+  auth: authRouter,
 
   // ==================== ISSUER ROUTES ====================
   issuers: router({

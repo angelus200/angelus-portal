@@ -2,9 +2,30 @@ import { clerkClient, getAuth } from '@clerk/express';
 import type { Request } from 'express';
 import type { User } from '../../drizzle/schema';
 import * as db from '../db';
+import { readSessionToken } from './auth/cookie';
+import { hashSessionToken } from './auth/crypto';
 
+/**
+ * CONTRACT (eingefroren): (req) => Promise<User | null>.
+ * Bei fehlender Auth → null (kein throw). Erfolg → volle DB-User-Zeile.
+ * context.ts + auth-middleware.ts koppeln ausschließlich an diese Signatur — NICHT ändern.
+ *
+ * Dual-Auth (Etappe B): eigene Session ZUERST, NUR bei fehlender/ungültiger eigener
+ * Session Clerk-Fallback (bis Clerk in Etappe D entfernt wird).
+ */
 export async function authenticateRequest(req: Request): Promise<User | null> {
-  // Use getAuth from @clerk/express to get auth info
+  // 1) Eigene Session (Custom Auth) zuerst
+  const sessionToken = readSessionToken(req);
+  if (sessionToken) {
+    try {
+      const sessionUser = await db.getUserBySessionTokenHash(hashSessionToken(sessionToken));
+      if (sessionUser) return sessionUser;
+    } catch (err) {
+      console.error('[Auth] Eigener Session-Lookup fehlgeschlagen, Clerk-Fallback:', err);
+    }
+  }
+
+  // 2) Clerk-Fallback
   const auth = getAuth(req);
 
   console.log('[Clerk Auth] getAuth result:', {

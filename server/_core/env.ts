@@ -1,7 +1,11 @@
 export const ENV = {
-  // Clerk Authentication
+  // Clerk Authentication (wird in Etappe D entfernt — bis dahin Dual-Auth-Fallback)
   clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY ?? "",
   clerkSecretKey: process.env.CLERK_SECRET_KEY ?? "",
+
+  // Custom Auth (server-only, KEIN VITE_ — Laufzeit, nicht Build-Zeit)
+  authSecret: process.env.AUTH_SECRET ?? "",        // HMAC-Pepper für Session-Token-Hash
+  totpEncSecret: process.env.TOTP_ENC_SECRET ?? "", // AES-256-GCM-Schlüssel für totpSecret at rest
 
   // Database
   databaseUrl: process.env.DATABASE_URL ?? "",
