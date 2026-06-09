@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, date, uniqueIndex } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, date, uniqueIndex, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -73,6 +73,16 @@ export const users = mysqlTable("users", {
   finanzamt: varchar("finanzamt", { length: 100 }),
   familienstand: mysqlEnum("familienstand", ["ledig", "verheiratet", "geschieden", "verwitwet"]),
   freistellungsauftrag: decimal("freistellungsauftrag", { precision: 10, scale: 2 }).default("0.00").notNull(),
+
+  // ===== Custom Auth (Clerk-Ablösung, Etappe A) — additiv, von Clerk-Pfad noch ungenutzt =====
+  passwordHash: varchar("passwordHash", { length: 255 }),                       // bcrypt
+  emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
+  emailVerificationExpires: timestamp("emailVerificationExpires"),
+  passwordResetToken: varchar("passwordResetToken", { length: 128 }),
+  passwordResetExpires: timestamp("passwordResetExpires"),
+  totpSecret: varchar("totpSecret", { length: 255 }),                           // AES-256-GCM-verschlüsselt at rest
+  totpEnabled: boolean("totpEnabled").default(false).notNull(),
+  backupCodes: json("backupCodes"),                                            // Array gehashter Backup-Codes
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -824,6 +834,27 @@ export const leads = mysqlTable("leads", {
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+/**
+ * Server-Sessions (Custom Auth, Etappe A) — opaque Token wird NUR als SHA-256-Hash gespeichert,
+ * der Klartext-Token liegt ausschließlich im HttpOnly-Cookie der jeweiligen Domain.
+ */
+export const sessions = mysqlTable("sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),  // SHA-256 (hex) des opaken Tokens
+  userAgent: varchar("user_agent", { length: 255 }),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  expiresAt: timestamp("expires_at").notNull(),
+  lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("uq_session_token").on(t.tokenHash),
+  index("idx_session_user").on(t.userId),
+]);
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = typeof sessions.$inferInsert;
 
 // Import legacy customer schema
 export * from './legacy-schema';
