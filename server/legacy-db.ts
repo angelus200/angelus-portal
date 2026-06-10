@@ -108,6 +108,17 @@ export async function getLegacyCustomerById(id: number) {
 }
 
 /**
+ * Get legacy customer by linked user ID (Investor-Self-Service).
+ * Basis für das harte userId-Gating der my*-Procedures.
+ */
+export async function getLegacyCustomerByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(legacyCustomers).where(eq(legacyCustomers.userId, userId)).limit(1).execute();
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
  * Get all legacy customers with pagination
  */
 export async function getAllLegacyCustomers(

@@ -13,6 +13,7 @@ import {
   createLegacyCustomer,
   getLegacyCustomerByContractNumber,
   getLegacyCustomerById,
+  getLegacyCustomerByUserId,
   getAllLegacyCustomers,
   searchLegacyCustomers,
   updateLegacyCustomer,
@@ -230,6 +231,58 @@ export const legacyCustomerRouter = router({
     } catch (error) {
       throw new Error(`Fehler beim Löschen des Bestandskunden: ${error}`);
     }
+  }),
+
+  // ==================== INVESTOR (Self-Service) ====================
+  // Hartes Gating: Der eigene Datensatz wird IMMER über ctx.user.id aufgelöst,
+  // NIE über eine Input-ID -> kein IDOR, ein Zeichner sieht ausschliesslich eigene Daten.
+
+  /**
+   * Eigener Bestandskunden-Datensatz des eingeloggten Zeichners (Whitelist, ohne interne Felder).
+   */
+  myRecord: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return null;
+    return {
+      contractNumber: c.contractNumber,
+      status: c.status,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      iban: c.iban,
+      bondNumber: c.bondNumber,
+      contractDate: c.contractDate,
+      valueDate: c.valueDate,
+      maturityDate: c.maturityDate,
+      termMonths: c.termMonths,
+      investmentAmount: c.investmentAmount,
+      shareCount: c.shareCount,
+      shareValue: c.shareValue,
+      annualInterestRate: c.annualInterestRate,
+      interestPaymentFrequency: c.interestPaymentFrequency,
+      annualInterestDate: c.annualInterestDate,
+      monthlyPaymentDay: c.monthlyPaymentDay,
+      capitalGainsTax: c.capitalGainsTax,
+      solidaritySurcharge: c.solidaritySurcharge,
+      churchTax: c.churchTax,
+    };
+  }),
+
+  /**
+   * Zahlungshistorie des eigenen Datensatzes. legacyCustomerId aus userId abgeleitet.
+   */
+  myPaymentHistory: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return [];
+    return getLegacyCustomerPaymentHistory(c.id);
+  }),
+
+  /**
+   * Zinsberechnungen inkl. KeSt-Aufschluesselung des eigenen Datensatzes. Gating wie myRecord.
+   */
+  myInterestCalculations: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return [];
+    return getLegacyCustomerInterestCalculations(c.id);
   }),
 
   /**
