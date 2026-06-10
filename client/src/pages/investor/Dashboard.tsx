@@ -16,6 +16,7 @@ import {
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { BRAND } from "@shared/brand";
 
 export default function InvestorDashboard() {
   const { user } = useAuth();
@@ -25,7 +26,11 @@ export default function InvestorDashboard() {
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
   const { data: profileCheck } = trpc.profileCheck.getMyProfileCheck.useQuery();
   const { data: news } = trpc.news.published.useQuery();
-  const { data: legacyContracts = [] } = trpc.legacyContracts.myContracts.useQuery();
+  // Legacy/Bestandsvertrag: reiches legacy_customers-Modell, nur KG-Brand (angelus). MyBonds hat keine Bestandskunden.
+  const isKG = BRAND.key === "angelus";
+  const { data: legacyRecord } = trpc.legacyCustomer.myRecord.useQuery(undefined, { enabled: isKG });
+  const { data: legacyPayments = [] } = trpc.legacyCustomer.myPaymentHistory.useQuery(undefined, { enabled: isKG });
+  const { data: legacyInterest = [] } = trpc.legacyCustomer.myInterestCalculations.useQuery(undefined, { enabled: isKG });
 
   const totalBalance = wallets?.reduce((sum, w) => {
     if (w.currency === "EUR") {
@@ -255,45 +260,115 @@ export default function InvestorDashboard() {
           </Card>
         )}
 
-        {/* Legacy Contracts */}
-        {legacyContracts.length > 0 && (
+        {/* Bestandsvertrag (reiches legacy_customers-Modell) — nur KG-Brand (angelus) */}
+        {isKG && legacyRecord && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Bestandsverträge</span>
+                <span>Bestandsvertrag</span>
                 <FileText className="w-5 h-5 text-muted-foreground" />
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {legacyContracts.map((c: any) => {
-                  const paid = parseFloat(c.paidAmount ?? "0");
-                  const signed = parseFloat(c.signedAmount ?? "0");
-                  return (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">
-                          {c.status === "active" ? "Aktiv" : c.status === "completed" ? "Abgeschlossen" : "Storniert"}
-                          {" · "}
-                          {parseFloat(c.interestRate).toLocaleString("de-DE", { minimumFractionDigits: 2 })} % p.a.
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.startDate ? new Date(c.startDate).toLocaleDateString("de-DE") : "—"}
-                          {" – "}
-                          {c.endDate ? new Date(c.endDate).toLocaleDateString("de-DE") : "—"}
-                        </p>
+            <CardContent className="space-y-6">
+              {/* Eckdaten */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Vertragsnummer</p>
+                  <p className="font-medium">{legacyRecord.contractNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="font-medium">
+                    {legacyRecord.status === "active" ? "Aktiv"
+                      : legacyRecord.status === "completed" ? "Abgeschlossen"
+                      : legacyRecord.status === "cancelled" ? "Storniert" : "Ausstehend"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Zinssatz</p>
+                  <p className="font-medium">
+                    {legacyRecord.annualInterestRate
+                      ? `${parseFloat(legacyRecord.annualInterestRate).toLocaleString("de-DE")} % p.a.`
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Gezeichnet</p>
+                  <p className="font-medium">
+                    {legacyRecord.investmentAmount
+                      ? `€${parseFloat(legacyRecord.investmentAmount).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Zeichnung</p>
+                  <p className="font-medium">
+                    {legacyRecord.contractDate ? new Date(legacyRecord.contractDate).toLocaleDateString("de-DE") : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Fälligkeit</p>
+                  <p className="font-medium">
+                    {legacyRecord.maturityDate ? new Date(legacyRecord.maturityDate).toLocaleDateString("de-DE") : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Zahlungshistorie */}
+              <div>
+                <p className="text-sm font-medium mb-2">Zahlungshistorie</p>
+                {legacyPayments.length > 0 ? (
+                  <div className="space-y-2">
+                    {legacyPayments.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-sm">
+                        <div>
+                          <span className="font-medium">
+                            {p.paymentType === "initial_investment" ? "Einzahlung"
+                              : p.paymentType === "interest_payment" ? "Zinszahlung"
+                              : p.paymentType === "refund" ? "Rückzahlung" : "Korrektur"}
+                          </span>
+                          <span className="text-muted-foreground ml-2">
+                            {p.paymentDate ? new Date(p.paymentDate).toLocaleDateString("de-DE") : ""}
+                          </span>
+                        </div>
+                        <span className="font-semibold">
+                          €{parseFloat(p.amount).toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sm">
-                          {paid.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {c.currency}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          von {signed.toLocaleString("de-DE", { minimumFractionDigits: 2 })} gezeichnet
-                        </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Noch keine Zahlungen erfasst.</p>
+                )}
+              </div>
+
+              {/* Zinsen & Steuern (inkl. KeSt-Aufschlüsselung) */}
+              <div>
+                <p className="text-sm font-medium mb-2">Zinsen &amp; Steuern</p>
+                {legacyInterest.length > 0 ? (
+                  <div className="space-y-2">
+                    {legacyInterest.map((z: any) => (
+                      <div key={z.id} className="p-2 bg-muted/50 rounded-lg text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">
+                            {z.paymentDate ? new Date(z.paymentDate).toLocaleDateString("de-DE") : `${z.calculationYear}`}
+                          </span>
+                          <span className="font-semibold">
+                            netto €{z.netInterest ? parseFloat(z.netInterest).toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "0,00"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Zinsen €{z.annualInterest ? parseFloat(z.annualInterest).toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "0,00"}
+                          {" · "}KESt €{z.capitalGainsTaxAmount ? parseFloat(z.capitalGainsTaxAmount).toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "0,00"}
+                          {" · "}SolZ €{z.solidaritySurchargeAmount ? parseFloat(z.solidaritySurchargeAmount).toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "0,00"}
+                          {" · "}KiSt €{z.churchTaxAmount ? parseFloat(z.churchTaxAmount).toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "0,00"}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Noch keine Zinsauszahlungen.</p>
+                )}
               </div>
             </CardContent>
           </Card>

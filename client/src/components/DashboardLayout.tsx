@@ -91,7 +91,10 @@ const adminMenuItems = [
   { icon: "Users", label: "Investoren", path: "/admin/investors" },
   { icon: "Inbox", label: "Leads", path: "/admin/leads" },
   { icon: "CreditCard", label: "Zahlungen", path: "/admin/payments" },
-  { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
+  // Legacy/Bestandskunden nur auf KG-Brand (angelus) — MyBonds hat keine Bestandskunden
+  ...(BRAND.key === "angelus"
+    ? [{ icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" }]
+    : []),
   { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },
   { icon: "Bitcoin", label: "Crypto-Wallets", path: "/admin/crypto-wallets" },
