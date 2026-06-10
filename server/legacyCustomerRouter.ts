@@ -34,19 +34,31 @@ import { Decimal } from 'decimal.js';
 import { ENV } from './_core/env';
 import { computeKontokorrent, type KontoBooking, type KontoInput } from './legacy-claim';
 
+// Normalisiert ein DB-Datum (Date oder 'YYYY-MM-DD'-String) TZ-robust auf UTC-Kalendertag-Mitternacht.
+// Verhindert Off-by-one bei Tages-Arithmetik, egal in welcher Zeitzone der Prozess laeuft.
+function toUtcCalendarMidnight(v: any): Date {
+  if (typeof v === 'string') {
+    const [y, m, d] = v.slice(0, 10).split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  }
+  const dt = new Date(v);
+  return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+}
+
 // Baut KontoInput aus DB-Rows (Kunde + payment_history) fuer das Kontokorrent-Forderungsmodul.
 // Faelligkeit = Zeichnungsdatum (contractDate) + 14 Tage. null = nicht konfiguriert (kein Refi-Satz / Stammdaten fehlen).
+// Alle Datumswerte auf UTC-Kalendertag normalisiert -> taggenaue, TZ-unabhaengige Berechnung.
 function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | null {
   if (c.refinancingRate == null || c.contractDate == null || c.investmentAmount == null || c.annualInterestRate == null) {
     return null;
   }
-  const faelligkeit = new Date(c.contractDate);
+  const faelligkeit = toUtcCalendarMidnight(c.contractDate);
   faelligkeit.setUTCDate(faelligkeit.getUTCDate() + 14);
   const bookings: KontoBooking[] = payments
     .filter((p: any) => (p.status ?? 'confirmed') === 'confirmed')
     .filter((p: any) => p.paymentType === 'initial_investment' || p.paymentType === 'interest_payment')
     .map((p: any) => ({
-      date: new Date(p.paymentDate),
+      date: toUtcCalendarMidnight(p.paymentDate),
       type: p.paymentType === 'initial_investment' ? ('einzahlung' as const) : ('zinsabschlag' as const),
       amount: Number(p.amount),
     }));
@@ -55,7 +67,7 @@ function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | 
     refinancingRate: Number(c.refinancingRate),
     couponRate: Number(c.annualInterestRate),
     faelligkeit,
-    stichtag,
+    stichtag: toUtcCalendarMidnight(stichtag),
     bookings,
   };
 }
