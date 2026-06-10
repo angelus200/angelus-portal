@@ -11,15 +11,14 @@ import { calculateInterestByDateRange } from './interest-calculation';
 export type KontoBookingType = 'einzahlung' | 'zinsabschlag';
 export interface KontoBooking { date: Date; type: KontoBookingType; amount: number; }
 
+export type KontoLineKind = 'einzahlung' | 'verzugszins' | 'zinsgutschrift' | 'auszahlung';
 export interface KontoLine {
-  date: string;
-  art: string;
-  soll: number;            // Negativzins-Segment (KG-Forderung)
-  haben: number;           // Kupon-Segment (Zeichner-Anspruch)
-  tilgung: number;         // ausgezahlter Zinsabschlag
-  saldoNachher: number;
-  offenesKapital: number;
-  gezahltesKapital: number;
+  date: string;            // Buchungsdatum (YYYY-MM-DD)
+  kind: KontoLineKind;
+  betrag: number;          // immer positiv; Vorzeichenwirkung ergibt sich aus kind
+  basis?: number;          // Bezugsbasis: offene Einlage (verzugszins) bzw. eingezahltes Kapital (zinsgutschrift)
+  vonDatum?: string;       // Beginn des Zinszeitraums (nur Zins-Zeilen)
+  saldoNachher: number;    // laufender Saldo nach dieser Buchung
 }
 
 export interface KontoResult {
@@ -27,6 +26,9 @@ export interface KontoResult {
   negativzinsSumme: number;  // Summe SOLL
   kuponAufgelaufen: number;  // Summe HABEN (Anspruch, auch unausgezahlt)
   ausgezahlt: number;        // Summe real ausgezahlter Zinsabschlaege
+  gezeichnet: number;        // Zeichnungssumme
+  eingezahlt: number;        // Summe der Einzahlungen
+  offen: number;             // gezeichnet - eingezahlt
   kontoauszug: KontoLine[];
 }
 
@@ -72,11 +74,11 @@ export function computeKontokorrent(input: KontoInput): KontoResult {
       if (b.type === 'einzahlung') {
         offen = offen.minus(b.amount);
         gezahlt = gezahlt.plus(b.amount);
-        lines.push({ date: iso(t), art: `Einzahlung ${b.amount.toFixed(2)}`, soll: 0, haben: 0, tilgung: 0, saldoNachher: r2(saldo), offenesKapital: r2(offen), gezahltesKapital: r2(gezahlt) });
+        lines.push({ date: iso(t), kind: 'einzahlung', betrag: b.amount, saldoNachher: r2(saldo) });
       } else {
         saldo = saldo.plus(b.amount);          // Tilgung: +saldo (erfuellter Kupon-Teil)
         ausgezahlt = ausgezahlt.plus(b.amount);
-        lines.push({ date: iso(t), art: `Zinsabschlag-Auszahlung ${b.amount.toFixed(2)} (HABEN-Tilgung)`, soll: 0, haben: 0, tilgung: b.amount, saldoNachher: r2(saldo), offenesKapital: r2(offen), gezahltesKapital: r2(gezahlt) });
+        lines.push({ date: iso(t), kind: 'auszahlung', betrag: b.amount, saldoNachher: r2(saldo) });
       }
     }
   };
@@ -93,24 +95,29 @@ export function computeKontokorrent(input: KontoInput): KontoResult {
     const kuponInt = gezahlt.gt(0)
       ? calculateInterestByDateRange(gezahlt, couponRate, new Date(a), new Date(b)).interestAmount
       : new Decimal(0);
-    saldo = saldo.plus(negInt).minus(kuponInt);
     negSum = negSum.plus(negInt);
     kuponSum = kuponSum.plus(kuponInt);
-    const days = Math.round((b - a) / 86400000);
-    lines.push({
-      date: iso(b),
-      art: `Zinssegment ${days}d`,
-      soll: r2(negInt), haben: r2(kuponInt), tilgung: 0,
-      saldoNachher: r2(saldo), offenesKapital: r2(offen), gezahltesKapital: r2(gezahlt),
-    });
+    // Pro Segment getrennte Buchungen: Verzugszins (SOLL, +) und Zinsgutschrift (HABEN, -).
+    if (negInt.gt(0)) {
+      saldo = saldo.plus(negInt);
+      lines.push({ date: iso(b), kind: 'verzugszins', betrag: r2(negInt), basis: r2(offen), vonDatum: iso(a), saldoNachher: r2(saldo) });
+    }
+    if (kuponInt.gt(0)) {
+      saldo = saldo.minus(kuponInt);
+      lines.push({ date: iso(b), kind: 'zinsgutschrift', betrag: r2(kuponInt), basis: r2(gezahlt), vonDatum: iso(a), saldoNachher: r2(saldo) });
+    }
     applyAt(b);
   }
 
+  const eingezahlt = bookings.filter(b => b.type === 'einzahlung').reduce((s, b) => s.plus(b.amount), new Decimal(0));
   return {
     saldo: r2(saldo),
     negativzinsSumme: r2(negSum),
     kuponAufgelaufen: r2(kuponSum),
     ausgezahlt: r2(ausgezahlt),
+    gezeichnet: r2(new Decimal(investmentAmount)),
+    eingezahlt: r2(eingezahlt),
+    offen: r2(new Decimal(investmentAmount).minus(eingezahlt)),
     kontoauszug: lines,
   };
 }

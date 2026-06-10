@@ -32,6 +32,7 @@ export default function InvestorDashboard() {
   const { data: legacyPayments = [] } = trpc.legacyCustomer.myPaymentHistory.useQuery(undefined, { enabled: isKG });
   const { data: legacyInterest = [] } = trpc.legacyCustomer.myInterestCalculations.useQuery(undefined, { enabled: isKG });
   const { data: kontokorrent } = trpc.legacyCustomer.myKontokorrent.useQuery(undefined, { enabled: isKG });
+  const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
 
   const totalBalance = wallets?.reduce((sum, w) => {
     if (w.currency === "EUR") {
@@ -192,6 +193,70 @@ export default function InvestorDashboard() {
             </CardContent>
           </Card>
 
+          {/* Forderungskonto — eigene Karte (KG), nur wenn Refi-Satz gesetzt */}
+          {isKG && kontokorrent && kontokorrent.konfiguriert && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Forderungskonto</span>
+                  <span className="text-xs font-normal text-muted-foreground">Stand {new Date(kontokorrent.stichtag).toLocaleDateString("de-DE")}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Stufe 1: Klartext-Zusammenfassung (roter Faden) */}
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Gezeichnete Summe</span><span className="font-medium">{eur(kontokorrent.gezeichnet)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Davon eingezahlt</span><span className="font-medium">− {eur(kontokorrent.eingezahlt)}</span></div>
+                  <div className="flex justify-between border-b pb-2"><span>Offene Einlage</span><span className="font-semibold">{eur(kontokorrent.offen)}</span></div>
+                  <div className="flex justify-between pt-1"><span className="text-muted-foreground">Verzugszins auf die offene Einlage ({kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a., seit {new Date(kontokorrent.faelligkeit).toLocaleDateString("de-DE")})</span><span className="font-medium">+ {eur(kontokorrent.negativzinsSumme)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Zinsgutschrift auf Ihr eingezahltes Kapital ({kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.)</span><span className="font-medium">− {eur(kontokorrent.kuponAufgelaufen)}</span></div>
+                </div>
+                {/* Ergebnis */}
+                <div className="rounded-lg bg-muted/40 p-4 flex items-center justify-between">
+                  <span className="text-sm font-medium">{kontokorrent.saldo >= 0 ? "Offene Forderung" : "Ihr Guthaben"}</span>
+                  <span className={`text-2xl font-bold ${kontokorrent.saldo >= 0 ? "" : "text-emerald-600"}`}>{eur(Math.abs(kontokorrent.saldo))}</span>
+                </div>
+                {/* Stufe 2: Schritt-für-Schritt-Verlauf (ausklappbar) */}
+                <details className="text-sm">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Schritt-für-Schritt-Verlauf anzeigen</summary>
+                  <div className="mt-2 divide-y rounded border">
+                    {kontokorrent.kontoauszug.map((l: any, i: number) => (
+                      <div key={i} className="flex items-start justify-between gap-3 px-3 py-2">
+                        <div className="min-w-0">
+                          <span className="text-muted-foreground tabular-nums">{new Date(l.date).toLocaleDateString("de-DE")}</span>
+                          <span className="ml-2">
+                            {l.kind === "einzahlung" ? `Einzahlung ${eur(l.betrag)} (verringert die offene Einlage)`
+                              : l.kind === "verzugszins" ? `Verzugszins auf ${eur(l.basis)} offene Einlage`
+                              : l.kind === "zinsgutschrift" ? `Zinsgutschrift auf ${eur(l.basis)} eingezahltes Kapital`
+                              : `Auszahlung Zinsabschlag`}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className={l.kind === "zinsgutschrift" ? "text-emerald-600" : l.kind === "einzahlung" ? "text-muted-foreground" : ""}>
+                            {l.kind === "verzugszins" || l.kind === "auszahlung" ? "+ " : l.kind === "zinsgutschrift" ? "− " : ""}{eur(l.betrag)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Saldo {eur(l.saldoNachher)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+                {/* FAQ-Entwurf */}
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                  <p className="font-semibold mb-1">⚠ ENTWURF — Erläuterung (wird von Angelus final geprüft)</p>
+                  <p>
+                    Ihr Forderungskonto wird taggenau fortgeschrieben. Auf den noch nicht eingezahlten Teil Ihrer
+                    Zeichnungssumme (die offene Einlage) fällt ab Verzugsbeginn ({new Date(kontokorrent.faelligkeit).toLocaleDateString("de-DE")} = Zeichnung + 14 Tage)
+                    ein Verzugszins von {kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a. an. Gegengerechnet wird eine
+                    Zinsgutschrift von {kontokorrent.couponRate.toLocaleString("de-DE")} % p.a. auf Ihr tatsächlich eingezahltes Kapital.
+                    Beide werden ohne Zinseszins berechnet und tagesaktuell fortgeschrieben. [Platzhalter: rechtliche
+                    Begründung des Verzugszinssatzes — durch Angelus zu ergänzen.]
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* News */}
           <Card>
             <CardHeader>
@@ -314,88 +379,6 @@ export default function InvestorDashboard() {
                   </p>
                 </div>
               </div>
-
-              {/* Forderungskonto (Kontokorrent) — tagesaktuell, nur wenn Refi-Satz gesetzt */}
-              {kontokorrent && kontokorrent.konfiguriert && (
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium">Forderungskonto (Kontokorrent)</p>
-                    <span className="text-xs text-muted-foreground">
-                      Stand {new Date(kontokorrent.stichtag).toLocaleDateString("de-DE")}
-                    </span>
-                  </div>
-
-                  <div className="mb-3">
-                    <p className="text-xs text-muted-foreground">
-                      {kontokorrent.saldo >= 0 ? "Offene Forderung der Angelus KG" : "Guthaben zu Ihren Gunsten"}
-                    </p>
-                    <p className={`text-2xl font-bold ${kontokorrent.saldo >= 0 ? "text-foreground" : "text-emerald-600"}`}>
-                      €{Math.abs(kontokorrent.saldo).toLocaleString("de-DE", { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Verzugszins · offene Resteinlage · {kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a.
-                      </p>
-                      <p className="font-medium">
-                        + €{kontokorrent.negativzinsSumme.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Zins-Gutschrift · eingezahltes Kapital · {kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.
-                      </p>
-                      <p className="font-medium">
-                        − €{kontokorrent.kuponAufgelaufen.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                      Kontoauszug anzeigen ({kontokorrent.kontoauszug.length} Buchungen)
-                    </summary>
-                    <div className="mt-2 max-h-72 overflow-y-auto rounded border">
-                      {kontokorrent.kontoauszug.map((l: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between gap-2 px-2 py-1 border-b last:border-0 text-xs">
-                          <span className="text-muted-foreground w-16 shrink-0">
-                            {new Date(l.date).toLocaleDateString("de-DE")}
-                          </span>
-                          <span className="flex-1 truncate">{l.art}</span>
-                          <span className="w-24 text-right tabular-nums text-muted-foreground">
-                            {l.soll > 0
-                              ? `+€${l.soll.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
-                              : l.haben > 0
-                                ? `−€${l.haben.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
-                                : l.tilgung > 0
-                                  ? `+€${l.tilgung.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
-                                  : ""}
-                          </span>
-                          <span className="w-24 text-right font-medium tabular-nums">
-                            €{l.saldoNachher.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-
-                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
-                    <p className="font-semibold mb-1">⚠ ENTWURF — Erläuterung (wird von Angelus final geprüft)</p>
-                    <p>
-                      Ihr Forderungskonto wird taggenau als Kontokorrent geführt. Auf die noch nicht eingezahlte
-                      Resteinlage (gezeichnet − bisher gezahlt) fällt ein Verzugszins von{" "}
-                      {kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a. an, gerechnet ab Verzugsbeginn
-                      ({new Date(kontokorrent.faelligkeit).toLocaleDateString("de-DE")} = Zeichnung + 14 Tage).
-                      Gegengerechnet wird Ihre Zins-Gutschrift von {kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.
-                      auf das tatsächlich eingezahlte Kapital. Beide werden ohne Zinseszins als einfacher Staffelzins
-                      gerechnet; der Saldo wird tagesaktuell fortgeschrieben. [Platzhalter: rechtliche Begründung des
-                      Verzugszinssatzes — durch Angelus zu ergänzen.]
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* Zahlungshistorie */}
               <div>

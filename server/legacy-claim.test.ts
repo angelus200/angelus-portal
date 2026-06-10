@@ -67,9 +67,9 @@ describe('Kontokorrent-Forderungsmodul', () => {
     console.log('Kupon aufgelaufen (HABEN): ', r.kuponAufgelaufen.toLocaleString('de-DE'), 'EUR');
     console.log('Ausgezahlte Abschlaege:    ', r.ausgezahlt.toLocaleString('de-DE'), 'EUR');
     console.log('NETTO-FORDERUNG KG:        ', r.saldo.toLocaleString('de-DE'), 'EUR');
-    console.log('\n--- Kontoauszug (Buchungen + Zinssegmente) ---');
+    console.log('\n--- Kontoauszug (Buchungen) ---');
     for (const l of r.kontoauszug) {
-      console.log(`${l.date} | ${l.art.padEnd(34)} | SOLL ${l.soll.toFixed(2).padStart(10)} | HABEN ${l.haben.toFixed(2).padStart(8)} | offen ${l.offenesKapital.toFixed(0).padStart(7)} | gezahlt ${l.gezahltesKapital.toFixed(0).padStart(6)} | Saldo ${l.saldoNachher.toFixed(2).padStart(10)}`);
+      console.log(`${l.date} | ${l.kind.padEnd(14)} | Betrag ${l.betrag.toFixed(2).padStart(10)} | Basis ${(l.basis ?? 0).toFixed(0).padStart(7)} | Saldo ${l.saldoNachher.toFixed(2).padStart(10)}`);
     }
     console.log('=====\n');
 
