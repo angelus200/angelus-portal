@@ -122,9 +122,10 @@ export function RegisterWithInvitation() {
       }
 
       setSuccess(true);
-      // Session-Cookie ist gesetzt → harter Reload ins Onboarding, damit auth.me frisch lädt
+      // Bestandskunden (legacy) gehen direkt aufs Dashboard - kein Onboarding; normale Investoren ins Onboarding.
+      const redirectTo = resolved.source === 'legacy' ? '/investor' : '/investor/onboarding';
       setTimeout(() => {
-        window.location.href = '/investor/onboarding';
+        window.location.href = redirectTo;
       }, 1200);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen');

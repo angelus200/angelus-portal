@@ -107,6 +107,7 @@ const createLegacyCustomerSchema = z.object({
   solidaritySurcharge: z.number().optional(),
   churchTax: z.number().optional(),
   refinancingRate: z.number().optional(),
+  riskClassification: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -421,6 +422,7 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       capitalGainsTax: c.capitalGainsTax,
       solidaritySurcharge: c.solidaritySurcharge,
       churchTax: c.churchTax,
+      riskClassification: c.riskClassification,
     };
   }),
 

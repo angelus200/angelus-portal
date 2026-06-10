@@ -9,6 +9,7 @@ import { Link, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
+import { BRAND } from "@shared/brand";
 
 export default function BondDetails() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ export default function BondDetails() {
   const utils = trpc.useUtils();
   const { data: bond, isLoading } = trpc.bonds.getById.useQuery({ id: bondId });
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
+  const { data: legacyRecord } = trpc.legacyCustomer.myRecord.useQuery(undefined, { enabled: BRAND.key === "angelus" });
   const { data: contracts } = trpc.contracts.byBond.useQuery({ bondId }, { enabled: !!bond });
   const { data: myAccess } = trpc.issuerAccess.mine.useQuery();
 
@@ -32,6 +34,7 @@ export default function BondDetails() {
   const bondIssuerKey = (bond as any)?.issuerKey || "angelus";
   const access = (myAccess || []).find(a => a.issuerKey === bondIssuerKey);
 
+  const isBestandskunde = BRAND.key === "angelus" && !!legacyRecord;
   const canSubscribe = user?.kycStatus === "verified" && riskProfile;
   const minAmount = parseFloat(bond?.minSubscription || "100000");
 
@@ -246,7 +249,11 @@ export default function BondDetails() {
                 <CardTitle>Anleihe zeichnen</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!canSubscribe ? (
+                {isBestandskunde ? (
+                  <div className="p-4 bg-muted/40 border rounded-lg text-sm text-muted-foreground">
+                    Sie sind Bestandskunde — Ihr Bestandsvertrag wird von Angelus verwaltet. Für neue Zeichnungen kontaktieren Sie uns bitte direkt.
+                  </div>
+                ) : !canSubscribe ? (
                   <div className="space-y-4">
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800">

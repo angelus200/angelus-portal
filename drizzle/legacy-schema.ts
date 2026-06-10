@@ -82,6 +82,7 @@ export const legacyCustomers = mysqlTable(
 
     // Forderung / Verzug (Kontokorrent-Forderungsmodul)
     refinancingRate: decimal('refinancing_rate', { precision: 5, scale: 2 }), // Negativzinssatz p.a. auf offene Resteinlage; nullable + KEIN Default = noch nicht gesetzt (Guard: computeKontokorrent verweigert ohne Satz)
+    riskClassification: varchar('risk_classification', { length: 64 }), // Risikoprofil aus Zeichnungsschein (z.B. "risikobereit"); NICHT zu verwechseln mit dem Onboarding-riskProfile-Modell
 
     // Status
     status: mysqlEnum('status', ['pending', 'active', 'completed', 'cancelled']).default('pending'),

@@ -48,7 +48,8 @@ export default function InvestorDashboard() {
     return sum;
   }, 0) || 0;
 
-  const needsOnboarding = user?.kycStatus !== "verified" || !riskProfile;
+  const isBestandskunde = isKG && !!legacyRecord;
+  const needsOnboarding = !isBestandskunde && (user?.kycStatus !== "verified" || !riskProfile);
 
   return (
     <DashboardLayout variant="investor">
@@ -72,6 +73,21 @@ export default function InvestorDashboard() {
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status Bestandskunde (statt Onboarding) */}
+        {isBestandskunde && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Status: Bestandskunde</p>
+                  <p className="text-xs text-muted-foreground">Ihr Bestandsvertrag wird von Angelus verwaltet — kein Onboarding erforderlich.</p>
                 </div>
               </div>
             </CardContent>
@@ -377,6 +393,10 @@ export default function InvestorDashboard() {
                   <p className="font-medium">
                     {legacyRecord.maturityDate ? new Date(legacyRecord.maturityDate).toLocaleDateString("de-DE") : "—"}
                   </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Risikoprofil</p>
+                  <p className="font-medium">{legacyRecord.riskClassification || "—"}</p>
                 </div>
               </div>
 
