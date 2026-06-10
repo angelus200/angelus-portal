@@ -80,6 +80,9 @@ export const legacyCustomers = mysqlTable(
     solidaritySurcharge: decimal('solidarity_surcharge', { precision: 5, scale: 2 }).default('5.50'), // Solidaritätszuschlag
     churchTax: decimal('church_tax', { precision: 5, scale: 2 }).default('0.00'), // Kirchensteuer
 
+    // Forderung / Verzug (Kontokorrent-Forderungsmodul)
+    refinancingRate: decimal('refinancing_rate', { precision: 5, scale: 2 }), // Negativzinssatz p.a. auf offene Resteinlage; nullable + KEIN Default = noch nicht gesetzt (Guard: computeKontokorrent verweigert ohne Satz)
+
     // Status
     status: mysqlEnum('status', ['pending', 'active', 'completed', 'cancelled']).default('pending'),
     importDate: timestamp('import_date').defaultNow(),
