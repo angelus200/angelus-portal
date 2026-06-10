@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  FileText, Plus, Upload, Loader2, AlertTriangle,
+  FileText, Plus, Loader2, AlertTriangle,
   TrendingUp, Wallet, Calendar, CheckCircle2, Link2,
   Banknote, ArrowUpRight, Paperclip
 } from "lucide-react";
@@ -168,8 +168,6 @@ function ContractTab({ userId, contract, onSaved }: {
 // ============================================================
 function PaymentsTab({ contract }: { contract: any }) {
   const utils = trpc.useUtils();
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const { data: payments = [] } = trpc.legacyContracts.listPayments.useQuery(
     { contractId: contract.id }, { enabled: !!contract }
   );
@@ -183,34 +181,10 @@ function PaymentsTab({ contract }: { contract: any }) {
     onError: (e) => toast.error(e.message),
   });
 
-  const extractMutation = trpc.legacyContracts.extractFromDocument.useMutation({
-    onSuccess: (data) => {
-      if (data.amount) setForm(f => ({ ...f, amount: data.amount! }));
-      if (data.date) setForm(f => ({ ...f, paidAt: data.date! }));
-      if (data.iban) setForm(f => ({ ...f, bankReference: data.iban! }));
-      if (data.txHash) setForm(f => ({ ...f, txHash: data.txHash! }));
-      toast.success("KI-Extraktion erfolgreich — bitte Daten prüfen");
-    },
-    onError: (e) => toast.error(`KI-Extraktion: ${e.message}`),
-  });
-
   const [open, setOpen] = useState(false);
   const EMPTY = { amount: "", currency: contract.currency, paidAt: "", txHash: "", bankReference: "", notes: "" };
   const [form, setForm] = useState(EMPTY);
   const resetForm = () => setForm(EMPTY);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const b64 = (reader.result as string).split(",")[1];
-      const mediaType = file.type as any;
-      extractMutation.mutate({ base64: b64, mediaType });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
 
   if (!contract) {
     return <Alert><AlertDescription>Bitte zuerst einen Vertrag anlegen.</AlertDescription></Alert>;
@@ -277,19 +251,6 @@ function PaymentsTab({ contract }: { contract: any }) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-1">
-            <div className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground">
-              <Upload className="w-4 h-4 shrink-0" />
-              <span>Dokument hochladen → KI füllt Felder automatisch vor</span>
-              <Button variant="outline" size="sm" className="ml-auto shrink-0 gap-1"
-                onClick={() => fileRef.current?.click()}
-                disabled={extractMutation.isPending}
-              >
-                {extractMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                Upload
-              </Button>
-              <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFile} />
-            </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Betrag *</Label>
