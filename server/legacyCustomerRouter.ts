@@ -31,6 +31,7 @@ import {
   getUpcomingPayments,
 } from './legacy-db';
 import { Decimal } from 'decimal.js';
+import { ENV } from './_core/env';
 
 /**
  * Validation Schemas
@@ -232,6 +233,122 @@ export const legacyCustomerRouter = router({
       throw new Error(`Fehler beim Löschen des Bestandskunden: ${error}`);
     }
   }),
+
+  // ==================== KI-EXTRAKTION (Admin) ====================
+  // Liest einen Zeichnungsschein/Vertrag und mappt die Felder auf legacy_customers
+  // (Vorausfuellung des Import-Formulars). Quelle umgezogen vom legacyContractsRouter (Etappe C).
+  extractFromDocument: adminProcedure
+    .input(z.object({
+      base64: z.string().min(1),
+      mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ENV.anthropicApiKey) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'ANTHROPIC_API_KEY nicht konfiguriert' });
+      }
+
+      const contentBlock = input.mediaType === 'application/pdf'
+        ? { type: 'document', source: { type: 'base64', media_type: input.mediaType, data: input.base64 } }
+        : { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.base64 } };
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ENV.anthropicApiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{
+            role: 'user',
+            content: [
+              contentBlock,
+              {
+                type: 'text',
+                text: `Du extrahierst Stammdaten aus einem Anleihe-Zeichnungsschein/Vertrag eines Bestandskunden. Gib AUSSCHLIESSLICH ein JSON-Objekt mit exakt diesen Keys zurueck. Wenn ein Feld im Dokument nicht steht, setze null. Erfinde nichts.
+
+WICHTIG zum Betrag: "investmentAmount" ist die GEZEICHNETE Gesamt-/Zeichnungssumme (z.B. Gesamtkaufbetrag = Anzahl Teilschuldverschreibungen x Nennwert) — NICHT bereits gezahlte Teilbetraege. Es muss gelten: shareCount x shareValue = investmentAmount.
+
+Keys:
+- contractNumber: Vertrags-/Zeichnungsnummer (string)
+- firstName: Vorname des Anlegers (string)
+- lastName: Nachname des Anlegers (string)
+- birthDate: Geburtsdatum (YYYY-MM-DD)
+- email: E-Mail (string)
+- phone: Telefon (string)
+- street: Strasse ohne Hausnummer (string)
+- houseNumber: Hausnummer (string)
+- postalCode: PLZ (string)
+- city: Ort (string)
+- iban: IBAN des Anlegers ohne Leerzeichen (string)
+- bic: BIC des Anlegers (string)
+- accountHolder: Kontoinhaber (string)
+- bondNumber: Anleihe-/Serien-Bezeichnung, z.B. "LevV-10-2022" (string)
+- investmentAmount: gezeichnete Gesamtsumme als Zahl-String, z.B. "100000.00"
+- shareCount: Anzahl Teilschuldverschreibungen als Ganzzahl-String, z.B. "100"
+- shareValue: Nennwert je Stueck als Zahl-String, z.B. "1000.00"
+- annualInterestRate: Zinssatz p.a. in Prozent als Zahl-String, z.B. "15"
+- interestPaymentFrequency: genau eines von "monthly" | "quarterly" | "annual" (jaehrlich nachschuessig = "annual")
+- contractDate: Zeichnungsdatum / Unterschrift des Anlegers (YYYY-MM-DD)
+- valueDate: Datum der Annahmeerklaerung der Emittentin (YYYY-MM-DD)
+- maturityDate: Faelligkeit/Laufzeitende falls angegeben (YYYY-MM-DD)
+- termMonths: Laufzeit in Monaten als Ganzzahl-String, z.B. "60"
+- capitalGainsTax: Kapitalertragsteuer-Satz in Prozent als Zahl-String, z.B. "25.00"
+- solidaritySurcharge: Solidaritaetszuschlag-Satz in Prozent als Zahl-String, sonst null
+- churchTax: Kirchensteuer-Satz in Prozent als Zahl-String, sonst null
+
+Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
+              },
+            ],
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Anthropic API Fehler: ${err}` });
+      }
+
+      const result = await response.json() as { content: Array<{ type: string; text: string }> };
+      const text = result.content.find(b => b.type === 'text')?.text ?? '{}';
+
+      try {
+        const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const e = JSON.parse(cleaned);
+        return {
+          contractNumber: e.contractNumber ?? null,
+          firstName: e.firstName ?? null,
+          lastName: e.lastName ?? null,
+          birthDate: e.birthDate ?? null,
+          email: e.email ?? null,
+          phone: e.phone ?? null,
+          street: e.street ?? null,
+          houseNumber: e.houseNumber ?? null,
+          postalCode: e.postalCode ?? null,
+          city: e.city ?? null,
+          iban: e.iban ?? null,
+          bic: e.bic ?? null,
+          accountHolder: e.accountHolder ?? null,
+          bondNumber: e.bondNumber ?? null,
+          investmentAmount: e.investmentAmount ?? null,
+          shareCount: e.shareCount ?? null,
+          shareValue: e.shareValue ?? null,
+          annualInterestRate: e.annualInterestRate ?? null,
+          interestPaymentFrequency: e.interestPaymentFrequency ?? null,
+          contractDate: e.contractDate ?? null,
+          valueDate: e.valueDate ?? null,
+          maturityDate: e.maturityDate ?? null,
+          termMonths: e.termMonths ?? null,
+          capitalGainsTax: e.capitalGainsTax ?? null,
+          solidaritySurcharge: e.solidaritySurcharge ?? null,
+          churchTax: e.churchTax ?? null,
+        };
+      } catch {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KI-Antwort konnte nicht geparst werden' });
+      }
+    }),
 
   // ==================== INVESTOR (Self-Service) ====================
   // Hartes Gating: Der eigene Datensatz wird IMMER über ctx.user.id aufgelöst,

@@ -96,6 +96,53 @@ export function LegacyCustomerImport() {
   const [successMessage, setSuccessMessage] = useState('');
 
   const createMutation = trpc.legacyCustomer.create.useMutation();
+  const extractMutation = trpc.legacyCustomer.extractFromDocument.useMutation();
+  const [extractMsg, setExtractMsg] = useState('');
+
+  const ALLOWED_EXTRACT = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+  const handleExtractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setExtractMsg('');
+    if (!ALLOWED_EXTRACT.includes(file.type)) {
+      setExtractMsg('Nicht unterstütztes Format. Bitte PDF, JPG, PNG oder WebP.');
+      return;
+    }
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    try {
+      const x = await extractMutation.mutateAsync({ base64, mediaType: file.type as any });
+      const patch: Partial<FormData> = {};
+      const strKeys: (keyof FormData)[] = [
+        'contractNumber', 'firstName', 'lastName', 'birthDate', 'email', 'phone',
+        'street', 'houseNumber', 'postalCode', 'city', 'iban', 'bic', 'accountHolder',
+        'bondNumber', 'investmentAmount', 'shareCount', 'shareValue', 'annualInterestRate',
+        'contractDate', 'valueDate', 'maturityDate', 'termMonths',
+        'capitalGainsTax', 'solidaritySurcharge', 'churchTax',
+      ];
+      for (const k of strKeys) {
+        const v = (x as any)[k];
+        if (v !== null && v !== undefined && v !== '') (patch as any)[k] = String(v);
+      }
+      if (x.interestPaymentFrequency && ['monthly', 'quarterly', 'annual'].includes(x.interestPaymentFrequency)) {
+        patch.interestPaymentFrequency = x.interestPaymentFrequency as FormData['interestPaymentFrequency'];
+      }
+      // Kontoinhaber-Fallback: bei Privatperson = Anleger selbst
+      if (!patch.accountHolder && (patch.firstName ?? x.firstName) && (patch.lastName ?? x.lastName)) {
+        patch.accountHolder = `${patch.firstName ?? x.firstName} ${patch.lastName ?? x.lastName}`;
+      }
+      setFormData((prev) => ({ ...prev, ...patch }));
+      setExtractMsg(`KI-Extraktion übernommen: ${Object.keys(patch).length} Felder vorausgefüllt. Bitte alle Werte gegen das Dokument prüfen.`);
+    } catch (err) {
+      setExtractMsg(`Extraktion fehlgeschlagen: ${err}`);
+    }
+  };
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({
@@ -262,6 +309,42 @@ export function LegacyCustomerImport() {
             </div>
           </div>
         )}
+
+        {/* KI-Vorausfüllung aus Vertrag */}
+        <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <FileText className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900">Vertrag hochladen — KI füllt die Felder vor</h3>
+              <p className="text-blue-800 text-sm mb-3">
+                Lade den Zeichnungsschein/Vertrag (PDF oder Bild) hoch. Die extrahierten Werte werden ins Formular übernommen — bitte anschließend gegen das Dokument prüfen.
+              </p>
+              <input
+                type="file"
+                onChange={handleExtractUpload}
+                className="hidden"
+                id="extract-upload"
+                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                disabled={extractMutation.isPending}
+              />
+              <label
+                htmlFor="extract-upload"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  extractMutation.isPending
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                }`}
+              >
+                {extractMutation.isPending ? (
+                  <><Loader className="w-4 h-4 animate-spin" /> Extrahiere…</>
+                ) : (
+                  <><Upload className="w-4 h-4" /> Vertrag hochladen &amp; extrahieren</>
+                )}
+              </label>
+              {extractMsg && <p className="text-sm mt-3 text-blue-900">{extractMsg}</p>}
+            </div>
+          </div>
+        </div>
 
         {/* Progress Indicator */}
         <div className="mb-8">
