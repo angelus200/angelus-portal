@@ -46,6 +46,7 @@ export async function createLegacyCustomer(data: {
   capitalGainsTax?: Decimal | number;
   solidaritySurcharge?: Decimal | number;
   churchTax?: Decimal | number;
+  refinancingRate?: Decimal | number;
   notes?: string;
 }) {
   const db = await getDb();
@@ -81,6 +82,7 @@ export async function createLegacyCustomer(data: {
     capitalGainsTax: data.capitalGainsTax ? new Decimal(data.capitalGainsTax).toString() : '25.00',
     solidaritySurcharge: data.solidaritySurcharge ? new Decimal(data.solidaritySurcharge).toString() : '5.50',
     churchTax: data.churchTax ? new Decimal(data.churchTax).toString() : '0.00',
+    refinancingRate: data.refinancingRate != null ? new Decimal(data.refinancingRate).toString() : undefined,
     notes: data.notes,
   });
 
@@ -195,6 +197,7 @@ export async function updateLegacyCustomer(
     accountHolder: string;
     investmentAmount: Decimal | number;
     annualInterestRate: Decimal | number;
+    refinancingRate: Decimal | number;
     maturityDate: Date;
     termMonths: number;
     status: 'pending' | 'active' | 'completed' | 'cancelled';
@@ -210,6 +213,10 @@ export async function updateLegacyCustomer(
 
   if (data.annualInterestRate) {
     updateData.annualInterestRate = new Decimal(data.annualInterestRate).toString();
+  }
+
+  if (data.refinancingRate !== undefined && data.refinancingRate !== null) {
+    updateData.refinancingRate = new Decimal(data.refinancingRate).toString();
   }
 
   if (!db) throw new Error('Database not available');

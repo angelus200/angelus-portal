@@ -31,6 +31,7 @@ export default function InvestorDashboard() {
   const { data: legacyRecord } = trpc.legacyCustomer.myRecord.useQuery(undefined, { enabled: isKG });
   const { data: legacyPayments = [] } = trpc.legacyCustomer.myPaymentHistory.useQuery(undefined, { enabled: isKG });
   const { data: legacyInterest = [] } = trpc.legacyCustomer.myInterestCalculations.useQuery(undefined, { enabled: isKG });
+  const { data: kontokorrent } = trpc.legacyCustomer.myKontokorrent.useQuery(undefined, { enabled: isKG });
 
   const totalBalance = wallets?.reduce((sum, w) => {
     if (w.currency === "EUR") {
@@ -313,6 +314,88 @@ export default function InvestorDashboard() {
                   </p>
                 </div>
               </div>
+
+              {/* Forderungskonto (Kontokorrent) — tagesaktuell, nur wenn Refi-Satz gesetzt */}
+              {kontokorrent && kontokorrent.konfiguriert && (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium">Forderungskonto (Kontokorrent)</p>
+                    <span className="text-xs text-muted-foreground">
+                      Stand {new Date(kontokorrent.stichtag).toLocaleDateString("de-DE")}
+                    </span>
+                  </div>
+
+                  <div className="mb-3">
+                    <p className="text-xs text-muted-foreground">
+                      {kontokorrent.saldo >= 0 ? "Offene Forderung der Angelus KG" : "Guthaben zu Ihren Gunsten"}
+                    </p>
+                    <p className={`text-2xl font-bold ${kontokorrent.saldo >= 0 ? "text-foreground" : "text-emerald-600"}`}>
+                      €{Math.abs(kontokorrent.saldo).toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Verzugszins · offene Resteinlage · {kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a.
+                      </p>
+                      <p className="font-medium">
+                        + €{kontokorrent.negativzinsSumme.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Zins-Gutschrift · eingezahltes Kapital · {kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.
+                      </p>
+                      <p className="font-medium">
+                        − €{kontokorrent.kuponAufgelaufen.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      Kontoauszug anzeigen ({kontokorrent.kontoauszug.length} Buchungen)
+                    </summary>
+                    <div className="mt-2 max-h-72 overflow-y-auto rounded border">
+                      {kontokorrent.kontoauszug.map((l: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between gap-2 px-2 py-1 border-b last:border-0 text-xs">
+                          <span className="text-muted-foreground w-16 shrink-0">
+                            {new Date(l.date).toLocaleDateString("de-DE")}
+                          </span>
+                          <span className="flex-1 truncate">{l.art}</span>
+                          <span className="w-24 text-right tabular-nums text-muted-foreground">
+                            {l.soll > 0
+                              ? `+€${l.soll.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+                              : l.haben > 0
+                                ? `−€${l.haben.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+                                : l.tilgung > 0
+                                  ? `+€${l.tilgung.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+                                  : ""}
+                          </span>
+                          <span className="w-24 text-right font-medium tabular-nums">
+                            €{l.saldoNachher.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                    <p className="font-semibold mb-1">⚠ ENTWURF — Erläuterung (wird von Angelus final geprüft)</p>
+                    <p>
+                      Ihr Forderungskonto wird taggenau als Kontokorrent geführt. Auf die noch nicht eingezahlte
+                      Resteinlage (gezeichnet − bisher gezahlt) fällt ein Verzugszins von{" "}
+                      {kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a. an, gerechnet ab Verzugsbeginn
+                      ({new Date(kontokorrent.faelligkeit).toLocaleDateString("de-DE")} = Zeichnung + 14 Tage).
+                      Gegengerechnet wird Ihre Zins-Gutschrift von {kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.
+                      auf das tatsächlich eingezahlte Kapital. Beide werden ohne Zinseszins als einfacher Staffelzins
+                      gerechnet; der Saldo wird tagesaktuell fortgeschrieben. [Platzhalter: rechtliche Begründung des
+                      Verzugszinssatzes — durch Angelus zu ergänzen.]
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Zahlungshistorie */}
               <div>

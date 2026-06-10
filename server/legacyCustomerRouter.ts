@@ -32,6 +32,33 @@ import {
 } from './legacy-db';
 import { Decimal } from 'decimal.js';
 import { ENV } from './_core/env';
+import { computeKontokorrent, type KontoBooking, type KontoInput } from './legacy-claim';
+
+// Baut KontoInput aus DB-Rows (Kunde + payment_history) fuer das Kontokorrent-Forderungsmodul.
+// Faelligkeit = Zeichnungsdatum (contractDate) + 14 Tage. null = nicht konfiguriert (kein Refi-Satz / Stammdaten fehlen).
+function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | null {
+  if (c.refinancingRate == null || c.contractDate == null || c.investmentAmount == null || c.annualInterestRate == null) {
+    return null;
+  }
+  const faelligkeit = new Date(c.contractDate);
+  faelligkeit.setUTCDate(faelligkeit.getUTCDate() + 14);
+  const bookings: KontoBooking[] = payments
+    .filter((p: any) => (p.status ?? 'confirmed') === 'confirmed')
+    .filter((p: any) => p.paymentType === 'initial_investment' || p.paymentType === 'interest_payment')
+    .map((p: any) => ({
+      date: new Date(p.paymentDate),
+      type: p.paymentType === 'initial_investment' ? ('einzahlung' as const) : ('zinsabschlag' as const),
+      amount: Number(p.amount),
+    }));
+  return {
+    investmentAmount: Number(c.investmentAmount),
+    refinancingRate: Number(c.refinancingRate),
+    couponRate: Number(c.annualInterestRate),
+    faelligkeit,
+    stichtag,
+    bookings,
+  };
+}
 
 /**
  * Validation Schemas
@@ -67,6 +94,7 @@ const createLegacyCustomerSchema = z.object({
   capitalGainsTax: z.number().optional(),
   solidaritySurcharge: z.number().optional(),
   churchTax: z.number().optional(),
+  refinancingRate: z.number().optional(),
   notes: z.string().optional(),
 });
 
@@ -401,6 +429,51 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
     if (!c) return [];
     return getLegacyCustomerInterestCalculations(c.id);
   }),
+
+  /**
+   * Kontokorrent-Forderung des EIGENEN Datensatzes. HART ueber ctx.user.id gegated
+   * (Lookup via getLegacyCustomerByUserId, KEIN Input-ID) -> IDOR konstruktiv unmoeglich.
+   * Ein Zeichner sieht ausschliesslich sein eigenes Kontokorrent.
+   */
+  myKontokorrent: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return null;
+    const payments = await getLegacyCustomerPaymentHistory(c.id);
+    const ki = buildKontoInput(c, payments, new Date());
+    if (!ki) return { konfiguriert: false as const };
+    const r = computeKontokorrent(ki);
+    return {
+      konfiguriert: true as const,
+      stichtag: ki.stichtag.toISOString().slice(0, 10),
+      faelligkeit: ki.faelligkeit.toISOString().slice(0, 10),
+      refinancingRate: Number(c.refinancingRate),
+      couponRate: Number(c.annualInterestRate),
+      ...r,
+    };
+  }),
+
+  /**
+   * Kontokorrent-Forderung eines Bestandskunden (Admin, by id + optionaler Stichtag).
+   * adminProcedure (role-gated), explizite Input-ID -> nur fuer Admin-Verwaltung.
+   */
+  adminKontokorrent: adminProcedure
+    .input(z.object({ id: z.number(), stichtag: z.date().optional() }))
+    .query(async ({ input }) => {
+      const c = await getLegacyCustomerById(input.id);
+      if (!c) throw new TRPCError({ code: 'NOT_FOUND', message: 'Bestandskunde nicht gefunden' });
+      const payments = await getLegacyCustomerPaymentHistory(c.id);
+      const ki = buildKontoInput(c, payments, input.stichtag ?? new Date());
+      if (!ki) return { konfiguriert: false as const };
+      const r = computeKontokorrent(ki);
+      return {
+        konfiguriert: true as const,
+        stichtag: ki.stichtag.toISOString().slice(0, 10),
+        faelligkeit: ki.faelligkeit.toISOString().slice(0, 10),
+        refinancingRate: Number(c.refinancingRate),
+        couponRate: Number(c.annualInterestRate),
+        ...r,
+      };
+    }),
 
   /**
    * Document Management
