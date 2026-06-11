@@ -267,6 +267,7 @@ export async function addLegacyCustomerDocument(data: {
     | 'payment_confirmation'
     | 'tax_certificate'
     | 'bank_statement'
+    | 'zeichnungsschein'
     | 'other';
   fileName: string;
   filePath: string;

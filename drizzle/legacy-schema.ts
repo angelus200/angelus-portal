@@ -125,6 +125,7 @@ export const legacyCustomerDocuments = mysqlTable(
       'payment_confirmation', // Zahlungsbestätigung
       'tax_certificate', // Steuerbescheinigung
       'bank_statement', // Kontoauszug
+      'zeichnungsschein', // Unterschriebener Zeichnungsschein (KYC-relevant)
       'other', // Sonstiges
     ]).notNull(),
 

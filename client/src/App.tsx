@@ -54,6 +54,7 @@ import CryptoWallets from './pages/admin/CryptoWallets';
 import Invitations from './pages/admin/Invitations';
 import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
+import LegacyCustomerDocuments from './pages/admin/LegacyCustomerDocuments';
 import IssuersManagement from './pages/admin/IssuersManagement';
 import AccessRequests from './pages/admin/AccessRequests';
 import LeadsManagement from './pages/admin/LeadsManagement';
@@ -114,6 +115,7 @@ function Router() {
       <Route path="/admin/invitations" component={Invitations} />
       <Route path="/admin/bestandskunden" component={Bestandskunden} />
       <Route path="/admin/bestandskunden/:userId" component={BestandskundenDetail} />
+      <Route path="/admin/bestandskunden-dokumente" component={LegacyCustomerDocuments} />
 
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

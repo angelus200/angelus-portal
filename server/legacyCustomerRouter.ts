@@ -125,6 +125,7 @@ const documentUploadSchema = z.object({
     'payment_confirmation',
     'tax_certificate',
     'bank_statement',
+    'zeichnungsschein',
     'other',
   ]),
   fileName: z.string(),
@@ -488,6 +489,20 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
         ...r,
       };
     }),
+
+  /**
+   * Metadaten des EIGENEN Zeichnungsscheins (no-id, HART ueber ctx.user.id).
+   * Liefert nur, OB ein Schein hinterlegt ist + Dateiname — die Datei selbst kommt
+   * ueber GET /api/zeichnungsschein (ebenfalls no-id). Kein Input -> kein IDOR moeglich.
+   */
+  myZeichnungsschein: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return null;
+    const docs = await getLegacyCustomerDocuments(c.id);
+    const schein = docs.find((d) => d.documentType === 'zeichnungsschein');
+    if (!schein) return null;
+    return { fileName: schein.fileName, uploadedAt: schein.uploadedAt };
+  }),
 
   /**
    * Document Management

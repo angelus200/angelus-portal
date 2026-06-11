@@ -94,7 +94,10 @@ const adminMenuItems = [
   { icon: "CreditCard", label: "Zahlungen", path: "/admin/payments" },
   // Legacy/Bestandskunden nur auf KG-Brand (angelus) — MyBonds hat keine Bestandskunden
   ...(BRAND.key === "angelus"
-    ? [{ icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" }]
+    ? [
+        { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
+        { icon: "Upload", label: "Bestandskunden-Dokumente", path: "/admin/bestandskunden-dokumente" },
+      ]
     : []),
   { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
   { icon: "Wallet", label: "Wallets", path: "/admin/wallets" },

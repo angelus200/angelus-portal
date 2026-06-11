@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { issuerBadgeClass } from "@/lib/issuerBadge";
 import { TaxBreakdown } from "@/components/TaxBreakdown";
-import { TrendingUp, Calendar, ArrowRight, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { TrendingUp, Calendar, ArrowRight, FileText, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -111,6 +111,7 @@ export default function MyInvestments() {
   const issuerByKey = new Map((issuersList || []).map(i => [i.issuerKey, i]));
   const isKG = BRAND.key === "angelus";
   const { data: kontokorrent } = trpc.legacyCustomer.myKontokorrent.useQuery(undefined, { enabled: isKG });
+  const { data: zeichnungsschein } = trpc.legacyCustomer.myZeichnungsschein.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
@@ -203,6 +204,29 @@ export default function MyInvestments() {
                   Beide werden ohne Zinseszins berechnet und tagesaktuell fortgeschrieben. [Platzhalter: rechtliche
                   Begründung des Verzugszinssatzes — durch Angelus zu ergänzen.]
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mein Zeichnungsschein (KG-Bestandszeichner) — Download via no-id Route /api/zeichnungsschein */}
+        {isKG && zeichnungsschein && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Mein Zeichnungsschein</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{zeichnungsschein.fileName}</p>
+                  <p className="text-xs text-muted-foreground">Ihr unterschriebener Zeichnungsschein</p>
+                </div>
+                <a href="/api/zeichnungsschein" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" /> Herunterladen
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>
