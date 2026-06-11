@@ -83,6 +83,12 @@ export const legacyCustomers = mysqlTable(
     // Forderung / Verzug (Kontokorrent-Forderungsmodul)
     refinancingRate: decimal('refinancing_rate', { precision: 5, scale: 2 }), // Negativzinssatz p.a. auf offene Resteinlage; nullable + KEIN Default = noch nicht gesetzt (Guard: computeKontokorrent verweigert ohne Satz)
     riskClassification: varchar('risk_classification', { length: 64 }), // Risikoprofil aus Zeichnungsschein (z.B. "risikobereit"); NICHT zu verwechseln mit dem Onboarding-riskProfile-Modell
+    zinsbasis: varchar('zinsbasis', { length: 16 }).default('act/365'), // Tageszählung der Anleihe: 'act/365' (Default) | '30E/360' (§4(6), z.B. Anleihe 60-2023)
+
+    // Kündigung (dokumentiert die KG-Position; reine Anzeige, KEINE Engine-/Zahlungslogik)
+    kuendigungEingegangenAm: date('kuendigung_eingegangen_am'),
+    kuendigungStatus: varchar('kuendigung_status', { length: 32 }), // null=keine | 'eingereicht' | 'zurueckgewiesen' | 'wirksam'
+    naechsterKuendigungstermin: date('naechster_kuendigungstermin'),
 
     // Status
     status: mysqlEnum('status', ['pending', 'active', 'completed', 'cancelled']).default('pending'),

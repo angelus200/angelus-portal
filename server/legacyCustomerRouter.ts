@@ -69,6 +69,7 @@ function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | 
     faelligkeit,
     stichtag: toUtcCalendarMidnight(stichtag),
     bookings,
+    zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
   };
 }
 
@@ -108,6 +109,10 @@ const createLegacyCustomerSchema = z.object({
   churchTax: z.number().optional(),
   refinancingRate: z.number().optional(),
   riskClassification: z.string().optional(),
+  zinsbasis: z.enum(['act/365', '30E/360']).optional(),
+  kuendigungEingegangenAm: z.date().optional(),
+  kuendigungStatus: z.enum(['eingereicht', 'zurueckgewiesen', 'wirksam']).optional(),
+  naechsterKuendigungstermin: z.date().optional(),
   notes: z.string().optional(),
 });
 
@@ -489,6 +494,40 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
         ...r,
       };
     }),
+
+  /**
+   * Vollzahler-Sicht (no-id, HART ueber ctx.user.id). Greift datengetrieben NUR wenn die offene
+   * Einlage = 0 ist (gezeichnet - Summe Einzahlungen). Bei offen > 0 -> null (Forderungskonto-Fall,
+   * siehe myKontokorrent). Keine refinancingRate noetig. Liefert auch den Kuendigungsstatus (Anzeige).
+   */
+  myVollzahlerKonto: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c || c.investmentAmount == null) return null;
+    const payments = await getLegacyCustomerPaymentHistory(c.id);
+    const conf = payments.filter((p: any) => (p.status ?? 'confirmed') === 'confirmed');
+    const sumOf = (t: string) => conf
+      .filter((p: any) => p.paymentType === t)
+      .reduce((s: Decimal, p: any) => s.plus(new Decimal(p.amount)), new Decimal(0));
+    const gezeichnet = new Decimal(c.investmentAmount);
+    const eingezahlt = sumOf('initial_investment');
+    const offen = gezeichnet.minus(eingezahlt);
+    if (offen.gt(new Decimal('0.005'))) return null; // offene Einlage > 0 -> Forderungskonto
+    const bereitsErhalten = sumOf('interest_payment');
+    return {
+      gezeichnet: Number(gezeichnet.toDecimalPlaces(2)),
+      eingezahlt: Number(eingezahlt.toDecimalPlaces(2)),
+      offen: 0,
+      couponRate: c.annualInterestRate != null ? Number(c.annualInterestRate) : null,
+      zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
+      bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
+      contractDate: c.contractDate ?? null,
+      valueDate: c.valueDate ?? null,
+      maturityDate: c.maturityDate ?? null,
+      kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm ?? null,
+      kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
+      naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin ?? null,
+    };
+  }),
 
   /**
    * Metadaten des EIGENEN Zeichnungsscheins (no-id, HART ueber ctx.user.id).

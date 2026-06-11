@@ -48,6 +48,10 @@ export async function createLegacyCustomer(data: {
   churchTax?: Decimal | number;
   refinancingRate?: Decimal | number;
   riskClassification?: string;
+  zinsbasis?: string;
+  kuendigungEingegangenAm?: Date;
+  kuendigungStatus?: string;
+  naechsterKuendigungstermin?: Date;
   notes?: string;
 }) {
   const db = await getDb();
@@ -85,6 +89,10 @@ export async function createLegacyCustomer(data: {
     churchTax: data.churchTax ? new Decimal(data.churchTax).toString() : '0.00',
     refinancingRate: data.refinancingRate != null ? new Decimal(data.refinancingRate).toString() : undefined,
     riskClassification: data.riskClassification,
+    zinsbasis: data.zinsbasis,
+    kuendigungEingegangenAm: data.kuendigungEingegangenAm,
+    kuendigungStatus: data.kuendigungStatus,
+    naechsterKuendigungstermin: data.naechsterKuendigungstermin,
     notes: data.notes,
   });
 
@@ -201,6 +209,10 @@ export async function updateLegacyCustomer(
     annualInterestRate: Decimal | number;
     refinancingRate: Decimal | number;
     riskClassification: string;
+    zinsbasis: string;
+    kuendigungEingegangenAm: Date;
+    kuendigungStatus: string;
+    naechsterKuendigungstermin: Date;
     maturityDate: Date;
     termMonths: number;
     status: 'pending' | 'active' | 'completed' | 'cancelled';

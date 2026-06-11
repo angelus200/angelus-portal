@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { issuerBadgeClass } from "@/lib/issuerBadge";
 import { TaxBreakdown } from "@/components/TaxBreakdown";
-import { TrendingUp, Calendar, ArrowRight, FileText, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { TrendingUp, Calendar, ArrowRight, FileText, ChevronDown, ChevronUp, Download, Info } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -112,6 +112,7 @@ export default function MyInvestments() {
   const isKG = BRAND.key === "angelus";
   const { data: kontokorrent } = trpc.legacyCustomer.myKontokorrent.useQuery(undefined, { enabled: isKG });
   const { data: zeichnungsschein } = trpc.legacyCustomer.myZeichnungsschein.useQuery(undefined, { enabled: isKG });
+  const { data: vollzahler } = trpc.legacyCustomer.myVollzahlerKonto.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
@@ -205,6 +206,45 @@ export default function MyInvestments() {
                   Begründung des Verzugszinssatzes — durch Angelus zu ergänzen.]
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Vollzahler-Sicht (KG-Bestandszeichner, offene Einlage = 0) — datengetrieben statt Forderungskonto */}
+        {isKG && vollzahler && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Meine Beteiligung</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Gezeichnet & voll eingezahlt</span><span className="font-medium">{eur(vollzahler.eingezahlt)}</span></div>
+                {vollzahler.couponRate != null && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">Zinssatz</span><span className="font-medium">{vollzahler.couponRate.toLocaleString("de-DE")} % p.a.</span></div>
+                )}
+                <div className="flex justify-between"><span className="text-muted-foreground">Bereits erhaltene Zinsen (brutto)</span><span className="font-medium">{eur(vollzahler.bereitsErhalten)}</span></div>
+                {vollzahler.maturityDate && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">Mindestlaufzeit bis</span><span className="font-medium">{new Date(vollzahler.maturityDate).toLocaleDateString("de-DE")}</span></div>
+                )}
+              </div>
+
+              {/* Kündigungsstatus (dokumentiert die Position der KG) */}
+              {vollzahler.kuendigungStatus && (
+                <div className="rounded-lg border p-4 text-sm space-y-1 bg-muted/30">
+                  <p className="font-medium flex items-center gap-2"><Info className="w-4 h-4" /> Kündigungsstatus</p>
+                  {vollzahler.kuendigungEingegangenAm && (
+                    <p className="text-muted-foreground">Kündigung eingegangen am {new Date(vollzahler.kuendigungEingegangenAm).toLocaleDateString("de-DE")}</p>
+                  )}
+                  <p className="font-medium">
+                    {vollzahler.kuendigungStatus === "zurueckgewiesen" ? "Zurückgewiesen (verfristet)"
+                      : vollzahler.kuendigungStatus === "wirksam" ? "Wirksam"
+                      : "Eingereicht"}
+                  </p>
+                  {vollzahler.naechsterKuendigungstermin && (
+                    <p className="text-muted-foreground">Nächster möglicher Kündigungstermin: {new Date(vollzahler.naechsterKuendigungstermin).toLocaleDateString("de-DE")}</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
