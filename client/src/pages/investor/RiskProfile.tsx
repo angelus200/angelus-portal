@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 
 export default function RiskProfile() {
   const { data: existingProfile, isLoading, refetch } = trpc.riskProfile.my.useQuery();
+  const { isBestandskunde, isLoading: bkLoading } = useIsBestandskunde();
   
   const submitProfile = trpc.riskProfile.submit.useMutation({
     onSuccess: (data) => {
@@ -60,11 +62,37 @@ export default function RiskProfile() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || bkLoading) {
     return (
       <DashboardLayout variant="investor">
         <div className="max-w-3xl mx-auto">
           <div className="h-64 bg-muted animate-pulse rounded-lg" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Bestandskunde: Risikoprofil stammt aus dem Zeichnungsschein — kein Formular, neutraler Hinweis.
+  if (isBestandskunde) {
+    return (
+      <DashboardLayout variant="investor">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Risikoprofil</h1>
+          </div>
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Keine Eingabe erforderlich</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ihr Risikoprofil wurde aus Ihrem Zeichnungsschein übernommen — keine Eingabe erforderlich.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     );

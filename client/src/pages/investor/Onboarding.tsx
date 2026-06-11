@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Link } from "wouter";
 export default function InvestorOnboarding() {
   const { user } = useAuth();
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
+  const { isBestandskunde, isLoading: bkLoading } = useIsBestandskunde();
 
   const steps = [
     {
@@ -44,6 +46,41 @@ export default function InvestorOnboarding() {
 
   const completedSteps = steps.filter(s => s.completed).length;
   const progress = (completedSteps / steps.length) * 100;
+
+  // Bestandskunde: kein Onboarding nötig — Risikoprofil kommt aus dem Zeichnungsschein.
+  if (bkLoading) {
+    return (
+      <DashboardLayout variant="investor">
+        <div className="max-w-3xl mx-auto">
+          <div className="h-64 bg-muted animate-pulse rounded-lg" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+  if (isBestandskunde) {
+    return (
+      <DashboardLayout variant="investor">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Onboarding</h1>
+          </div>
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Kein Onboarding erforderlich</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ihr Risikoprofil wurde aus Ihrem Zeichnungsschein übernommen — keine Eingabe erforderlich.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout variant="investor">

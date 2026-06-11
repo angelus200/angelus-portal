@@ -21,6 +21,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 import {
   LayoutDashboard,
   LogOut,
@@ -126,6 +127,7 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const { isBestandskunde } = useIsBestandskunde();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -180,7 +182,10 @@ export default function DashboardLayout({
     );
   }
 
-  const menuItems = variant === "admin" ? adminMenuItems : investorMenuItems;
+  // Bestandskunden füllen kein Risikoprofil aus (kommt aus dem Zeichnungsschein) → Menüpunkt ausblenden.
+  const menuItems = variant === "admin"
+    ? adminMenuItems
+    : investorMenuItems.filter(item => !(isBestandskunde && item.path === "/investor/risk-profile"));
 
   return (
     <SidebarProvider

@@ -9,7 +9,7 @@ import { Link, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
-import { BRAND } from "@shared/brand";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 
 export default function BondDetails() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +19,7 @@ export default function BondDetails() {
   const utils = trpc.useUtils();
   const { data: bond, isLoading } = trpc.bonds.getById.useQuery({ id: bondId });
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
-  const { data: legacyRecord } = trpc.legacyCustomer.myRecord.useQuery(undefined, { enabled: BRAND.key === "angelus" });
+  const { isBestandskunde } = useIsBestandskunde();
   const { data: contracts } = trpc.contracts.byBond.useQuery({ bondId }, { enabled: !!bond });
   const { data: myAccess } = trpc.issuerAccess.mine.useQuery();
 
@@ -34,7 +34,6 @@ export default function BondDetails() {
   const bondIssuerKey = (bond as any)?.issuerKey || "angelus";
   const access = (myAccess || []).find(a => a.issuerKey === bondIssuerKey);
 
-  const isBestandskunde = BRAND.key === "angelus" && !!legacyRecord;
   const canSubscribe = user?.kycStatus === "verified" && riskProfile;
   const minAmount = parseFloat(bond?.minSubscription || "100000");
 

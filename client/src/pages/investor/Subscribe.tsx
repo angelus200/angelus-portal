@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -36,6 +37,7 @@ export default function Subscribe() {
     { enabled: bondId > 0 }
   );
   const { data: riskProfile } = trpc.riskProfile.my.useQuery();
+  const { isBestandskunde } = useIsBestandskunde();
   const { data: wallets } = trpc.wallet.myWallets.useQuery();
   const { data: myAccess } = trpc.issuerAccess.mine.useQuery();
 
@@ -208,8 +210,17 @@ export default function Subscribe() {
           </div>
         </div>
 
-        {/* Eligibility Check */}
-        {!isEligible && (
+        {/* Eligibility Check — Bestandskunden bekommen den neutralen Hinweis, KEINEN Ausfüll-Prompt */}
+        {isBestandskunde ? (
+          <Alert>
+            <Shield className="h-4 w-4" />
+            <AlertTitle>Bestandskunde</AlertTitle>
+            <AlertDescription>
+              Ihr Risikoprofil wurde aus Ihrem Zeichnungsschein übernommen — keine Eingabe erforderlich.
+              Ihr Bestandsvertrag wird von Angelus verwaltet; für neue Zeichnungen kontaktieren Sie uns bitte direkt.
+            </AlertDescription>
+          </Alert>
+        ) : !isEligible ? (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Zeichnung nicht möglich</AlertTitle>
@@ -222,7 +233,7 @@ export default function Subscribe() {
               )}
             </AlertDescription>
           </Alert>
-        )}
+        ) : null}
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-4">

@@ -16,7 +16,7 @@ import {
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { BRAND } from "@shared/brand";
+import { useIsBestandskunde } from "@/hooks/useIsBestandskunde";
 
 export default function InvestorDashboard() {
   const { user } = useAuth();
@@ -27,8 +27,8 @@ export default function InvestorDashboard() {
   const { data: profileCheck } = trpc.profileCheck.getMyProfileCheck.useQuery();
   const { data: news } = trpc.news.published.useQuery();
   // Legacy/Bestandsvertrag: reiches legacy_customers-Modell, nur KG-Brand (angelus). MyBonds hat keine Bestandskunden.
-  const isKG = BRAND.key === "angelus";
-  const { data: legacyRecord } = trpc.legacyCustomer.myRecord.useQuery(undefined, { enabled: isKG });
+  // Bestandskunden-Status kommt zentral aus useIsBestandskunde() — NICHT lokal nachrechnen.
+  const { isKG, legacyRecord, isBestandskunde } = useIsBestandskunde();
   const { data: legacyPayments = [] } = trpc.legacyCustomer.myPaymentHistory.useQuery(undefined, { enabled: isKG });
   const { data: legacyInterest = [] } = trpc.legacyCustomer.myInterestCalculations.useQuery(undefined, { enabled: isKG });
 
@@ -46,7 +46,6 @@ export default function InvestorDashboard() {
     return sum;
   }, 0) || 0;
 
-  const isBestandskunde = isKG && !!legacyRecord;
   const needsOnboarding = !isBestandskunde && (user?.kycStatus !== "verified" || !riskProfile);
 
   return (
