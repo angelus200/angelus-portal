@@ -115,13 +115,64 @@ export function calculateInterestByPeriods(
  * @param endDate - Enddatum
  * @returns Berechnete Zinsen
  */
+/**
+ * Zins-Tageszählungsbasis pro Anleihe konfigurierbar.
+ *  - 'act/365' : tatsächliche Tage / 365 (Default, z.B. Anleihe Brenner)
+ *  - '30E/360' : Standard-30E/360, Tag auf 30 gekappt (z.B. Anleihe 60-2023 §4(6))
+ */
+export type ZinsBasis = 'act/365' | '30E/360';
+
+/**
+ * Tageszählung nach Standard-30E/360 ("deutsche kaufmännische Zinsmethode", Tag auf 30 gekappt):
+ *   days = 360*(y2-y1) + 30*(m2-m1) + (min(d2,30) - min(d1,30))
+ *
+ * ENTSCHEIDUNG (Thomas, 2026-06-11, Option A): Eine VOLLE Periode = Jahreszins (§4(3) jährlich
+ * nachschüssig); diese Stub-Methode greift nur für ANGEBROCHENE Perioden (erste Teilperiode ab
+ * Wertstellung, Kündigungs-Stub). Diese Variante deckt sich EXAKT mit der Steuerbescheinigung 2025
+ * (volles Jahr 18.10.→18.10. = 360 Tage = 18.000 € bei 100k@18%) und stützt die §4(3)-Position der
+ * KG-Kündigungsantwort. Der wörtliche §4(6)-Ansatz "Teilmonat actual /360" (Option B, NICHT genutzt)
+ * ergäbe für ein volles Okt→Okt-Jahr 361 Tage = 18.050 € und widerspräche der eigenen Bescheinigung.
+ * UTC-Getter (TZ-robust, passend zu toUtcCalendarMidnight im Aufrufer).
+ */
+export function days30E360(startDate: Date, endDate: Date): number {
+  const y1 = startDate.getUTCFullYear();
+  const m1 = startDate.getUTCMonth() + 1;
+  const d1 = Math.min(startDate.getUTCDate(), 30);
+  const y2 = endDate.getUTCFullYear();
+  const m2 = endDate.getUTCMonth() + 1;
+  const d2 = Math.min(endDate.getUTCDate(), 30); // ISDA-Variante: auch d2 auf 30 gekappt
+  return 360 * (y2 - y1) + 30 * (m2 - m1) + (d2 - d1);
+}
+
 export function calculateInterestByDateRange(
   principal: number | Decimal,
   annualRate: number,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  basis: ZinsBasis = 'act/365'
 ): InterestCalculationResult {
-  // Berechne Anzahl der Tage zwischen den Daten
+  if (basis === '30E/360') {
+    const days = days30E360(startDate, endDate);
+    if (days < 0) {
+      throw new Error('Enddatum muss nach Startdatum liegen');
+    }
+    const principalDec = new Decimal(principal);
+    const interestAmount = principalDec
+      .times(annualRate)
+      .times(days)
+      .dividedBy(360)
+      .dividedBy(100)
+      .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    return {
+      principal: principalDec,
+      annualRate: new Decimal(annualRate),
+      days,
+      interestAmount,
+      calculationMethod: 'simple_interest_30E_360',
+    };
+  }
+
+  // 'act/365' — UNVERAENDERT (byte-identisch zum bisherigen Verhalten)
   const timeDiff = endDate.getTime() - startDate.getTime();
   const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
 

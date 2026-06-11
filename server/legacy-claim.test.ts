@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeKontokorrent, type KontoBooking } from './legacy-claim';
+import { days30E360 } from './interest-calculation';
 
 const d = (s: string) => new Date(s + 'T00:00:00.000Z');
 
@@ -78,5 +79,46 @@ describe('Kontokorrent-Forderungsmodul', () => {
     expect(r.saldo).toBeGreaterThan(50000);    // klare KG-Forderung
     expect(r.saldo).toBeLessThan(70000);       // Plausibilitaetsband bei 20%
     expect(r.saldo).toBeCloseTo(r.negativzinsSumme - r.kuponAufgelaufen, 2); // Identitaet (ausgezahlt=0)
+  });
+
+  // ============================================================
+  // 30E/360 (Anleihe 60-2023, §4(6), Option A) — Brendel-Fall-Typ
+  // ============================================================
+
+  // Reine Tageszählung (Standard-30E/360, Tag auf 30 gekappt)
+  it('days30E360: volles Jahr (18.10.→18.10.) = exakt 360 Tage', () => {
+    expect(days30E360(d('2024-10-18'), d('2025-10-18'))).toBe(360);
+  });
+  it('days30E360: Stub 18.10.2024 → 01.01.2025 = 73 Tage (Okt 12 + Nov 30 + Dez 30 + 1)', () => {
+    expect(days30E360(d('2024-10-18'), d('2025-01-01'))).toBe(73);
+  });
+
+  // INVARIANTE: volles Jahr 30E/360 = exakt der Jahreszins = 18.000,00 (deckungsgleich
+  // Steuerbescheinigung 2025). Vollzahlerin: 100k voll eingezahlt, offen=0 -> kein Negativzins.
+  it('Brendel-Invariante: Kupon volles Jahr @18% 30E/360 = exakt 18.000,00', () => {
+    const bookings: KontoBooking[] = [
+      { date: d('2024-10-18'), type: 'einzahlung', amount: 100000 },
+    ];
+    const r = computeKontokorrent({
+      investmentAmount: 100000, refinancingRate: 18, couponRate: 18,
+      faelligkeit: d('2024-10-18'), stichtag: d('2025-10-18'), bookings,
+      zinsbasis: '30E/360',
+    });
+    expect(r.offen).toBe(0);
+    expect(r.negativzinsSumme).toBe(0);       // Vollzahlerin -> kein Verzugszins
+    expect(r.kuponAufgelaufen).toBe(18000);   // <-- die Invariante (= Bescheinigung 2025)
+  });
+
+  // Stub: erste angebrochene Periode ab Wertstellung -> 73 Tage / 360 * 18% * 100k = 3.650,00
+  it('Brendel-Stub: 18.10.2024 → 01.01.2025 @18% 30E/360 = 3.650,00', () => {
+    const bookings: KontoBooking[] = [
+      { date: d('2024-10-18'), type: 'einzahlung', amount: 100000 },
+    ];
+    const r = computeKontokorrent({
+      investmentAmount: 100000, refinancingRate: 18, couponRate: 18,
+      faelligkeit: d('2024-10-18'), stichtag: d('2025-01-01'), bookings,
+      zinsbasis: '30E/360',
+    });
+    expect(r.kuponAufgelaufen).toBe(3650);
   });
 });

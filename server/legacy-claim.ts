@@ -6,7 +6,7 @@
 //   SALDO = SOLL - HABEN + Tilgung, zum Stichtag.  >0 = KG-Forderung, <0 = Zeichner-Guthaben.
 // Segment-Primitiv wiederverwendet aus interest-calculation.ts (Decimal-praezise, getestet).
 import { Decimal } from 'decimal.js';
-import { calculateInterestByDateRange } from './interest-calculation';
+import { calculateInterestByDateRange, type ZinsBasis } from './interest-calculation';
 
 export type KontoBookingType = 'einzahlung' | 'zinsabschlag';
 export interface KontoBooking { date: Date; type: KontoBookingType; amount: number; }
@@ -39,6 +39,7 @@ export interface KontoInput {
   faelligkeit: Date;          // Unterschrift + 14 Tage
   stichtag: Date;
   bookings: KontoBooking[];   // einzahlungen + zinsabschlaege
+  zinsbasis?: ZinsBasis;      // Tageszählung pro Anleihe; Default 'act/365' (Brenner unveraendert)
 }
 
 const r2 = (d: Decimal): number => Number(d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP));
@@ -46,6 +47,7 @@ const iso = (t: number): string => new Date(t).toISOString().slice(0, 10);
 
 export function computeKontokorrent(input: KontoInput): KontoResult {
   const { investmentAmount, refinancingRate, couponRate, faelligkeit, stichtag } = input;
+  const zinsbasis = input.zinsbasis ?? 'act/365';
   if (refinancingRate === null || refinancingRate === undefined) {
     throw new Error('refinancingRate nicht gesetzt - Kontokorrent kann nicht berechnet werden');
   }
@@ -89,11 +91,11 @@ export function computeKontokorrent(input: KontoInput): KontoResult {
     const a = times[i], b = times[i + 1];
     // SOLL: Negativzins nur ab Faelligkeit und nur auf positives offenes Kapital
     const negInt = (a >= faelligT && offen.gt(0))
-      ? calculateInterestByDateRange(offen, refinancingRate, new Date(a), new Date(b)).interestAmount
+      ? calculateInterestByDateRange(offen, refinancingRate, new Date(a), new Date(b), zinsbasis).interestAmount
       : new Decimal(0);
     // HABEN: Kupon auf gezahltes Kapital (ab jeweiligem Zahlungsdatum, auch vor Faelligkeit)
     const kuponInt = gezahlt.gt(0)
-      ? calculateInterestByDateRange(gezahlt, couponRate, new Date(a), new Date(b)).interestAmount
+      ? calculateInterestByDateRange(gezahlt, couponRate, new Date(a), new Date(b), zinsbasis).interestAmount
       : new Decimal(0);
     negSum = negSum.plus(negInt);
     kuponSum = kuponSum.plus(kuponInt);
