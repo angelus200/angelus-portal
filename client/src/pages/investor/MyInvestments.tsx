@@ -228,6 +228,32 @@ export default function MyInvestments() {
                 )}
               </div>
 
+              {/* Voraussichtliche Fälligkeiten (P4) — JEDE Zeile trägt den Vorbehalt (*) */}
+              {(vollzahler.naechsteZinsfaelligkeit || vollzahler.rueckzahlung) && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Voraussichtliche Fälligkeiten</p>
+                  <div className="space-y-1.5 text-sm">
+                    {vollzahler.naechsteZinsfaelligkeit && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Nächste Zinsfälligkeit ({new Date(vollzahler.naechsteZinsfaelligkeit.datum).toLocaleDateString("de-DE")}) *</span>
+                        <span className="font-medium">{eur(vollzahler.naechsteZinsfaelligkeit.betrag)}</span>
+                      </div>
+                    )}
+                    {vollzahler.rueckzahlung && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Rückzahlung frühestens ({new Date(vollzahler.rueckzahlung.datum).toLocaleDateString("de-DE")}) *</span>
+                        <span className="font-medium">{eur(vollzahler.rueckzahlung.betrag)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Vorbehalt — ENTWURF, finaler Wortlaut durch Angelus (NICHT von CC final formuliert) */}
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                    <p className="font-semibold mb-1">⚠ ENTWURF — Vorbehalt (finaler Wortlaut durch Angelus)</p>
+                    <p>* Vorbehaltlich vorinsolvenzlichem Zahlungsverbot (§2) und qualifiziertem Rangrücktritt (§3) — keine unbedingte Zahlungszusage. [Platzhalter: finaler rechtlicher Wortlaut durch Angelus]</p>
+                  </div>
+                </div>
+              )}
+
               {/* Kündigungsstatus (dokumentiert die Position der KG) */}
               {vollzahler.kuendigungStatus && (
                 <div className="rounded-lg border p-4 text-sm space-y-1 bg-muted/30">

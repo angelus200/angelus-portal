@@ -45,6 +45,21 @@ function toUtcCalendarMidnight(v: any): Date {
   return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
 }
 
+// Naechste jaehrliche Zinsfaelligkeit = Ende des Zinsjahres = (naechster Jahrestag des
+// Vertragsstichtags annualInterestDate nach heute) MINUS 1 Tag. DATENGETRIEBEN aus
+// annualInterestDate (z.B. 01.06. -> Faelligkeit 31.05.); KEIN anleihe-spezifisches Hardcoding.
+function nextZinsFaelligkeit(annualInterestDate: any, today: Date): Date {
+  const stich = toUtcCalendarMidnight(annualInterestDate); // liefert Monat/Tag des Vertragsstichtags
+  const m = stich.getUTCMonth();
+  const dday = stich.getUTCDate();
+  let anniv = new Date(Date.UTC(today.getUTCFullYear(), m, dday));
+  if (anniv.getTime() <= today.getTime()) {
+    anniv = new Date(Date.UTC(today.getUTCFullYear() + 1, m, dday));
+  }
+  anniv.setUTCDate(anniv.getUTCDate() - 1); // Ende des Zinsjahres = Tag vor dem Stichtag
+  return anniv;
+}
+
 // Baut KontoInput aus DB-Rows (Kunde + payment_history) fuer das Kontokorrent-Forderungsmodul.
 // Faelligkeit = Zeichnungsdatum (contractDate) + 14 Tage. null = nicht konfiguriert (kein Refi-Satz / Stammdaten fehlen).
 // Alle Datumswerte auf UTC-Kalendertag normalisiert -> taggenaue, TZ-unabhaengige Berechnung.
@@ -513,6 +528,25 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
     const offen = gezeichnet.minus(eingezahlt);
     if (offen.gt(new Decimal('0.005'))) return null; // offene Einlage > 0 -> Forderungskonto
     const bereitsErhalten = sumOf('interest_payment');
+
+    // P4: voraussichtliche Faelligkeiten (IMMER unter Vorbehalt §2/§3 - Anzeige im Frontend).
+    // Zins: naechste jaehrliche Faelligkeit (Stichtag annualInterestDate, generisch). Betrag =
+    // Jahreszins = Nennbetrag x Satz (volle Periode = Jahreszins, Option A). Rueckzahlung:
+    // fruehestens zum naechsten Kuendigungstermin, Nennbetrag. Nur wenn die Datenbasis gesetzt ist.
+    const today = toUtcCalendarMidnight(new Date());
+    const naechsteZinsfaelligkeit = (c.annualInterestDate != null && c.annualInterestRate != null)
+      ? {
+          datum: nextZinsFaelligkeit(c.annualInterestDate, today).toISOString().slice(0, 10),
+          betrag: Number(gezeichnet.times(new Decimal(c.annualInterestRate)).dividedBy(100).toDecimalPlaces(2)),
+        }
+      : null;
+    const rueckzahlung = (c as any).naechsterKuendigungstermin != null
+      ? {
+          datum: toUtcCalendarMidnight((c as any).naechsterKuendigungstermin).toISOString().slice(0, 10),
+          betrag: Number(gezeichnet.toDecimalPlaces(2)),
+        }
+      : null;
+
     return {
       gezeichnet: Number(gezeichnet.toDecimalPlaces(2)),
       eingezahlt: Number(eingezahlt.toDecimalPlaces(2)),
@@ -520,6 +554,8 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       couponRate: c.annualInterestRate != null ? Number(c.annualInterestRate) : null,
       zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
       bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
+      naechsteZinsfaelligkeit,
+      rueckzahlung,
       contractDate: c.contractDate ?? null,
       valueDate: c.valueDate ?? null,
       maturityDate: c.maturityDate ?? null,
