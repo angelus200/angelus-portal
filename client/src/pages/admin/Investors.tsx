@@ -44,7 +44,10 @@ interface ImportResult {
 
 export default function AdminInvestors() {
   const { data: investors, isLoading, refetch } = trpc.investors.list.useQuery();
-  
+  // Bestandszeichner-Klassifizierung: welche users haben eine legacy_customers-Zeile (user_id-Verknüpfung).
+  const { data: legacyLinks } = trpc.legacyCustomer.userLinks.useQuery();
+  const legacyByUser = new Map<number, number>((legacyLinks ?? []).map((l: any) => [l.userId, l.legacyId]));
+
   const updateKycStatus = trpc.investors.updateKycStatus.useMutation({
     onSuccess: () => {
       toast.success("KYC-Status aktualisiert");
@@ -1002,9 +1005,12 @@ export default function AdminInvestors() {
                   {filteredInvestors?.map((investor) => (
                     <TableRow key={investor.id}>
                       <TableCell className="font-medium">
-                        {investor.firstName && investor.lastName 
+                        {investor.firstName && investor.lastName
                           ? `${investor.firstName} ${investor.lastName}`
                           : investor.name || '-'}
+                        {legacyByUser.has(investor.id) && (
+                          <Badge variant="outline" className="ml-2 text-xs">Bestandszeichner</Badge>
+                        )}
                         {investor.isCompany && investor.companyName && (
                           <div className="text-sm text-muted-foreground">{investor.companyName}</div>
                         )}
@@ -1032,7 +1038,7 @@ export default function AdminInvestors() {
                             size="sm"
                             asChild
                           >
-                            <Link href={`/admin/investors/${investor.id}`}>
+                            <Link href={legacyByUser.has(investor.id) ? `/admin/bestandszeichner/${legacyByUser.get(investor.id)}` : `/admin/investors/${investor.id}`}>
                               <ExternalLink className="w-4 h-4" />
                             </Link>
                           </Button>

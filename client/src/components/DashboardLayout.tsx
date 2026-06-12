@@ -95,7 +95,8 @@ const adminMenuItems = [
   // Legacy/Bestandskunden nur auf KG-Brand (angelus) — MyBonds hat keine Bestandskunden
   ...(BRAND.key === "angelus"
     ? [
-        { icon: "FileText", label: "Bestandsverträge", path: "/admin/bestandskunden" },
+        { icon: "Users", label: "Bestandszeichner", path: "/admin/bestandszeichner" },
+        { icon: "FileText", label: "Bestandsverträge (alt)", path: "/admin/bestandskunden" },
         { icon: "Upload", label: "Bestandskunden-Dokumente", path: "/admin/bestandskunden-dokumente" },
       ]
     : []),

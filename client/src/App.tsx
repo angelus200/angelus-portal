@@ -55,6 +55,7 @@ import Invitations from './pages/admin/Invitations';
 import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
 import BestandszeichnerDetail from './pages/admin/BestandszeichnerDetail';
+import BestandszeichnerListe from './pages/admin/BestandszeichnerListe';
 import LegacyCustomerDocuments from './pages/admin/LegacyCustomerDocuments';
 import IssuersManagement from './pages/admin/IssuersManagement';
 import AccessRequests from './pages/admin/AccessRequests';
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/admin/invitations" component={Invitations} />
       <Route path="/admin/bestandskunden" component={Bestandskunden} />
       <Route path="/admin/bestandskunden/:userId" component={BestandskundenDetail} />
+      <Route path="/admin/bestandszeichner" component={BestandszeichnerListe} />
       <Route path="/admin/bestandszeichner/:legacyId" component={BestandszeichnerDetail} />
       <Route path="/admin/bestandskunden-dokumente" component={LegacyCustomerDocuments} />
 

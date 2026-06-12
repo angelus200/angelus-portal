@@ -5,7 +5,7 @@ import {
   legacyCustomerInterestCalculations,
   legacyCustomerPaymentHistory,
 } from '../drizzle/legacy-schema';
-import { eq, and, gte, lte, desc, asc, like, sql, or } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, asc, like, sql, or, isNotNull } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 /**
@@ -133,6 +133,20 @@ export async function getLegacyCustomerByUserId(userId: number) {
 /**
  * Get all legacy customers with pagination
  */
+// Verknuepfung legacy_customers <-> users: liefert {userId, legacyId} fuer alle Bestandszeichner
+// mit hinterlegtem User. Klassifiziert die Investorenliste (users) -> wer ist Bestandszeichner.
+export async function getLegacyCustomerUserLinks(): Promise<{ userId: number; legacyId: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ legacyId: legacyCustomers.id, userId: legacyCustomers.userId })
+    .from(legacyCustomers)
+    .where(isNotNull(legacyCustomers.userId));
+  return rows
+    .filter((r) => r.userId != null)
+    .map((r) => ({ userId: r.userId as number, legacyId: r.legacyId }));
+}
+
 export async function getAllLegacyCustomers(
   page: number = 1,
   limit: number = 50,

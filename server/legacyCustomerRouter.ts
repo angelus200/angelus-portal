@@ -15,6 +15,7 @@ import {
   getLegacyCustomerById,
   getLegacyCustomerByUserId,
   getAllLegacyCustomers,
+  getLegacyCustomerUserLinks,
   searchLegacyCustomers,
   updateLegacyCustomer,
   deleteLegacyCustomer,
@@ -288,6 +289,12 @@ export const legacyCustomerRouter = router({
   /**
    * Get legacy customer by ID
    */
+  // Verknuepfung user_id -> legacy_customer.id, um die Investorenliste (users) zu klassifizieren:
+  // wer ist Bestandszeichner. Reines Lesen, kein Schema-Touch.
+  userLinks: adminProcedure.query(async () => {
+    return getLegacyCustomerUserLinks();
+  }),
+
   getById: adminProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
     try {
       const customer = await getLegacyCustomerById(input.id);
