@@ -117,6 +117,68 @@ export const legacyCustomers = mysqlTable(
 );
 
 /**
+ * Legacy Bonds Table (1:n) — eine Zeile pro Anleihe eines Bestandskunden.
+ * Nimmt ALLE anleihespezifischen Felder auf (die 14 Engine-Felder + Vertrags-/Serien-Metadaten).
+ * legacy_customers behaelt Stammdaten + Person-Steuer (KeSt/SolZ/KiSt) + die kombinierte
+ * Steuerbescheinigung. Die Rechen-Engines lesen kuenftig aus diesem Datensatz (gleiche Feldnamen
+ * wie bisher am Kunden -> Rechenlogik unveraendert). Backfill (E2) ueberfuehrt bestehende Kunden 1:1.
+ */
+export const legacyBonds = mysqlTable(
+  'legacy_bonds',
+  {
+    id: int('id').primaryKey().autoincrement(),
+    legacyCustomerId: int('legacy_customer_id').notNull(),
+
+    // Identifikation / Serie
+    contractNumber: varchar('contract_number', { length: 20 }).notNull().unique(),
+    bondId: int('bond_id'),
+    bondNumber: varchar('bond_number', { length: 50 }),
+
+    // Vertrag
+    contractDate: date('contract_date'),
+    valueDate: date('value_date'),
+    investmentAmount: decimal('investment_amount', { precision: 15, scale: 2 }),
+    shareCount: int('share_count'),
+    shareValue: decimal('share_value', { precision: 15, scale: 2 }),
+
+    // Zins
+    annualInterestRate: decimal('annual_interest_rate', { precision: 5, scale: 2 }),
+    interestPaymentFrequency: mysqlEnum('interest_payment_frequency', ['monthly', 'quarterly', 'annual']).default('monthly'),
+    annualInterestDate: date('annual_interest_date'),
+    monthlyPaymentDay: int('monthly_payment_day'),
+
+    // Laufzeit
+    maturityDate: date('maturity_date'),
+    termMonths: int('term_months'),
+
+    // Forderung / Verzug
+    refinancingRate: decimal('refinancing_rate', { precision: 5, scale: 2 }),
+    riskClassification: varchar('risk_classification', { length: 64 }),
+    zinsbasis: varchar('zinsbasis', { length: 16 }).default('act/365'),
+
+    // Kündigung
+    kuendigungEingegangenAm: date('kuendigung_eingegangen_am'),
+    kuendigungStatus: varchar('kuendigung_status', { length: 32 }),
+    naechsterKuendigungstermin: date('naechster_kuendigungstermin'),
+
+    // VFE-Schlussabrechnung
+    vfeSatz: decimal('vfe_satz', { precision: 5, scale: 4 }),
+    schadensersatzTeilbetrag: decimal('schadensersatz_teilbetrag', { precision: 15, scale: 2 }),
+    vergleichsfrist: date('vergleichsfrist'),
+
+    // Status / Metadaten
+    status: mysqlEnum('status', ['pending', 'active', 'completed', 'cancelled']).default('pending'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  },
+  (table) => ({
+    contractNumberIdx: uniqueIndex('idx_bond_contract_number').on(table.contractNumber),
+    legacyCustomerIdIdx: index('idx_bond_legacy_customer_id').on(table.legacyCustomerId),
+    statusIdx: index('idx_bond_status').on(table.status),
+  })
+);
+
+/**
  * Legacy Customer Documents Table
  * Stores documents uploaded for legacy customers
  */
@@ -183,6 +245,7 @@ export const legacyCustomerInterestCalculations = mysqlTable(
 
     // Reference
     legacyCustomerId: int('legacy_customer_id').notNull(),
+    legacyBondId: int('legacy_bond_id'), // E1: additiv NULLABLE; E2-Backfill setzt die Anleihe-Zuordnung
 
     // Calculation Period
     calculationYear: int('calculation_year').notNull(),
@@ -235,6 +298,7 @@ export const legacyCustomerPaymentHistory = mysqlTable(
 
     // Reference
     legacyCustomerId: int('legacy_customer_id').notNull(),
+    legacyBondId: int('legacy_bond_id'), // E1: additiv NULLABLE; E2-Backfill setzt die Anleihe-Zuordnung
     interestCalculationId: int('interest_calculation_id'),
 
     // Payment Information
