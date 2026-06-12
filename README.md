@@ -63,8 +63,9 @@ Versionen exakt aus [`package.json`](package.json) (Node `>=20.11.0`, ES-Module)
 | | drizzle-kit | 0.31.4 |
 | | mysql2 | 3.15.0 |
 | | decimal.js (Geld-Arithmetik) | 10.6.0 |
-| Auth | Clerk (`@clerk/express`) | 1.7.77 |
-| | Clerk React | 5.61.3 |
+| Auth | Custom-Auth (JWT/Cookie, eigenes User/Session-Modell) — aktiver Pfad | — |
+| | Clerk (`@clerk/express`) — Fallback bis Etappe D | 1.7.77 |
+| | Clerk React — Fallback bis Etappe D | 5.61.3 |
 | Payments | Stripe | 20.1.2 |
 | E-Mail | Resend (deutsche Templates) | 6.7.0 |
 | KI | Anthropic Claude API (REST, `claude-sonnet-4-20250514`) — Dokument-Extraktion | — |
@@ -115,6 +116,8 @@ Basis: [`.env.example`](.env.example).
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Public Key (Client) |
 | `CLERK_PUBLISHABLE_KEY` | Clerk Public Key (Server) |
 | `CLERK_SECRET_KEY` | Clerk Secret (Server) |
+| `AUTH_SECRET` | Custom-Auth Session-/JWT-Secret (Server, runtime-only) |
+| `TOTP_ENC_SECRET` | Verschlüsselung der TOTP-Seeds für 2FA (Server, runtime-only) |
 | `DATABASE_URL` | MySQL-Connection-String (Railway) |
 | `STRIPE_SECRET_KEY` | Stripe Secret (Server) |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe Public Key (Client) |
@@ -123,7 +126,7 @@ Basis: [`.env.example`](.env.example).
 | `ANTHROPIC_API_KEY` | Claude API für KI-Dokumentenextraktion (**in `.env.example` ergänzen**) |
 | `PORT` | Server-Port (Default `3000`) |
 | `NODE_ENV` | `development` / `production` |
-| `VITE_BRAND` | Aktive Marke: `angelus` (Default) \| `angelus-alpha` |
+| `VITE_BRAND` | Aktive Marke: `angelus` (Default) \| `mybonds` \| `angelus-alpha` — pro Railway-Instanz gepinnt |
 | `VITE_FRONTEND_URL` | Öffentliche URL Marke Angelus |
 | `VITE_FRONTEND_URL_ALPHA` | Öffentliche URL Marke Angelus Alpha |
 | `UPLOAD_PATH` | Upload-Basisverzeichnis (Default `/app/uploads`, Railway Volume) |
@@ -287,10 +290,11 @@ MySQL über Drizzle ORM. Tabellen nach Schema-Datei gruppiert.
 
 | Tabelle | Beschreibung |
 |---|---|
-| `legacy_customers` | Bestandskunden mit DocuSign-Anleihen (Stammdaten, Vertrag, Zins, Steuer) |
+| `legacy_customers` | Bestandszeichner — Stammdaten + Personen-Steuer (KeSt/SolZ/KiSt); Anleihe-Spalten vestigial bis E6 |
+| `legacy_bonds` | Anleihen je Zeichner (1:n): Serie, Coupon-Termin, Zinsbasis 30E/360, `refinancing_rate`, Engine-Felder |
 | `legacy_customer_documents` | Dokumente je Bestandskunde (Vertrag, Hochrechnung, …) inkl. extrahierter Daten |
 | `legacy_customer_interest_calculations` | Berechnete Zinsen je Periode (inkl. Steuerabzüge) |
-| `legacy_customer_payment_history` | Zahlungshistorie Bestandskunden |
+| `legacy_customer_payment_history` | Zahlungshistorie, je Bond via `legacy_bond_id` gefiltert |
 | `legacy_customer_invitations` | Einladungs-Tokens für Bestandskunden (7 Tage) |
 
 **Zinsen — [`drizzle/interest-schema.ts`](drizzle/interest-schema.ts)**
