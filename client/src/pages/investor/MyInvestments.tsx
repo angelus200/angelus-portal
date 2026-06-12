@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,20 +110,16 @@ export default function MyInvestments() {
   const { data: issuersList } = trpc.issuers.list.useQuery();
   const issuerByKey = new Map((issuersList || []).map(i => [i.issuerKey, i]));
   const isKG = BRAND.key === "angelus";
-  const { data: kontokorrent } = trpc.legacyCustomer.myKontokorrent.useQuery(undefined, { enabled: isKG });
   const { data: zeichnungsschein } = trpc.legacyCustomer.myZeichnungsschein.useQuery(undefined, { enabled: isKG });
-  const { data: vollzahler } = trpc.legacyCustomer.myVollzahlerKonto.useQuery(undefined, { enabled: isKG });
+  const { data: legacyBonds = [] } = trpc.legacyCustomer.myLegacyBonds.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-  // Kündigungs-/Laufzeit-Satz parametrisiert aus wording-Feldern (statische §§-Prosa, Daten generisch).
-  const w = vollzahler?.wording;
-  const laufzeitSatz = w
-    ? [
-        w.mindestlaufzeitEnde ? `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. ` : "",
-        `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
-        w.verfristeterTermin ? `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). ` : "",
-        w.naechsterTermin ? `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.` : "",
-      ].join("")
-    : "";
+  // E4b: Wording-/Laufzeit-Satz ist bond-spezifisch -> Helper, im Bond-Loop pro Anleihe aufgerufen.
+  const laufzeitSatzOf = (w: any): string => !w ? "" : [
+    w.mindestlaufzeitEnde ? `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. ` : "",
+    `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
+    w.verfristeterTermin ? `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). ` : "",
+    w.naechsterTermin ? `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.` : "",
+  ].join("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpand = (id: number) => {
@@ -156,6 +152,16 @@ export default function MyInvestments() {
           </div>
         </div>
 
+        {/* E4b: je Anleihe (1:n) — inneres JSX unveraendert, kontokorrent/vollzahler pro Bond aliasiert */}
+        {isKG && legacyBonds.map((bond: any) => {
+          const kontokorrent = bond.forderung;
+          const vollzahler = bond.vollzahler;
+          const laufzeitSatz = laufzeitSatzOf(vollzahler?.wording);
+          return (
+            <Fragment key={bond.bondId}>
+              {legacyBonds.length > 1 && (
+                <h2 className="text-lg font-semibold border-b pb-1">Anleihe {bond.bondNumber ?? "—"} · Vertrag {bond.contractNumber}</h2>
+              )}
         {/* Forderungskonto (KG-Bestandszeichner) — verschoben aus dem Dashboard */}
         {isKG && kontokorrent && kontokorrent.konfiguriert && (
           <Card>
@@ -282,7 +288,7 @@ export default function MyInvestments() {
                           </tr>
                         </thead>
                         <tbody>
-                          {vollzahler.perioden.map((p) => (
+                          {vollzahler.perioden.map((p: any) => (
                             <tr key={p.index} className="border-b last:border-0">
                               <td className="py-1.5 pr-2">
                                 {new Date(p.von).toLocaleDateString("de-DE")}–{new Date(p.bis).toLocaleDateString("de-DE")}
@@ -307,11 +313,11 @@ export default function MyInvestments() {
                     </div>
                   )}
                   {/* P8 — aufklappbare nominale Deckung je Periode (Transparenz hinter "bedient") */}
-                  {vollzahler.perioden && vollzahler.perioden.some((p) => p.deckungsluecke > 0) && (
+                  {vollzahler.perioden && vollzahler.perioden.some((p: any) => p.deckungsluecke > 0) && (
                     <details className="text-xs text-muted-foreground">
                       <summary className="cursor-pointer">Nominale Deckung je Periode</summary>
                       <div className="mt-1 space-y-0.5">
-                        {vollzahler.perioden.filter((p) => p.deckungsluecke > 0).map((p) => (
+                        {vollzahler.perioden.filter((p: any) => p.deckungsluecke > 0).map((p: any) => (
                           <p key={p.index}>
                             {new Date(p.von).toLocaleDateString("de-DE")}–{new Date(p.bis).toLocaleDateString("de-DE")}: {eur(p.erhaltenInPeriode)}/{eur(p.zins)} bedient
                             {p.status === "bedient"
@@ -380,6 +386,9 @@ export default function MyInvestments() {
             </CardContent>
           </Card>
         )}
+            </Fragment>
+          );
+        })}
 
         {/* Mein Zeichnungsschein (KG-Bestandszeichner) — Download via no-id Route /api/zeichnungsschein */}
         {isKG && zeichnungsschein && (
