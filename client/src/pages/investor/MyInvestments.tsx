@@ -166,6 +166,26 @@ export default function MyInvestments() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* Fall 3: wirksame Kündigung -> VFE-Schlussabrechnung ist MASSGEBLICH (oben, prominent);
+                  der kontinuierliche Verzugszins darunter nur als historischer Hinweis, kein zweiter Saldo. */}
+              {(kontokorrent as any).massgeblich === "vfe" && (kontokorrent as any).vfe && (
+                <div className="space-y-2">
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Vorfälligkeitsentschädigung (VFE)</span><span className="font-medium">{eur((kontokorrent as any).vfe.vfeBetrag)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Davon eingezahlte Einlage</span><span className="font-medium">− {eur((kontokorrent as any).vfe.einlage)}</span></div>
+                    <div className="flex justify-between border-b pb-2"><span>Differenz</span><span className="font-semibold">{eur((kontokorrent as any).vfe.differenz)}</span></div>
+                    <div className="flex justify-between pt-1"><span className="text-muted-foreground">Schadensersatz (offene Einlage × Zinssatz × 5 Jahre)</span><span className="font-medium">+ {eur((kontokorrent as any).vfe.schadensersatzVoll)}</span></div>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-4 flex items-center justify-between">
+                    <span className="text-sm font-medium">Maßgebliche Forderung (VFE-Schlussabrechnung)</span>
+                    <span className="text-2xl font-bold">{eur((kontokorrent as any).vfe.massgeblicherSaldo)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Bei Zahlung bis {(kontokorrent as any).vfe.vergleichsfrist ? new Date((kontokorrent as any).vfe.vergleichsfrist).toLocaleDateString("de-DE") : "—"} → {eur((kontokorrent as any).vfe.vergleichsbetrag)}, Verzicht auf {eur((kontokorrent as any).vfe.verzicht)} ohne Anerkennung einer Rechtspflicht.
+                  </p>
+                  <p className="text-xs font-medium text-muted-foreground pt-1 border-t">Historischer Hinweis (nicht maßgeblich) — bis zur Kündigung lief Verzugszins auf:</p>
+                </div>
+              )}
               {/* Stufe 1: Klartext-Zusammenfassung (roter Faden) */}
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Gezeichnete Summe</span><span className="font-medium">{eur(kontokorrent.gezeichnet)}</span></div>
@@ -174,11 +194,19 @@ export default function MyInvestments() {
                 <div className="flex justify-between pt-1"><span className="text-muted-foreground">Verzugszins auf die offene Einlage ({kontokorrent.refinancingRate.toLocaleString("de-DE")} % p.a., seit {new Date(kontokorrent.faelligkeit).toLocaleDateString("de-DE")})</span><span className="font-medium">+ {eur(kontokorrent.negativzinsSumme)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Zinsgutschrift auf Ihr eingezahltes Kapital ({kontokorrent.couponRate.toLocaleString("de-DE")} % p.a.)</span><span className="font-medium">− {eur(kontokorrent.kuponAufgelaufen)}</span></div>
               </div>
-              {/* Ergebnis */}
-              <div className="rounded-lg bg-muted/40 p-4 flex items-center justify-between">
-                <span className="text-sm font-medium">{kontokorrent.saldo >= 0 ? "Offene Forderung" : "Ihr Guthaben"}</span>
-                <span className={`text-2xl font-bold ${kontokorrent.saldo >= 0 ? "" : "text-emerald-600"}`}>{eur(Math.abs(kontokorrent.saldo))}</span>
-              </div>
+              {/* Ergebnis — groß nur wenn der Verzugszins der maßgebliche Saldo ist (kein VFE-Fall).
+                  Bei VFE bleibt dieser Saldo klein/historisch, damit kein zweiter Hauptsaldo entsteht. */}
+              {(kontokorrent as any).massgeblich === "vfe" ? (
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Historischer Verzugszins-Saldo (nicht maßgeblich)</span>
+                  <span className="font-medium">{eur(kontokorrent.saldo)}</span>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-muted/40 p-4 flex items-center justify-between">
+                  <span className="text-sm font-medium">{kontokorrent.saldo >= 0 ? "Offene Forderung" : "Ihr Guthaben"}</span>
+                  <span className={`text-2xl font-bold ${kontokorrent.saldo >= 0 ? "" : "text-emerald-600"}`}>{eur(Math.abs(kontokorrent.saldo))}</span>
+                </div>
+              )}
               {/* Stufe 2: Schritt-für-Schritt-Verlauf (ausklappbar) */}
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Schritt-für-Schritt-Verlauf anzeigen</summary>

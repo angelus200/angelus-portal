@@ -33,7 +33,7 @@ import {
 } from './legacy-db';
 import { Decimal } from 'decimal.js';
 import { ENV } from './_core/env';
-import { computeKontokorrent, type KontoBooking, type KontoInput } from './legacy-claim';
+import { computeKontokorrent, computeVfeSchlussabrechnung, type KontoBooking, type KontoInput } from './legacy-claim';
 import { buildVollzahlerPerioden, computeVollzahlerSaldo, buildVollzahlerWording } from './vollzahler-perioden';
 
 // Normalisiert ein DB-Datum (Date oder 'YYYY-MM-DD'-String) TZ-robust auf UTC-Kalendertag-Mitternacht.
@@ -154,6 +154,40 @@ export function buildVollzahlerKontoView(c: any, payments: any[], today: Date) {
     kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
     naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin ?? null,
   };
+}
+
+// Geteilte Forderungskonto-Sicht (Säumiger, offen>0) — EINE Quelle für myKontokorrent (self) UND
+// adminKontokorrent (by id), kein zweiter Rechenweg. Drei-Fälle-Weiche zusammen mit
+// buildVollzahlerKontoView (offen=0): hier offen>0; bei kuendigungStatus='wirksam' + vfeSatz gesetzt
+// ist die VFE-Schlussabrechnung der MASSGEBLICHE Saldo, der kontinuierliche Verzugszins bleibt nur
+// historischer Hinweis (massgeblich='vfe'); sonst laufendes Forderungskonto (massgeblich='verzugszins').
+export function buildForderungskontoView(c: any, payments: any[], today: Date) {
+  const ki = buildKontoInput(c, payments, today);
+  if (!ki) return { konfiguriert: false as const };
+  const r = computeKontokorrent(ki);
+  const base = {
+    konfiguriert: true as const,
+    stichtag: ki.stichtag.toISOString().slice(0, 10),
+    faelligkeit: ki.faelligkeit.toISOString().slice(0, 10),
+    refinancingRate: Number(c.refinancingRate),
+    couponRate: Number(c.annualInterestRate),
+    ...r,
+  };
+  // Fall 3: wirksame Kündigung + VFE-Satz gesetzt -> VFE-Schlussabrechnung ist maßgeblich.
+  if ((c as any).kuendigungStatus === 'wirksam' && (c as any).vfeSatz != null) {
+    const vfe = computeVfeSchlussabrechnung({
+      investmentAmount: Number(c.investmentAmount),
+      eingezahlt: r.eingezahlt,
+      annualInterestRate: Number(c.annualInterestRate),
+      vfeSatz: Number((c as any).vfeSatz),
+      schadensersatzTeilbetrag: Number((c as any).schadensersatzTeilbetrag ?? 0),
+      vergleichsfrist: (c as any).vergleichsfrist != null
+        ? toUtcCalendarMidnight((c as any).vergleichsfrist).toISOString().slice(0, 10)
+        : null,
+    });
+    return { ...base, massgeblich: 'vfe' as const, vfe };
+  }
+  return { ...base, massgeblich: 'verzugszins' as const };
 }
 
 /**
@@ -548,17 +582,8 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
     const c = await getLegacyCustomerByUserId(ctx.user.id);
     if (!c) return null;
     const payments = await getLegacyCustomerPaymentHistory(c.id);
-    const ki = buildKontoInput(c, payments, new Date());
-    if (!ki) return { konfiguriert: false as const };
-    const r = computeKontokorrent(ki);
-    return {
-      konfiguriert: true as const,
-      stichtag: ki.stichtag.toISOString().slice(0, 10),
-      faelligkeit: ki.faelligkeit.toISOString().slice(0, 10),
-      refinancingRate: Number(c.refinancingRate),
-      couponRate: Number(c.annualInterestRate),
-      ...r,
-    };
+    // Geteilte Sicht (gleiche Funktion wie adminKontokorrent) -> kein zweiter Rechenweg.
+    return buildForderungskontoView(c, payments, new Date());
   }),
 
   /**
@@ -571,17 +596,8 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       const c = await getLegacyCustomerById(input.id);
       if (!c) throw new TRPCError({ code: 'NOT_FOUND', message: 'Bestandskunde nicht gefunden' });
       const payments = await getLegacyCustomerPaymentHistory(c.id);
-      const ki = buildKontoInput(c, payments, input.stichtag ?? new Date());
-      if (!ki) return { konfiguriert: false as const };
-      const r = computeKontokorrent(ki);
-      return {
-        konfiguriert: true as const,
-        stichtag: ki.stichtag.toISOString().slice(0, 10),
-        faelligkeit: ki.faelligkeit.toISOString().slice(0, 10),
-        refinancingRate: Number(c.refinancingRate),
-        couponRate: Number(c.annualInterestRate),
-        ...r,
-      };
+      // Geteilte Sicht (gleiche Funktion wie myKontokorrent) -> kein zweiter Rechenweg.
+      return buildForderungskontoView(c, payments, input.stichtag ?? new Date());
     }),
 
   /**

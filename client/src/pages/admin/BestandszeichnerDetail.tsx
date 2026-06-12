@@ -193,8 +193,33 @@ export default function BestandszeichnerDetail() {
         </Card>
       )}
 
-      {/* Forderungskonto-Block (offen>0, Säumiger) — kontinuierliche Engine via adminKontokorrent */}
-      {!vz && kk && kk.konfiguriert && (
+      {/* Forderungskonto-Block (offen>0, Säumiger) — kontinuierliche Engine via adminKontokorrent.
+          Fall 3 (massgeblich='vfe'): VFE-Schlussabrechnung ist Hauptsaldo, Verzugszins nur historisch. */}
+      {!vz && kk && kk.konfiguriert && (kk as any).massgeblich === "vfe" && (kk as any).vfe && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">VFE-Schlussabrechnung (gekündigt)</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-3">
+            <div className="space-y-0.5">
+              <Row label={`VFE-Betrag (${pct(Number((kk as any).vfe.vfeBetrag) / Number(kk.gezeichnet) * 100)} v. Nennbetrag)`} value={eur((kk as any).vfe.vfeBetrag)} />
+              <Row label="./. eingezahlte Einlage" value={eur((kk as any).vfe.einlage)} />
+              <Row label="= Differenz" value={eur((kk as any).vfe.differenz)} />
+              <Row label="+ Schadensersatz (offen × Coupon × 5 J.)" value={eur((kk as any).vfe.schadensersatzVoll)} />
+              <div className="flex justify-between font-medium border-t pt-1">
+                <span>Maßgeblicher Saldo (volle Forderung)</span>
+                <span className="text-amber-700">{eur((kk as any).vfe.massgeblicherSaldo)}</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Bei Zahlung bis {de((kk as any).vfe.vergleichsfrist)} → {eur((kk as any).vfe.vergleichsbetrag)} (Differenz {eur((kk as any).vfe.differenz)} + Schadensersatz-Teilbetrag {eur(Number((kk as any).vfe.vergleichsbetrag) - Number((kk as any).vfe.differenz))}), Verzicht auf {eur((kk as any).vfe.verzicht)} ohne Anerkennung einer Rechtspflicht.
+            </p>
+            <div className="rounded border bg-muted/30 p-2 text-xs text-muted-foreground">
+              <p className="font-medium">Historischer Hinweis (nicht maßgeblich)</p>
+              <p>Bis zur Kündigung ({de(c.kuendigungEingegangenAm)}) lief Verzugszins auf (Saldo {eur(kk.saldo)}, davon Verzugszins {eur(kk.negativzinsSumme)}); ab Kündigung gilt die VFE-Schlussabrechnung.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {!vz && kk && kk.konfiguriert && (kk as any).massgeblich !== "vfe" && (
         <Card>
           <CardHeader><CardTitle className="text-base">Forderungskonto (Säumiger)</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-0.5">

@@ -90,6 +90,12 @@ export const legacyCustomers = mysqlTable(
     kuendigungStatus: varchar('kuendigung_status', { length: 32 }), // null=keine | 'eingereicht' | 'zurueckgewiesen' | 'wirksam'
     naechsterKuendigungstermin: date('naechster_kuendigungstermin'),
 
+    // VFE-Schlussabrechnung (Fall 3: gekündigter Säumiger, kuendigungStatus='wirksam'). NUR die
+    // Verhandlungsgrößen gespeichert; Beträge (VFE/Schadensersatz/Vergleich) werden berechnet.
+    vfeSatz: decimal('vfe_satz', { precision: 5, scale: 4 }), // z.B. 0.2000 = 20% Vorfälligkeitsentschädigung
+    schadensersatzTeilbetrag: decimal('schadensersatz_teilbetrag', { precision: 15, scale: 2 }), // Verhandlungsgröße (Vergleich)
+    vergleichsfrist: date('vergleichsfrist'), // Zahlungsfrist für den Vergleichsbetrag
+
     // Status
     status: mysqlEnum('status', ['pending', 'active', 'completed', 'cancelled']).default('pending'),
     importDate: timestamp('import_date').defaultNow(),

@@ -45,6 +45,54 @@ export interface KontoInput {
 const r2 = (d: Decimal): number => Number(d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP));
 const iso = (t: number): string => new Date(t).toISOString().slice(0, 10);
 
+// VFE-Schlussabrechnung (Fall 3: gekündigter Säumiger). Maßgeblicher Saldo = volle Forderung; der
+// kontinuierliche Verzugszins (computeKontokorrent) bleibt nur HISTORISCHER Hinweis, NICHT Hauptsaldo.
+// Gespeichert (Verhandlungsgrößen): vfeSatz, schadensersatzTeilbetrag, vergleichsfrist.
+// Berechnet: VFE-Betrag, Schadensersatz, Differenz, maßgeblicher Saldo, Vergleichsbetrag, Verzicht.
+export interface VfeInput {
+  investmentAmount: number;        // gezeichnet
+  eingezahlt: number;              // Σ initial_investment
+  annualInterestRate: number;      // Coupon p.a. (% ) — Basis Schadensersatz
+  vfeSatz: number;                 // z.B. 0.20 (20 %)
+  schadensersatzTeilbetrag: number; // Verhandlungsgröße (im Vergleich)
+  schadensersatzJahre?: number;    // Default 5
+  vergleichsfrist?: string | null; // ISO 'YYYY-MM-DD'
+}
+export interface VfeResult {
+  vfeBetrag: number;
+  einlage: number;
+  offen: number;
+  differenz: number;               // VFE-Betrag − Einlage
+  schadensersatzVoll: number;      // offen × Satz × Jahre
+  massgeblicherSaldo: number;      // Differenz + Schadensersatz voll (volle Forderung)
+  vergleichsbetrag: number;        // Differenz + Schadensersatz-Teilbetrag
+  verzicht: number;                // maßgeblicher Saldo − Vergleichsbetrag
+  vergleichsfrist: string | null;
+}
+export function computeVfeSchlussabrechnung(inp: VfeInput): VfeResult {
+  const jahre = inp.schadensersatzJahre ?? 5;
+  const gezeichnet = new Decimal(inp.investmentAmount);
+  const einlage = new Decimal(inp.eingezahlt);
+  const offen = gezeichnet.minus(einlage);
+  const vfeBetrag = gezeichnet.times(inp.vfeSatz);
+  const differenz = vfeBetrag.minus(einlage);
+  const schadensersatzVoll = offen.times(new Decimal(inp.annualInterestRate).dividedBy(100)).times(jahre);
+  const massgeblicherSaldo = differenz.plus(schadensersatzVoll);
+  const vergleichsbetrag = differenz.plus(inp.schadensersatzTeilbetrag);
+  const verzicht = massgeblicherSaldo.minus(vergleichsbetrag);
+  return {
+    vfeBetrag: r2(vfeBetrag),
+    einlage: r2(einlage),
+    offen: r2(offen),
+    differenz: r2(differenz),
+    schadensersatzVoll: r2(schadensersatzVoll),
+    massgeblicherSaldo: r2(massgeblicherSaldo),
+    vergleichsbetrag: r2(vergleichsbetrag),
+    verzicht: r2(verzicht),
+    vergleichsfrist: inp.vergleichsfrist ?? null,
+  };
+}
+
 export function computeKontokorrent(input: KontoInput): KontoResult {
   const { investmentAmount, refinancingRate, couponRate, faelligkeit, stichtag } = input;
   const zinsbasis = input.zinsbasis ?? 'act/365';

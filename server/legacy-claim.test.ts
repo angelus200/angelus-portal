@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeKontokorrent, type KontoBooking } from './legacy-claim';
+import { computeKontokorrent, computeVfeSchlussabrechnung, type KontoBooking } from './legacy-claim';
 import { days30E360 } from './interest-calculation';
 import { buildVollzahlerPerioden, computeVollzahlerSaldo, buildVollzahlerWording } from './vollzahler-perioden';
 
@@ -239,5 +239,27 @@ describe('Kontokorrent-Forderungsmodul', () => {
       `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.`,
     ].join('');
     expect(satz).toBe('Die Mindestlaufzeit (§ 4 Abs. 2) endete am 31.05.2026. Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils 31.05.) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). Die Kündigung vom 19.05.2026 war für den Termin 31.05.2026 verfristet (Eingang erforderlich bis 28.02.2026). Nächstmöglicher Termin: 31.05.2027, Eingang bis 28.02.2027.');
+  });
+
+  // P/Teil B — VFE-Schlussabrechnung (Brenner, gekündigter Säumiger). Maßgeblicher Saldo = volle
+  // Forderung 72.250; Vergleichsbetrag 17.000 (Differenz 7.000 + Verhandlungs-Teilbetrag 10.000).
+  it('Brenner-VFE: maßgeblicher Saldo 72.250, Vergleich 17.000, Verzicht 55.250', () => {
+    const v = computeVfeSchlussabrechnung({
+      investmentAmount: 100000,
+      eingezahlt: 13000,
+      annualInterestRate: 15,       // Coupon -> Schadensersatzbasis
+      vfeSatz: 0.20,                // 20 % VFE
+      schadensersatzTeilbetrag: 10000, // Verhandlungsgröße im Vergleich
+      vergleichsfrist: '2026-07-30',
+    });
+    expect(v.vfeBetrag).toBe(20000);            // 100k × 20 %
+    expect(v.einlage).toBe(13000);
+    expect(v.offen).toBe(87000);
+    expect(v.differenz).toBe(7000);             // 20.000 − 13.000
+    expect(v.schadensersatzVoll).toBe(65250);   // 87.000 × 15 % × 5
+    expect(v.massgeblicherSaldo).toBe(72250);   // 7.000 + 65.250 (volle Forderung)
+    expect(v.vergleichsbetrag).toBe(17000);     // 7.000 + 10.000 (transparent herleitbar)
+    expect(v.verzicht).toBe(55250);             // 72.250 − 17.000
+    expect(v.vergleichsfrist).toBe('2026-07-30');
   });
 });
