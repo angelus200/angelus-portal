@@ -202,6 +202,19 @@ function buildBondView(bond: any, payments: any[], today: Date) {
     contractNumber: bond.contractNumber,
     bondNumber: bond.bondNumber,
     status: bond.status,
+    // Anleihe-Metadaten fuer die "Vertrag"-Karte je Bond (UI). Regressionsneutral (Saldo = vollzahler/forderung).
+    meta: {
+      investmentAmount: bond.investmentAmount != null ? Number(bond.investmentAmount) : null,
+      annualInterestRate: bond.annualInterestRate != null ? Number(bond.annualInterestRate) : null,
+      zinsbasis: bond.zinsbasis ?? null,
+      refinancingRate: bond.refinancingRate != null ? Number(bond.refinancingRate) : null,
+      contractDate: bond.contractDate ?? null,
+      valueDate: bond.valueDate ?? null,
+      maturityDate: bond.maturityDate ?? null,
+      kuendigungEingegangenAm: bond.kuendigungEingegangenAm ?? null,
+      kuendigungStatus: bond.kuendigungStatus ?? null,
+      naechsterKuendigungstermin: bond.naechsterKuendigungstermin ?? null,
+    },
     vollzahler,
     forderung,
   };
