@@ -9,34 +9,36 @@ Deployment und die in der Praxis gelernten Stolperfallen.
 
 ---
 
-## Live-System
+## Live-System — zwei Instanzen, eine Codebase
 
-| | |
-|---|---|
-| Portal | https://www.unternehmerrente.app |
-| Admin | https://www.unternehmerrente.app/admin |
-| Hosting | Railway (Auto-Deploy bei Push auf `main`) |
-| Status | Production, Live-Zahlungen aktiv |
+| Instanz | Railway-Projekt | `VITE_BRAND` | Domain | DB |
+|---|---|---|---|---|
+| MyBonds (EN/B2B) | Unternehmerrente | `mybonds` | mybonds.net | `tramway` |
+| Angelus KG (DE) | cozy-clarity | `angelus` | portal.angelus.capital | `acela` |
+
+Beide Instanzen deployen vom **selben Repo** (`main`) — **ein Push baut beide**. Marke
+und DB werden PRO Deployment per Env gepinnt (`VITE_BRAND` + `DATABASE_URL`); es gibt
+KEINE Laufzeit-`req.hostname`-Weiche (der entsprechende Code in `server/_core/cookies.ts`
+ist auskommentiert). Bestandszeichner existieren NUR auf der KG-Instanz (acela).
 
 ---
 
 ## Emittenten (Multi-Brand)
 
-Das Portal verwaltet Anleihen **zweier Firmen** auf **einer** Plattform:
+`shared/brand.ts` hält drei Brand-Configs und löst die aktive Marke über `VITE_BRAND`
+auf (Client `import.meta.env.VITE_BRAND`, Server `process.env.VITE_BRAND`), Fallback
+`angelus`:
 
-| Emittent | `issuerKey` | Domain | Badge |
-|---|---|---|---|
-| Angelus Managementberatungs und Service KG | `angelus` | unternehmerrente.app | gelb |
-| Angelus Alpha Beteiligungen GmbH | `angelus-alpha` | angelus-alpha.app | lila |
+| `issuerKey` | Name | Domain |
+|---|---|---|
+| `angelus` (Default) | Angelus KG | portal.angelus.capital |
+| `mybonds` | MyBonds | mybonds.net |
+| `angelus-alpha` | Angelus Alpha Beteiligungen GmbH | angelus-alpha.app |
 
-- **Investoren** sehen ALLE aktiven Anleihen beider Emittenten auf einer Seite (`bonds.list`), Badges unterscheiden den Emittenten.
-- **Admin** (`bonds.listAll`) ist nach `VITE_BRAND` gefiltert — jede Marke sieht im Admin nur ihre eigenen Anleihen.
+- **Investoren** sehen ALLE aktiven Anleihen auf einer Seite (`bonds.list`), Badges unterscheiden den Emittenten.
+- **Admin** sieht gruppenweit alle Emittenten (von `VITE_BRAND` entkoppelt).
 - Neue Anleihen erben den `issuerKey` automatisch aus `VITE_BRAND`, sofern nicht explizit gesetzt.
-- Brand-Konfiguration zentral in [`shared/brand.ts`](shared/brand.ts) (Name, Logo, Domain, Kontakt-E-Mail, Issuer).
 - Einladungs-E-Mails sind brand-aware (Name, Domain, Absender pro `issuerKey`).
-
-`shared/brand.ts` löst die aktive Marke sowohl im Client (`import.meta.env.VITE_BRAND`)
-als auch im Server (`process.env.VITE_BRAND`) auf und fällt auf `angelus` zurück.
 
 ---
 
@@ -165,7 +167,12 @@ angelus-portal/
 ## Features
 
 ### Authentifizierung & Sicherheit
-- Clerk mit Rollen-Enum `role`: **`user`** (= Investor), `admin`, `superadmin`.
+- **Custom-Auth (JWT/Cookie, eigenes User/Session-Modell)** ist der AKTIVE Pfad auf
+  beiden Instanzen (Admin-Bootstrap office@angelus.group je DB getrennt). Die Clerk-
+  Pakete (`@clerk/express`, `@clerk/clerk-react`, `@clerk/localizations`) sind NOCH im
+  Repo — der finale Clerk-Cutover (Etappe D) steht aus, Clerk dient bis dahin als
+  Fallback-Netz.
+- Rollen-Enum `role`: **`user`** (= Investor), `admin`, `superadmin`.
 - 2FA/TOTP-Pflicht für Admins (Admin-Bereich „Security").
 - Privates Portal: Registrierung NUR per Einladungslink.
 - **WICHTIG:** Investoren haben `role = 'user'`, **nicht** `'investor'`.
@@ -215,6 +222,21 @@ Implementiert in [`server/tax-service.ts`](server/tax-service.ts):
 - KI-Dokumentenextraktion via Anthropic Claude API (`legacyContractsRouter`,
   Modell `claude-sonnet-4-20250514`).
 - Admin-UI mit Tabs: Zeichnungsschein, Einzahlungen, Zinsabschläge, Berechnung.
+
+### Bestandszeichner-Modul (1:n, KG-Instanz / acela)
+- **1:n-Architektur:** `legacy_customers` 1:n `legacy_bonds` (ein Zeichner, mehrere
+  Anleihen); `payment_history` trägt `legacy_bond_id` → jeder Bond sieht nur seine
+  Zahlungen. Procedures `adminLegacyBonds`/`myLegacyBonds` liefern ein Bond-Array.
+- **Drei-Fälle-Weiche je Bond** (datengetrieben an offener Einlage): Vollzahler (offen=0,
+  Vorfinanzierungs-Kontokorrent) / Säumiger (Verzugszins) / VFE-Schlussabrechnung
+  (wirksame Kündigung).
+- **Saldo-Mechanik (Kurzfassung):** Coupon jährlich nachschüssig zum festen Serien-Termin
+  (§4, NIE aus `value_date` ableiten), über monatliche Abschläge vorfinanziert. Vorfin
+  MINDERT den Coupon: `saldo = sollVorfin − (faelligeCoupons − ausgezahlt)`. Saldo>0 =
+  KG-Forderung, <0 = Guthaben Zeichner. refinancing_rate = Coupon+2 (pro Bond).
+- Neue Zeichner: `scripts/insert-legacy-bonds.cjs` (konfig-getrieben, idempotent).
+- **Vollständige Mechanik im Skill `angelus-anleihe-kuendigung`** (Serien-Termine,
+  30E/360, Periodenstatus, VFE-Formel, Anker Brendel +313,50 / Brenner 72.250).
 
 ### Dokumentenverwaltung
 - Railway Volume (`/app/uploads`, override `UPLOAD_PATH`), Multer-Upload.
@@ -282,20 +304,36 @@ MySQL über Drizzle ORM. Tabellen nach Schema-Datei gruppiert.
 
 ---
 
+## Prod-Schema-Änderungen (eiserne Regel)
+
+- Schemaänderungen laufen über **idempotente `scripts/*.cjs`-ALTER** (information_schema-
+  Check + Host-Guardrail), **NIE** über `drizzle-kit push` auf Prod (Drift = DROP-Gefahr;
+  auf Windows bräuchte push ohnehin `--force`).
+- Reihenfolge: **erst ALTER auf BEIDE DBs (acela + tramway), dann Code deployen** — beide
+  Instanzen laufen auf demselben Code, also müssen beide DBs die Spalten haben.
+- Verify-Proben: DATE-Spalten per `DATE_FORMAT(...,'%Y-%m-%d')` als String laden, NIE
+  `new Date(dbDate).toISOString()` (TZ-Tag-Shift verfälscht Datums-/Saldo-Berechnungen).
+
+---
+
 ## Deployment
 
 ```bash
 # Eiserne Regeln (siehe Workflow unten):
-npx tsc --noEmit     # MUSS sauber sein (Typecheck)
-npm run build        # MUSS erfolgreich sein (Client + Server)
-git add -A && git commit -m "feat: Beschreibung auf Deutsch"
-git push origin main # Railway Auto-Deploy (~60–90s)
+npx tsc --noEmit         # Typecheck (Baseline beachten; Gate ist der Build)
+npm run build            # MUSS erfolgreich sein (Client via Vite + Server via esbuild)
+git add <dateien>        # gezielt stagen, NIE package-lock.json
+git commit -F <datei>    # Message als Datei (PS 5.1 bricht bei -m mit Umlauten/Quotes)
+railway up --detach      # bevorzugt — GitHub-Webhooks hängen zeitweise am ghcr.io-Pull
 # Danach: Browser Hard Refresh (Strg+Shift+R / Cmd+Shift+R)
 ```
 
-Railway buildet via **npm**, startet `npm start` (`dist/index.js`). Im internen Log
-erscheint `Server running on http://localhost:3000/` — das ist normal, Railway mappt
-den Port nach außen.
+- **Build-Command nutzt `--include=dev`** (in `railway.json` UND `nixpacks.toml`), weil
+  `NODE_ENV=production` sonst devDeps weglässt → Build bricht mit „vite: not found".
+- **Push triggert beide Instanzen** (gemeinsames `main`); für gezielte tramway-Ops vorher
+  `railway link -p Unternehmerrente -e production -s MySQL`, danach zurück auf cozy-clarity.
+- Railway buildet via **npm**, startet `npm start` (`dist/index.js`). Im internen Log
+  erscheint `Server running on http://localhost:3000/` — normal, Railway mappt nach außen.
 
 ---
 
@@ -356,6 +394,20 @@ den Port nach außen.
 18. **Tabellenname `payment_schedules` doppelt definiert**: einmal in `drizzle/schema.ts` (je Zeichnung)
     und einmal in `drizzle/interest-schema.ts` (je Zinsberechnung). Beim Import/Query genau auf die
     richtige Quelle achten.
+19. **Hard-Reload nach Deploy**: Das gehashte JS-Bundle wird im Browser gecacht — nach einem Deploy
+    zeigt der alte Cache veraltete UI (sah schon wie ein „Bug" aus). Bei Post-Deploy-UI-Berichten
+    ZUERST `Strg+Shift+R` / Inkognito prüfen, dann tiefer graben.
+20. **`VITE_*` build-time vs. runtime**: `VITE_*` wird beim Client-Build eingebrannt
+    (`import.meta.env`), steht dem Server aber zur Laufzeit via `process.env` zur Verfügung —
+    `shared/brand.ts` behandelt beide Pfade. Eine Änderung an `VITE_BRAND` erfordert einen
+    Client-Rebuild, nicht nur einen Server-Restart.
+21. **`wouter useLocation()` ohne Query-String**: liefert nur den Pfad, NICHT `?param`. Für
+    Query-Parameter `window.location.search` / `useSearch()` nutzen, nie `location.split('?')`.
+22. **`drizzle.config.ts` lädt BEIDE Schemas**: `["./drizzle/schema.ts", "./drizzle/legacy-schema.ts"]`
+    — Migrationen/Generate berücksichtigen beide. (Prod-Schema dennoch per cjs-ALTER, nicht push.)
+23. **Runtime-Tools gehören in `dependencies`**: was der Start-/Runtime-Command braucht
+    (`cross-env`, `tsx`, `dotenv`) MUSS in `dependencies` — Prod pruned devDeps → „command not found"
+    trotz grünem Build.
 
 ---
 
