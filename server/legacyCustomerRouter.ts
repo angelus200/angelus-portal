@@ -578,6 +578,21 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
     }),
 
   /**
+   * Vollzahler-Sicht eines Bestandszeichners fuer den Admin (by legacy_customer id, role-gated).
+   * Ruft WOERTLICH dieselbe geteilte Funktion wie myVollzahlerKonto (self) -> Admin- und Investor-
+   * Sicht sind konstruktiv identisch, KEIN zweiter Rechenweg. null = kein Vollzahler (offen>0 ->
+   * Forderungskonto via adminKontokorrent) bzw. Datensatz fehlt.
+   */
+  adminVollzahlerKonto: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const c = await getLegacyCustomerById(input.id);
+      if (!c) return null;
+      const payments = await getLegacyCustomerPaymentHistory(c.id);
+      return buildVollzahlerKontoView(c, payments, toUtcCalendarMidnight(new Date()));
+    }),
+
+  /**
    * Vollzahler-Sicht (no-id, HART ueber ctx.user.id). Greift datengetrieben NUR wenn die offene
    * Einlage = 0 ist (gezeichnet - Summe Einzahlungen). Bei offen > 0 -> null (Forderungskonto-Fall,
    * siehe myKontokorrent). Keine refinancingRate noetig. Liefert auch den Kuendigungsstatus (Anzeige).
