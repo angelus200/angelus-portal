@@ -33,6 +33,7 @@ import {
 import { Decimal } from 'decimal.js';
 import { ENV } from './_core/env';
 import { computeKontokorrent, type KontoBooking, type KontoInput } from './legacy-claim';
+import { buildVollzahlerPerioden, computeVollzahlerSaldo } from './vollzahler-perioden';
 
 // Normalisiert ein DB-Datum (Date oder 'YYYY-MM-DD'-String) TZ-robust auf UTC-Kalendertag-Mitternacht.
 // Verhindert Off-by-one bei Tages-Arithmetik, egal in welcher Zeitzone der Prozess laeuft.
@@ -45,21 +46,6 @@ function toUtcCalendarMidnight(v: any): Date {
   return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
 }
 
-// Naechste jaehrliche Zinsfaelligkeit = Ende des Zinsjahres = (naechster Jahrestag des
-// Vertragsstichtags annualInterestDate nach heute) MINUS 1 Tag. DATENGETRIEBEN aus
-// annualInterestDate (z.B. 01.06. -> Faelligkeit 31.05.); KEIN anleihe-spezifisches Hardcoding.
-function nextZinsFaelligkeit(annualInterestDate: any, today: Date): Date {
-  const stich = toUtcCalendarMidnight(annualInterestDate); // liefert Monat/Tag des Vertragsstichtags
-  const m = stich.getUTCMonth();
-  const dday = stich.getUTCDate();
-  let anniv = new Date(Date.UTC(today.getUTCFullYear(), m, dday));
-  if (anniv.getTime() <= today.getTime()) {
-    anniv = new Date(Date.UTC(today.getUTCFullYear() + 1, m, dday));
-  }
-  anniv.setUTCDate(anniv.getUTCDate() - 1); // Ende des Zinsjahres = Tag vor dem Stichtag
-  return anniv;
-}
-
 // Baut KontoInput aus DB-Rows (Kunde + payment_history) fuer das Kontokorrent-Forderungsmodul.
 // Faelligkeit = Zeichnungsdatum (contractDate) + 14 Tage. null = nicht konfiguriert (kein Refi-Satz / Stammdaten fehlen).
 // Alle Datumswerte auf UTC-Kalendertag normalisiert -> taggenaue, TZ-unabhaengige Berechnung.
@@ -67,6 +53,13 @@ function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | 
   if (c.refinancingRate == null || c.contractDate == null || c.investmentAmount == null || c.annualInterestRate == null) {
     return null;
   }
+  // WEICHE: kontinuierliches Forderungs-Kontokorrent NUR bei offener Einlage (offen > 0). Vollzahler
+  // (offen = 0) niemals durch diese Engine, auch wenn refinancingRate gesetzt ist — bei ihnen steuert
+  // refinancingRate den Vorfinanzierungssatz (computeVollzahlerSaldo), nicht den Negativzins.
+  const eingezahltSum = payments
+    .filter((p: any) => (p.status ?? 'confirmed') === 'confirmed' && p.paymentType === 'initial_investment')
+    .reduce((s: number, p: any) => s + Number(p.amount), 0);
+  if (Number(c.investmentAmount) - eingezahltSum <= 0.005) return null; // Vollzahler -> kein Forderungs-Kontokorrent
   const faelligkeit = toUtcCalendarMidnight(c.contractDate);
   faelligkeit.setUTCDate(faelligkeit.getUTCDate() + 14);
   const bookings: KontoBooking[] = payments
@@ -529,16 +522,31 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
     if (offen.gt(new Decimal('0.005'))) return null; // offene Einlage > 0 -> Forderungskonto
     const bereitsErhalten = sumOf('interest_payment');
 
-    // P4: voraussichtliche Faelligkeiten (IMMER unter Vorbehalt §2/§3 - Anzeige im Frontend).
-    // Zins: naechste jaehrliche Faelligkeit (Stichtag annualInterestDate, generisch). Betrag =
-    // Jahreszins = Nennbetrag x Satz (volle Periode = Jahreszins, Option A). Rueckzahlung:
-    // fruehestens zum naechsten Kuendigungstermin, Nennbetrag. Nur wenn die Datenbasis gesetzt ist.
+    // P6: Jahreszins pro Laufzeitjahr (Tabelle, ersetzt die fruehere Einzel-Zeile "naechste
+    // Zinsfaelligkeit"). Rumpfjahr anteilig ueber die 30E/360-Engine, volle Jahre = Jahreszins
+    // (Option A). Status datengetrieben aus den Abschlaegen (erfuellt/teilweise/offen). IMMER
+    // unter Vorbehalt §2/§3 nur fuer offene Perioden. Generisch ueber valueDate + annualInterestDate.
     const today = toUtcCalendarMidnight(new Date());
-    const naechsteZinsfaelligkeit = (c.annualInterestDate != null && c.annualInterestRate != null)
+    const hatPeriodenBasis = c.valueDate != null && c.annualInterestDate != null && c.annualInterestRate != null;
+    const periodenInput = hatPeriodenBasis
       ? {
-          datum: nextZinsFaelligkeit(c.annualInterestDate, today).toISOString().slice(0, 10),
-          betrag: Number(gezeichnet.times(new Decimal(c.annualInterestRate)).dividedBy(100).toDecimalPlaces(2)),
+          valueDate: toUtcCalendarMidnight(c.valueDate),
+          annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
+          nominal: gezeichnet,
+          rate: Number(c.annualInterestRate),
+          basis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
+          zinsAbschlaege: conf
+            .filter((p: any) => p.paymentType === 'interest_payment')
+            .map((p: any) => ({ date: toUtcCalendarMidnight(p.paymentDate), amount: Number(p.amount) })),
+          today,
         }
+      : null;
+    const perioden = periodenInput ? buildVollzahlerPerioden(periodenInput) : [];
+    // P7: Kontokorrent-Saldo (periodenbasiert, NICHT die kontinuierliche Engine). Nur wenn der
+    // Vorfinanzierungssatz (refinancingRate) gesetzt ist. Bei Vollzahlern steuert refinancingRate
+    // den Vorfin, nicht den Negativzins (offen=0 -> Weiche in buildKontoInput verhindert die Engine).
+    const saldo = (periodenInput && c.refinancingRate != null)
+      ? computeVollzahlerSaldo({ ...periodenInput, refinancingRate: Number(c.refinancingRate) })
       : null;
     const rueckzahlung = (c as any).naechsterKuendigungstermin != null
       ? {
@@ -554,7 +562,8 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       couponRate: c.annualInterestRate != null ? Number(c.annualInterestRate) : null,
       zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
       bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
-      naechsteZinsfaelligkeit,
+      perioden,
+      saldo,
       rueckzahlung,
       contractDate: c.contractDate ?? null,
       valueDate: c.valueDate ?? null,

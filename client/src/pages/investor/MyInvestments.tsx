@@ -228,28 +228,74 @@ export default function MyInvestments() {
                 )}
               </div>
 
-              {/* Voraussichtliche Fälligkeiten (P4) — JEDE Zeile trägt den Vorbehalt (*) */}
-              {(vollzahler.naechsteZinsfaelligkeit || vollzahler.rueckzahlung) && (
+              {/* Jahreszins pro Laufzeitjahr (P6) — Status datengetrieben; Vorbehalt (*) NUR für offene Perioden */}
+              {((vollzahler.perioden && vollzahler.perioden.length > 0) || vollzahler.rueckzahlung) && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Voraussichtliche Fälligkeiten</p>
-                  <div className="space-y-1.5 text-sm">
-                    {vollzahler.naechsteZinsfaelligkeit && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Nächste Zinsfälligkeit ({new Date(vollzahler.naechsteZinsfaelligkeit.datum).toLocaleDateString("de-DE")}) *</span>
-                        <span className="font-medium">{eur(vollzahler.naechsteZinsfaelligkeit.betrag)}</span>
+                  <p className="text-sm font-medium">Zinsperioden je Laufzeitjahr</p>
+                  {vollzahler.perioden && vollzahler.perioden.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-muted-foreground border-b">
+                            <th className="text-left font-normal py-1.5 pr-2">Zeitraum</th>
+                            <th className="text-right font-normal py-1.5 px-2">Jahreszins</th>
+                            <th className="text-right font-normal py-1.5 px-2">Fällig</th>
+                            <th className="text-right font-normal py-1.5 pl-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vollzahler.perioden.map((p) => (
+                            <tr key={p.index} className="border-b last:border-0">
+                              <td className="py-1.5 pr-2">
+                                {new Date(p.von).toLocaleDateString("de-DE")}–{new Date(p.bis).toLocaleDateString("de-DE")}
+                                {p.istRumpf && <span className="ml-1 text-xs text-muted-foreground">(Rumpfjahr)</span>}
+                              </td>
+                              <td className="text-right py-1.5 px-2 font-medium">{eur(p.zins)}</td>
+                              <td className="text-right py-1.5 px-2 text-muted-foreground">
+                                {new Date(p.faelligkeit).toLocaleDateString("de-DE")}{p.unterVorbehalt ? " *" : ""}
+                              </td>
+                              <td className="text-right py-1.5 pl-2">
+                                {p.status === "erfuellt" && <span className="text-green-700">Erfüllt</span>}
+                                {p.status === "teilweise" && (
+                                  <span className="text-amber-700">Teilweise (offen {eur(p.deckungsluecke)})</span>
+                                )}
+                                {p.status === "offen" && <span className="text-amber-700">Offen *</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {/* Kontokorrent-Saldo (P7) — periodenbasiert, NUR fällige Coupons (kein kontinuierlicher Kupon) */}
+                  {vollzahler.saldo && (
+                    <div className="rounded-lg border p-3 text-sm space-y-1 bg-muted/30">
+                      <p className="font-medium">Kontokorrent (Stichtag heute)</p>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Offener fälliger Kupon (HABEN)</span><span>{eur(vollzahler.saldo.habenOffenerKupon)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Vorfinanzierungszins (SOLL, {vollzahler.saldo.refinancingRate.toLocaleString("de-DE")} %)</span><span>{eur(vollzahler.saldo.sollVorfinanzierung)}</span></div>
+                      <div className="flex justify-between font-medium border-t pt-1">
+                        <span>Saldo</span>
+                        <span className={vollzahler.saldo.saldo > 0 ? "text-amber-700" : "text-green-700"}>
+                          {eur(vollzahler.saldo.saldo)} {vollzahler.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben)"}
+                        </span>
                       </div>
-                    )}
-                    {vollzahler.rueckzahlung && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rückzahlung frühestens ({new Date(vollzahler.rueckzahlung.datum).toLocaleDateString("de-DE")}) *</span>
-                        <span className="font-medium">{eur(vollzahler.rueckzahlung.betrag)}</span>
-                      </div>
-                    )}
-                  </div>
+                      {vollzahler.saldo.naechsterCoupon && (
+                        <p className="text-xs text-muted-foreground pt-1">
+                          Gleicht sich zur nächsten Coupon-Fälligkeit ({new Date(vollzahler.saldo.naechsterCoupon.datum).toLocaleDateString("de-DE")}, {eur(vollzahler.saldo.naechsterCoupon.betrag)}) aus — dieser ist separat und unter Vorbehalt (*), nicht im Saldo enthalten.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {vollzahler.rueckzahlung && (
+                    <div className="flex justify-between text-sm pt-1">
+                      <span className="text-muted-foreground">Rückzahlung frühestens ({new Date(vollzahler.rueckzahlung.datum).toLocaleDateString("de-DE")}) *</span>
+                      <span className="font-medium">{eur(vollzahler.rueckzahlung.betrag)}</span>
+                    </div>
+                  )}
                   {/* Vorbehalt — ENTWURF, finaler Wortlaut durch Angelus (NICHT von CC final formuliert) */}
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
                     <p className="font-semibold mb-1">⚠ ENTWURF — Vorbehalt (finaler Wortlaut durch Angelus)</p>
-                    <p>* Vorbehaltlich vorinsolvenzlichem Zahlungsverbot (§2) und qualifiziertem Rangrücktritt (§3) — keine unbedingte Zahlungszusage. [Platzhalter: finaler rechtlicher Wortlaut durch Angelus]</p>
+                    <p>* Vorbehaltlich vorinsolvenzlichem Zahlungsverbot (§2) und qualifiziertem Rangrücktritt (§3) — keine unbedingte Zahlungszusage; gilt für offene Perioden und die Rückzahlung. Erfüllte Perioden sind dem Vorbehalt nicht unterworfen. [Platzhalter: finaler rechtlicher Wortlaut durch Angelus]</p>
                   </div>
                 </div>
               )}

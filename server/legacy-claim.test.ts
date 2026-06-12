@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeKontokorrent, type KontoBooking } from './legacy-claim';
 import { days30E360 } from './interest-calculation';
+import { buildVollzahlerPerioden, computeVollzahlerSaldo } from './vollzahler-perioden';
 
 const d = (s: string) => new Date(s + 'T00:00:00.000Z');
 
@@ -120,5 +121,76 @@ describe('Kontokorrent-Forderungsmodul', () => {
       zinsbasis: '30E/360',
     });
     expect(r.kuponAufgelaufen).toBe(3650);
+  });
+
+  // ============================================================
+  // P6 — Vollzahler-Perioden (Jahreszins pro Laufzeitjahr), Brendel-Fall
+  // Stichtag 01.06. (Zinsjahr -> 31.05.), Wertstellung 18.10.2024, 19 Abschläge à 1.500
+  // (28.500), heute 12.06.2026. Erwartung: Rumpfjahr teilweise, 1. Jahr erfüllt, laufend offen.
+  // ============================================================
+  it('Brendel-Perioden: Leistungsmonat-Zuordnung -> Rumpfjahr erfüllt, 1.Jahr teilweise', () => {
+    // Korrigierte Daten: erster Abschlag 600 (anteiliger Okt), Rest 1.500. Zuordnung per Leistungsmonat:
+    // der am 15.06.2025 gezahlte Mai-Zins gehört zum Rumpfjahr (Termin 31.05.2025), nicht zum Folgejahr.
+    const raw = ['2024-11-15','2024-12-15','2025-01-15','2025-02-15','2025-03-15','2025-04-15','2025-05-15','2025-06-15','2025-07-15','2025-08-15','2025-09-15','2025-10-15','2025-11-15','2025-12-15','2026-01-15','2026-02-15','2026-03-15','2026-04-15','2026-05-15'];
+    const abschlaege = raw.map((s, i) => ({ date: d(s), amount: i === 0 ? 600 : 1500 }));
+
+    const p = buildVollzahlerPerioden({
+      valueDate: d('2024-10-18'),
+      annualInterestDate: d('2024-06-01'), // nur MM-DD relevant
+      nominal: 100000,
+      rate: 18,
+      basis: '30E/360',
+      zinsAbschlaege: abschlaege,
+      today: d('2026-06-12'),
+    });
+
+    expect(p).toHaveLength(3);
+
+    // Rumpfjahr 2024-10-18 -> 2025-05-31: Engine 30E/360 = 222 Tage = 11.100,00.
+    // Leistungsmonat: 8 Abschläge (Okt..Mai, inkl. 15.06.) = 600 + 7×1.500 = 11.100 -> ERFÜLLT.
+    expect(p[0]).toMatchObject({
+      von: '2024-10-18', bis: '2025-05-31', istRumpf: true,
+      zins: 11100, erhaltenInPeriode: 11100, status: 'erfuellt', deckungsluecke: 0, unterVorbehalt: false,
+    });
+    // Rumpfjahr-Zins MUSS exakt der Engine entsprechen (nicht geschätzt)
+    expect(p[0].zins).toBe(100000 * 18 * days30E360(d('2024-10-18'), d('2025-05-31')) / 360 / 100);
+
+    // 1. volles Jahr 2025-06-01 -> 2026-05-31: 18.000 (flat, Option A); 11 Abschläge (Jun..Apr) = 16.500 -> TEILWEISE, offen 1.500
+    expect(p[1]).toMatchObject({
+      von: '2025-06-01', bis: '2026-05-31', istRumpf: false,
+      zins: 18000, erhaltenInPeriode: 16500, status: 'teilweise', deckungsluecke: 1500, unterVorbehalt: false,
+    });
+
+    // Laufendes Jahr 2026-06-01 -> 2027-05-31: 18.000, fällig in Zukunft -> offen + Vorbehalt
+    expect(p[2]).toMatchObject({
+      von: '2026-06-01', bis: '2027-05-31', istRumpf: false,
+      zins: 18000, erhaltenInPeriode: 0, status: 'offen', unterVorbehalt: true,
+    });
+  });
+
+  // P7 — Vollzahler-Kontokorrent: periodenbasierter Saldo MUSS +313,50 treffen (Zielzahl).
+  // Korrigierte Daten: erster Abschlag 600 (anteiliger Okt), Rest 1.500 -> Σ 27.600.
+  // Variante A (netto): der am 15.06.2025 gezahlte Mai-Zins faellt auf Termin 31.05.2025 -> verspaetet (-11,25).
+  it('Brendel-Saldo: SOLL 1.813,50 − HABEN 1.500 = +313,50 (KG-Forderung)', () => {
+    const raw = ['2024-11-15','2024-12-15','2025-01-15','2025-02-15','2025-03-15','2025-04-15','2025-05-15','2025-06-15','2025-07-15','2025-08-15','2025-09-15','2025-10-15','2025-11-15','2025-12-15','2026-01-15','2026-02-15','2026-03-15','2026-04-15','2026-05-15'];
+    const zinsAbschlaege = raw.map((s, i) => ({ date: d(s), amount: i === 0 ? 600 : 1500 }));
+
+    const s = computeVollzahlerSaldo({
+      valueDate: d('2024-10-18'),
+      annualInterestDate: d('2024-06-01'),
+      nominal: 100000,
+      rate: 18,
+      basis: '30E/360',
+      zinsAbschlaege,
+      today: d('2026-06-12'),
+      refinancingRate: 18,
+    });
+
+    expect(s.faelligeCoupons).toBe(29100);      // 11.100 + 18.000
+    expect(s.ausgezahlt).toBe(27600);           // 600 + 18×1.500
+    expect(s.habenOffenerKupon).toBe(1500);     // HABEN
+    expect(s.sollVorfinanzierung).toBe(1813.5); // Variante A (netto)
+    expect(s.saldo).toBe(313.5);                // ZIEL: +313,50 = KG-Forderung
+    expect(s.naechsterCoupon).toEqual({ datum: '2027-05-31', betrag: 18000 }); // separat, Vorbehalt
   });
 });
