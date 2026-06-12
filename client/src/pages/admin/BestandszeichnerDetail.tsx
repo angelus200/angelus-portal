@@ -269,29 +269,38 @@ export default function BestandszeichnerDetail() {
             </div>
           )}
 
-          {/* Upload (Admin) — versteckter Input + sichtbarer Button (ref.click()): umgeht Overlay-/
-              pointer-events-Probleme am nativen File-Input; der Klick triggert den Dialog programmatisch. */}
-          <div className="border-t pt-3 flex flex-wrap items-center gap-2">
-            <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Datei wählen</Button>
-            <select value={docType} onChange={(e) => setDocType(e.target.value)} className="text-xs border rounded px-2 py-1">
-              <option value="other">Sonstiges</option>
-              <option value="contract">Vertrag/Korrespondenz</option>
-              <option value="bank_statement">Kontoauszug</option>
-              <option value="tax_certificate">Steuerbescheinigung</option>
-              <option value="payment_confirmation">Zahlungsbestätigung</option>
-            </select>
-            <select value={richtung} onChange={(e) => setRichtung(e.target.value)} className="text-xs border rounded px-2 py-1">
-              <option value="">Richtung —</option>
-              <option value="eingehend">eingehend</option>
-              <option value="ausgehend">ausgehend</option>
-            </select>
-            <Button size="sm" className="gap-1" onClick={handleUpload} disabled={!file || uploading}>
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Hochladen
-            </Button>
-            {/* Sichtbare React-State-Bestätigung (Kandidat C): erscheint der Name -> setFile feuerte */}
-            {file && <span className="text-xs text-muted-foreground">gewählt: {file.name}</span>}
+          {/* Upload (Admin) — Drag&Drop umgeht den nativen Datei-Dialog KOMPLETT (selbst wenn ein
+              Overlay/Extension den Klick schluckt); zusätzlich Button via ref.click(). */}
+          <div className="border-t pt-3 space-y-2">
+            <p className="text-[10px] text-muted-foreground">Upload v2 (Drag&Drop)</p>
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) setFile(f); }}
+              className="border-2 border-dashed rounded p-4 text-center text-xs text-muted-foreground"
+            >
+              Datei hierher ziehen — oder{" "}
+              <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Button type="button" variant="outline" size="sm" className="mx-1" onClick={() => fileInputRef.current?.click()}>Datei wählen</Button>
+              {file && <span className="text-foreground"> · gewählt: {file.name}</span>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={docType} onChange={(e) => setDocType(e.target.value)} className="text-xs border rounded px-2 py-1">
+                <option value="other">Sonstiges</option>
+                <option value="contract">Vertrag/Korrespondenz</option>
+                <option value="bank_statement">Kontoauszug</option>
+                <option value="tax_certificate">Steuerbescheinigung</option>
+                <option value="payment_confirmation">Zahlungsbestätigung</option>
+              </select>
+              <select value={richtung} onChange={(e) => setRichtung(e.target.value)} className="text-xs border rounded px-2 py-1">
+                <option value="">Richtung —</option>
+                <option value="eingehend">eingehend</option>
+                <option value="ausgehend">ausgehend</option>
+              </select>
+              <Button size="sm" className="gap-1" onClick={handleUpload} disabled={!file || uploading}>
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                Hochladen
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
