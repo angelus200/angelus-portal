@@ -114,6 +114,16 @@ export default function MyInvestments() {
   const { data: zeichnungsschein } = trpc.legacyCustomer.myZeichnungsschein.useQuery(undefined, { enabled: isKG });
   const { data: vollzahler } = trpc.legacyCustomer.myVollzahlerKonto.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+  // Kündigungs-/Laufzeit-Satz parametrisiert aus wording-Feldern (statische §§-Prosa, Daten generisch).
+  const w = vollzahler?.wording;
+  const laufzeitSatz = w
+    ? [
+        w.mindestlaufzeitEnde ? `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. ` : "",
+        `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
+        w.verfristeterTermin ? `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). ` : "",
+        w.naechsterTermin ? `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.` : "",
+      ].join("")
+    : "";
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpand = (id: number) => {
@@ -256,6 +266,7 @@ export default function MyInvestments() {
                               </td>
                               <td className="text-right py-1.5 pl-2">
                                 {p.status === "erfuellt" && <span className="text-green-700">Erfüllt</span>}
+                                {p.status === "bedient" && <span className="text-green-700">bedient (Saldo-Ausgleich)</span>}
                                 {p.status === "teilweise" && (
                                   <span className="text-amber-700">Teilweise (offen {eur(p.deckungsluecke)})</span>
                                 )}
@@ -266,6 +277,22 @@ export default function MyInvestments() {
                         </tbody>
                       </table>
                     </div>
+                  )}
+                  {/* P8 — aufklappbare nominale Deckung je Periode (Transparenz hinter "bedient") */}
+                  {vollzahler.perioden && vollzahler.perioden.some((p) => p.deckungsluecke > 0) && (
+                    <details className="text-xs text-muted-foreground">
+                      <summary className="cursor-pointer">Nominale Deckung je Periode</summary>
+                      <div className="mt-1 space-y-0.5">
+                        {vollzahler.perioden.filter((p) => p.deckungsluecke > 0).map((p) => (
+                          <p key={p.index}>
+                            {new Date(p.von).toLocaleDateString("de-DE")}–{new Date(p.bis).toLocaleDateString("de-DE")}: {eur(p.erhaltenInPeriode)}/{eur(p.zins)} bedient
+                            {p.status === "bedient"
+                              ? `, Differenz ${eur(p.deckungsluecke)} über Vorfinanzierungssaldo ausgeglichen`
+                              : `, offen ${eur(p.deckungsluecke)}`}
+                          </p>
+                        ))}
+                      </div>
+                    </details>
                   )}
                   {/* Kontokorrent-Saldo (P7) — periodenbasiert, NUR fällige Coupons (kein kontinuierlicher Kupon) */}
                   {vollzahler.saldo && (
@@ -279,6 +306,9 @@ export default function MyInvestments() {
                           {eur(vollzahler.saldo.saldo)} {vollzahler.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben)"}
                         </span>
                       </div>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Der jährlich nachschüssig fällige Zins (§ 4 Abs. 3, Coupon-Termin {vollzahler.wording?.couponTerminMMDD ?? ""}) wurde über monatliche Abschläge vorausgezahlt; diese sind keine zusätzliche Zahlung. Aus der Vorauszahlung vor dem jeweiligen Coupon-Termin ergibt sich der ausgewiesene Saldo.
+                      </p>
                       {vollzahler.saldo.naechsterCoupon && (
                         <p className="text-xs text-muted-foreground pt-1">
                           Gleicht sich zur nächsten Coupon-Fälligkeit ({new Date(vollzahler.saldo.naechsterCoupon.datum).toLocaleDateString("de-DE")}, {eur(vollzahler.saldo.naechsterCoupon.betrag)}) aus — dieser ist separat und unter Vorbehalt (*), nicht im Saldo enthalten.
@@ -292,10 +322,9 @@ export default function MyInvestments() {
                       <span className="font-medium">{eur(vollzahler.rueckzahlung.betrag)}</span>
                     </div>
                   )}
-                  {/* Vorbehalt — ENTWURF, finaler Wortlaut durch Angelus (NICHT von CC final formuliert) */}
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
-                    <p className="font-semibold mb-1">⚠ ENTWURF — Vorbehalt (finaler Wortlaut durch Angelus)</p>
-                    <p>* Vorbehaltlich vorinsolvenzlichem Zahlungsverbot (§2) und qualifiziertem Rangrücktritt (§3) — keine unbedingte Zahlungszusage; gilt für offene Perioden und die Rückzahlung. Erfüllte Perioden sind dem Vorbehalt nicht unterworfen. [Platzhalter: finaler rechtlicher Wortlaut durch Angelus]</p>
+                  {/* Vorbehalt (§2/§3) — finaler, freigegebener Wortlaut */}
+                  <div className="p-3 border rounded text-xs text-muted-foreground bg-muted/30">
+                    <p>* Die ausgewiesenen Zinsfälligkeiten und die Rückzahlung stehen unter dem vorinsolvenzlichen Zahlungsverbot (§ 2) und dem qualifizierten Rangrücktritt (§ 3) der Anleihebedingungen. Solange Zahlungen danach nicht verlangt werden können, begründet ihre Nichterfüllung keinen Verzug der Emittentin (§ 3 Abs. 2). Es handelt sich nicht um eine unbedingte Zahlungszusage, sondern um eine Gesamtbetrachtung zum Stichtag.</p>
                   </div>
                 </div>
               )}
@@ -314,6 +343,9 @@ export default function MyInvestments() {
                   </p>
                   {vollzahler.naechsterKuendigungstermin && (
                     <p className="text-muted-foreground">Nächster möglicher Kündigungstermin: {new Date(vollzahler.naechsterKuendigungstermin).toLocaleDateString("de-DE")}</p>
+                  )}
+                  {laufzeitSatz && (
+                    <p className="text-xs text-muted-foreground pt-1 border-t mt-1">{laufzeitSatz}</p>
                   )}
                 </div>
               )}

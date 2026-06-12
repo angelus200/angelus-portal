@@ -33,7 +33,7 @@ import {
 import { Decimal } from 'decimal.js';
 import { ENV } from './_core/env';
 import { computeKontokorrent, type KontoBooking, type KontoInput } from './legacy-claim';
-import { buildVollzahlerPerioden, computeVollzahlerSaldo } from './vollzahler-perioden';
+import { buildVollzahlerPerioden, computeVollzahlerSaldo, buildVollzahlerWording } from './vollzahler-perioden';
 
 // Normalisiert ein DB-Datum (Date oder 'YYYY-MM-DD'-String) TZ-robust auf UTC-Kalendertag-Mitternacht.
 // Verhindert Off-by-one bei Tages-Arithmetik, egal in welcher Zeitzone der Prozess laeuft.
@@ -541,12 +541,25 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
           today,
         }
       : null;
-    const perioden = periodenInput ? buildVollzahlerPerioden(periodenInput) : [];
     // P7: Kontokorrent-Saldo (periodenbasiert, NICHT die kontinuierliche Engine). Nur wenn der
     // Vorfinanzierungssatz (refinancingRate) gesetzt ist. Bei Vollzahlern steuert refinancingRate
     // den Vorfin, nicht den Negativzins (offen=0 -> Weiche in buildKontoInput verhindert die Engine).
     const saldo = (periodenInput && c.refinancingRate != null)
       ? computeVollzahlerSaldo({ ...periodenInput, refinancingRate: Number(c.refinancingRate) })
+      : null;
+    // P8: abgelaufene Periodenluecken, die der Vorfinanzierungssaldo traegt, als "bedient" markieren.
+    const perioden = periodenInput
+      ? buildVollzahlerPerioden({ ...periodenInput, ausgleichBudget: saldo?.sollVorfinanzierung ?? 0 })
+      : [];
+    // Wording-Datumswerte (parametrisiert, generisch aus Feldern -> keine kunden-spezifischen Literale).
+    const wording = c.annualInterestDate != null
+      ? buildVollzahlerWording({
+          annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
+          maturityDate: c.maturityDate != null ? toUtcCalendarMidnight(c.maturityDate) : null,
+          kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
+          kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm != null ? toUtcCalendarMidnight((c as any).kuendigungEingegangenAm) : null,
+          naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin != null ? toUtcCalendarMidnight((c as any).naechsterKuendigungstermin) : null,
+        })
       : null;
     const rueckzahlung = (c as any).naechsterKuendigungstermin != null
       ? {
@@ -564,6 +577,7 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
       perioden,
       saldo,
+      wording,
       rueckzahlung,
       contractDate: c.contractDate ?? null,
       valueDate: c.valueDate ?? null,

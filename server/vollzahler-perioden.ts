@@ -21,14 +21,19 @@
  * Rumpfjahr (Termin 31.05.), nicht zum Folgejahr.
  *
  * Status DATENGETRIEBEN aus den Abschlaegen (KEIN hartes Flag):
- *  - Faelligkeit (Periodenende) in der Zukunft          -> 'offen'      (+ Vorbehalt §2/§3)
- *  - Faelligkeit vergangen & Abschlaege >= Periodenzins  -> 'erfuellt'
- *  - Faelligkeit vergangen & Abschlaege <  Periodenzins  -> 'teilweise' (Deckungsluecke ausgewiesen)
+ *  - Faelligkeit (Periodenende) in der Zukunft           -> 'offen'      (+ Vorbehalt §2/§3)
+ *  - Faelligkeit vergangen & Abschlaege >= Periodenzins   -> 'erfuellt'
+ *  - Faelligkeit vergangen, nominale Luecke <= ausgleichBudget (Vorfinanzierungssaldo)
+ *                                                         -> 'bedient'    (Saldo-Ausgleich; P8)
+ *  - Faelligkeit vergangen, Luecke >  Budget              -> 'teilweise'  (Deckungsluecke ausgewiesen)
+ * Die nominale deckungsluecke wird bei 'bedient' UND 'teilweise' ausgewiesen (Transparenz);
+ * 'bedient' heisst nur, dass die Luecke vom Vorfinanzierungssaldo getragen wird. ausgleichBudget
+ * wird ueber die abgelaufenen Perioden der Reihe nach VERBRAUCHT (keine Doppelnutzung).
  */
 import { Decimal } from 'decimal.js';
 import { calculateInterestByDateRange, days30E360, type ZinsBasis } from './interest-calculation';
 
-export type PeriodeStatus = 'erfuellt' | 'teilweise' | 'offen';
+export type PeriodeStatus = 'erfuellt' | 'bedient' | 'teilweise' | 'offen';
 
 export interface VollzahlerPeriode {
   index: number;
@@ -56,6 +61,7 @@ export interface PeriodenInput {
   basis: ZinsBasis;
   zinsAbschlaege: PeriodenAbschlag[]; // confirmed interest_payment (date + brutto)
   today: Date;
+  ausgleichBudget?: number | Decimal; // P8: Vorfinanzierungssaldo, der nominale Periodenluecken deckt -> 'bedient'
 }
 
 function utcMidnight(v: Date): Date {
@@ -116,12 +122,23 @@ export function buildVollzahlerPerioden(inp: PeriodenInput): VollzahlerPeriode[]
     erhalten[i] = erhalten[i].plus(new Decimal(a.amount));
   }
 
+  let remaining = new Decimal(inp.ausgleichBudget ?? 0); // wird der Reihe nach verbraucht
   return bounds.map((b, i) => {
     let status: PeriodeStatus;
-    if (!b.past) status = 'offen';
-    else if (erhalten[i].gte(b.zins.minus(EPS))) status = 'erfuellt';
-    else status = 'teilweise';
-    const luecke = status === 'teilweise' ? Decimal.max(new Decimal(0), b.zins.minus(erhalten[i])) : new Decimal(0);
+    let luecke = new Decimal(0);
+    if (!b.past) {
+      status = 'offen';
+    } else if (erhalten[i].gte(b.zins.minus(EPS))) {
+      status = 'erfuellt';
+    } else {
+      luecke = Decimal.max(new Decimal(0), b.zins.minus(erhalten[i])); // nominale Luecke, immer ausgewiesen
+      if (luecke.lte(remaining.plus(EPS))) {
+        status = 'bedient';                  // durch Vorfinanzierungssaldo getragen (P8)
+        remaining = remaining.minus(luecke);
+      } else {
+        status = 'teilweise';
+      }
+    }
     return {
       index: i,
       von: iso(b.von),
@@ -186,5 +203,81 @@ export function computeVollzahlerSaldo(inp: PeriodenInput & { refinancingRate: n
     sollVorfinanzierung: Number(vorfin.toDecimalPlaces(2)),
     saldo: Number(saldo.toDecimalPlaces(2)),
     naechsterCoupon: next ? { datum: iso(next.bis), betrag: Number(next.zins.toDecimalPlaces(2)) } : null,
+  };
+}
+
+// ============================================================
+// Wording-Datumswerte fuer die Vollzahler-Karte (P8/parametrisiert) — generisch aus Feldern,
+// damit KEINE kunden-spezifischen Literale in der UI stehen (sonst saehe der naechste Zeichner
+// fremde Kuendigungsdaten). Liefert vorformatierte DE-Strings; die Saetze stehen statisch im
+// Frontend (§§-Wortlaut), nur die Daten kommen hierher.
+//   - Coupon-Termin MM-DD = Stichtag (annualInterestDate) − 1 Tag (Zinsjahr-Ende), z.B. 01.06. -> "31.05."
+//   - Eingangsfrist = Termin − 3 Monate (Monatsende-geklemmt: 31.05. -> 28.02.)
+//   - verfristeter Termin = erster Coupon-Termin >= Kuendigungseingang (nur bei status 'zurueckgewiesen')
+// ============================================================
+export interface VollzahlerWording {
+  couponTerminMMDD: string;                 // "31.05."
+  mindestlaufzeitEnde: string | null;       // "31.05.2026" (maturityDate)
+  kuendigungDatum: string | null;           // "19.05.2026"
+  verfristeterTermin: string | null;        // "31.05.2026" (nur bei zurueckgewiesen)
+  verfristeterEingangBis: string | null;    // "28.02.2026"
+  naechsterTermin: string | null;           // "31.05.2027"
+  naechsterEingangBis: string | null;       // "28.02.2027"
+}
+
+function fmtDE(d: Date): string {
+  return `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${d.getUTCFullYear()}`;
+}
+// Datum − n Monate, Tag auf das Monatsende des Zielmonats geklemmt (31.05. − 3M -> 28.02.).
+function minusMonths(d: Date, n: number): Date {
+  const total = d.getUTCFullYear() * 12 + d.getUTCMonth() - n;
+  const y = Math.floor(total / 12);
+  const m = ((total % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m, Math.min(d.getUTCDate(), lastDay)));
+}
+
+export function buildVollzahlerWording(inp: {
+  annualInterestDate: Date;
+  maturityDate: Date | null;
+  kuendigungStatus: string | null;
+  kuendigungEingegangenAm: Date | null;
+  naechsterKuendigungstermin: Date | null;
+}): VollzahlerWording {
+  const stich = utcMidnight(inp.annualInterestDate);
+  const term1 = new Date(stich.getTime());
+  term1.setUTCDate(term1.getUTCDate() - 1); // Coupon-Termin = Zinsjahr-Ende = Stichtag − 1 Tag
+  const tm = term1.getUTCMonth();
+  const td = term1.getUTCDate();
+  const couponTerminMMDD = `${String(td).padStart(2, '0')}.${String(tm + 1).padStart(2, '0')}.`;
+
+  let kuendigungDatum: string | null = null;
+  let verfristeterTermin: string | null = null;
+  let verfristeterEingangBis: string | null = null;
+  if (inp.kuendigungStatus === 'zurueckgewiesen' && inp.kuendigungEingegangenAm) {
+    const k = utcMidnight(inp.kuendigungEingegangenAm);
+    kuendigungDatum = fmtDE(k);
+    let cand = new Date(Date.UTC(k.getUTCFullYear(), tm, td)); // erster Coupon-Termin >= Kuendigung
+    if (cand.getTime() < k.getTime()) cand = new Date(Date.UTC(k.getUTCFullYear() + 1, tm, td));
+    verfristeterTermin = fmtDE(cand);
+    verfristeterEingangBis = fmtDE(minusMonths(cand, 3));
+  }
+
+  let naechsterTermin: string | null = null;
+  let naechsterEingangBis: string | null = null;
+  if (inp.naechsterKuendigungstermin) {
+    const nt = utcMidnight(inp.naechsterKuendigungstermin);
+    naechsterTermin = fmtDE(nt);
+    naechsterEingangBis = fmtDE(minusMonths(nt, 3));
+  }
+
+  return {
+    couponTerminMMDD,
+    mindestlaufzeitEnde: inp.maturityDate ? fmtDE(utcMidnight(inp.maturityDate)) : null,
+    kuendigungDatum,
+    verfristeterTermin,
+    verfristeterEingangBis,
+    naechsterTermin,
+    naechsterEingangBis,
   };
 }

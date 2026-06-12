@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeKontokorrent, type KontoBooking } from './legacy-claim';
 import { days30E360 } from './interest-calculation';
-import { buildVollzahlerPerioden, computeVollzahlerSaldo } from './vollzahler-perioden';
+import { buildVollzahlerPerioden, computeVollzahlerSaldo, buildVollzahlerWording } from './vollzahler-perioden';
 
 const d = (s: string) => new Date(s + 'T00:00:00.000Z');
 
@@ -192,5 +192,52 @@ describe('Kontokorrent-Forderungsmodul', () => {
     expect(s.sollVorfinanzierung).toBe(1813.5); // Variante A (netto)
     expect(s.saldo).toBe(313.5);                // ZIEL: +313,50 = KG-Forderung
     expect(s.naechsterCoupon).toEqual({ datum: '2027-05-31', betrag: 18000 }); // separat, Vorbehalt
+  });
+
+  // P8 — abgelaufene Lücke <= Vorfinanzierungssaldo -> 'bedient (Saldo-Ausgleich)' statt 'teilweise'.
+  it('Brendel-Perioden mit ausgleichBudget: 1.Jahr "bedient", nominale Lücke 1.500 bleibt sichtbar', () => {
+    const raw = ['2024-11-15','2024-12-15','2025-01-15','2025-02-15','2025-03-15','2025-04-15','2025-05-15','2025-06-15','2025-07-15','2025-08-15','2025-09-15','2025-10-15','2025-11-15','2025-12-15','2026-01-15','2026-02-15','2026-03-15','2026-04-15','2026-05-15'];
+    const zinsAbschlaege = raw.map((s, i) => ({ date: d(s), amount: i === 0 ? 600 : 1500 }));
+    const base = { valueDate: d('2024-10-18'), annualInterestDate: d('2024-06-01'), nominal: 100000, rate: 18, basis: '30E/360' as const, zinsAbschlaege, today: d('2026-06-12') };
+
+    // Budget = SOLL Vorfinanzierung (1.813,50) deckt die 1.500-Lücke -> bedient.
+    const p = buildVollzahlerPerioden({ ...base, ausgleichBudget: 1813.5 });
+    expect(p[0].status).toBe('erfuellt');                       // Rumpfjahr unverändert
+    expect(p[1]).toMatchObject({ status: 'bedient', deckungsluecke: 1500, erhaltenInPeriode: 16500, zins: 18000 });
+    expect(p[2]).toMatchObject({ status: 'offen', unterVorbehalt: true });
+
+    // Ohne Budget bleibt es 'teilweise' (Default-Verhalten unverändert -> P6-Test bleibt gültig).
+    const p0 = buildVollzahlerPerioden(base);
+    expect(p0[1].status).toBe('teilweise');
+  });
+
+  // Wording parametrisiert: die Datumswerte MÜSSEN byte-identisch zu Brendels freigegebenen
+  // Literalen sein (Regressions-Check) — 12-Monats-Rhythmus + Termin−3M (Monatsende-geklemmt).
+  it('Brendel-Wording: Datumswerte byte-identisch zu den freigegebenen Literalen', () => {
+    const w = buildVollzahlerWording({
+      annualInterestDate: d('2024-06-01'),
+      maturityDate: d('2026-05-31'),
+      kuendigungStatus: 'zurueckgewiesen',
+      kuendigungEingegangenAm: d('2026-05-19'),
+      naechsterKuendigungstermin: d('2027-05-31'),
+    });
+    expect(w).toEqual({
+      couponTerminMMDD: '31.05.',
+      mindestlaufzeitEnde: '31.05.2026',
+      kuendigungDatum: '19.05.2026',
+      verfristeterTermin: '31.05.2026',
+      verfristeterEingangBis: '28.02.2026', // 31.05.2026 − 3M, auf Monatsende geklemmt
+      naechsterTermin: '31.05.2027',
+      naechsterEingangBis: '28.02.2027',
+    });
+
+    // Voller Satz, exakt wie im Frontend zusammengesetzt -> muss dem freigegebenen Wortlaut entsprechen.
+    const satz = [
+      `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. `,
+      `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
+      `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). `,
+      `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.`,
+    ].join('');
+    expect(satz).toBe('Die Mindestlaufzeit (§ 4 Abs. 2) endete am 31.05.2026. Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils 31.05.) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). Die Kündigung vom 19.05.2026 war für den Termin 31.05.2026 verfristet (Eingang erforderlich bis 28.02.2026). Nächstmöglicher Termin: 31.05.2027, Eingang bis 28.02.2027.');
   });
 });
