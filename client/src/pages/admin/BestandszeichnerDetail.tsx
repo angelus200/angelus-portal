@@ -53,7 +53,13 @@ export default function BestandszeichnerDetail() {
       fd.append("documentType", docType);
       if (richtung) fd.append("richtung", richtung);
       const res = await fetch("/api/legacy-document", { method: "POST", body: fd });
-      if (!res.ok) throw new Error((await res.json()).error || "Upload fehlgeschlagen");
+      if (!res.ok) {
+        // Robust: Response kann JSON (App-Fehler) ODER HTML/leer (502 Proxy) sein -> nicht blind res.json()
+        const text = await res.text().catch(() => "");
+        let detail = text;
+        try { detail = JSON.parse(text).error || text; } catch { /* HTML/leer -> Rohtext */ }
+        throw new Error(`Upload fehlgeschlagen (HTTP ${res.status})${detail ? ": " + String(detail).slice(0, 200) : ""}`);
+      }
       setFile(null);
       await refetchDocs();
     } catch (e: any) {
@@ -280,6 +286,8 @@ export default function BestandszeichnerDetail() {
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Hochladen
             </Button>
+            {/* Sichtbare React-State-Bestätigung (Kandidat C): erscheint der Name -> setFile feuerte */}
+            {file && <span className="text-xs text-muted-foreground">gewählt: {file.name}</span>}
           </div>
         </CardContent>
       </Card>

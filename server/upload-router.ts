@@ -224,24 +224,31 @@ router.post('/legacy-document', upload.single('file'), async (req: Request, res:
   const description = (req.body?.description as string) || undefined;
   const documentDate = req.body?.documentDate ? new Date(req.body.documentDate as string) : undefined;
 
-  const customer = await legacyDb.getLegacyCustomerById(legacyCustomerId);
-  if (!customer) { res.status(404).json({ error: 'Bestandszeichner nicht gefunden' }); return; }
+  // Express 4 faengt async-Rejections NICHT -> ohne try/catch haengt der Request (kein Response) und
+  // der Railway-Edge gibt 502 zurueck. try/catch -> sauberes 500-JSON statt Hang/502.
+  try {
+    const customer = await legacyDb.getLegacyCustomerById(legacyCustomerId);
+    if (!customer) { res.status(404).json({ error: 'Bestandszeichner nicht gefunden' }); return; }
 
-  const relPath = path.relative(UPLOAD_BASE, req.file.path);
-  await legacyDb.addLegacyCustomerDocument({
-    legacyCustomerId,
-    documentType: documentType as any,
-    fileName: req.file.originalname,
-    filePath: relPath,
-    fileSize: req.file.size,
-    fileType: req.file.mimetype,
-    documentDate,
-    richtung,
-    description,
-    uploadedBy: req.user.id,
-  });
+    const relPath = path.relative(UPLOAD_BASE, req.file.path);
+    await legacyDb.addLegacyCustomerDocument({
+      legacyCustomerId,
+      documentType: documentType as any,
+      fileName: req.file.originalname,
+      filePath: relPath,
+      fileSize: req.file.size,
+      fileType: req.file.mimetype,
+      documentDate,
+      richtung,
+      description,
+      uploadedBy: req.user.id,
+    });
 
-  res.json({ ok: true, fileName: req.file.originalname, size: req.file.size, documentType, richtung });
+    res.json({ ok: true, fileName: req.file.originalname, size: req.file.size, documentType, richtung });
+  } catch (e: any) {
+    console.error('[legacy-document] Upload-Fehler:', e?.message, e?.code);
+    res.status(500).json({ error: `Speichern fehlgeschlagen: ${e?.message ?? 'unbekannt'}` });
+  }
 });
 
 // GET /api/admin/legacy-document/:documentId — ADMIN-ONLY. Liefert die Datei aus der legacy-Akte.
