@@ -300,6 +300,7 @@ export async function addLegacyCustomerDocument(data: {
   fileSize?: number;
   fileType?: string;
   documentDate?: Date;
+  richtung?: 'eingehend' | 'ausgehend';
   description?: string;
   uploadedBy?: number;
 }) {
@@ -313,11 +314,22 @@ export async function addLegacyCustomerDocument(data: {
     fileSize: data.fileSize,
     fileType: data.fileType,
     documentDate: data.documentDate,
+    richtung: data.richtung,
     description: data.description,
     uploadedBy: data.uploadedBy,
   });
 
   return result;
+}
+
+// Einzeldokument (legacy_customers-Akte) per id — fuer den Admin-Download-Endpoint.
+export async function getLegacyCustomerDocumentById(documentId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(legacyCustomerDocuments)
+    .where(eq(legacyCustomerDocuments.id, documentId))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**

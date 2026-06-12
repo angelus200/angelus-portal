@@ -197,4 +197,66 @@ router.get('/admin/legacy-zeichnungsschein/:legacyCustomerId', async (req: Reque
   res.sendFile(absPath);
 });
 
+// ============================================================
+// Allgemeine Bestandszeichner-Dokumente (legacy_customers). ADMIN-ONLY. Beliebiger documentType +
+// Richtung (eingehend/ausgehend). Datei -> Volume, Metadaten -> legacy_customer_documents (gekeyt auf
+// legacyCustomerId). NICHT das alte /api/upload (modernes documents-Modell, userId-gekeyt) verwenden.
+// ============================================================
+const LEGACY_DOC_TYPES = new Set([
+  'contract', 'projection', 'interest_calculation', 'payment_confirmation',
+  'tax_certificate', 'bank_statement', 'zeichnungsschein', 'other',
+]);
+
+// POST /api/legacy-document — legacyCustomerId + documentType + richtung + description (Body), file (multipart)
+router.post('/legacy-document', upload.single('file'), async (req: Request, res: Response) => {
+  if (!req.user?.id) { res.status(401).json({ error: 'Nicht authentifiziert' }); return; }
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    res.status(403).json({ error: 'Nur Admins dürfen Dokumente hochladen' }); return;
+  }
+  if (!req.file) { res.status(400).json({ error: 'Keine Datei hochgeladen' }); return; }
+
+  const legacyCustomerId = req.body?.legacyCustomerId ? parseInt(req.body.legacyCustomerId as string) : undefined;
+  if (!legacyCustomerId) { res.status(400).json({ error: 'legacyCustomerId fehlt' }); return; }
+  const documentType = (req.body?.documentType as string) || 'other';
+  if (!LEGACY_DOC_TYPES.has(documentType)) { res.status(400).json({ error: 'Ungültiger documentType' }); return; }
+  const richtungRaw = (req.body?.richtung as string) || '';
+  const richtung = richtungRaw === 'eingehend' || richtungRaw === 'ausgehend' ? richtungRaw : undefined;
+  const description = (req.body?.description as string) || undefined;
+  const documentDate = req.body?.documentDate ? new Date(req.body.documentDate as string) : undefined;
+
+  const customer = await legacyDb.getLegacyCustomerById(legacyCustomerId);
+  if (!customer) { res.status(404).json({ error: 'Bestandszeichner nicht gefunden' }); return; }
+
+  const relPath = path.relative(UPLOAD_BASE, req.file.path);
+  await legacyDb.addLegacyCustomerDocument({
+    legacyCustomerId,
+    documentType: documentType as any,
+    fileName: req.file.originalname,
+    filePath: relPath,
+    fileSize: req.file.size,
+    fileType: req.file.mimetype,
+    documentDate,
+    richtung,
+    description,
+    uploadedBy: req.user.id,
+  });
+
+  res.json({ ok: true, fileName: req.file.originalname, size: req.file.size, documentType, richtung });
+});
+
+// GET /api/admin/legacy-document/:documentId — ADMIN-ONLY. Liefert die Datei aus der legacy-Akte.
+router.get('/admin/legacy-document/:documentId', async (req: Request, res: Response) => {
+  if (!req.user?.id) { res.status(401).json({ error: 'Nicht authentifiziert' }); return; }
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    res.status(403).json({ error: 'Kein Zugriff' }); return;
+  }
+  const documentId = parseInt(req.params.documentId);
+  if (!documentId) { res.status(400).json({ error: 'Ungültige documentId' }); return; }
+  const doc = await legacyDb.getLegacyCustomerDocumentById(documentId);
+  if (!doc) { res.status(404).json({ error: 'Dokument nicht gefunden' }); return; }
+  const absPath = getAbsPath(doc.filePath);
+  if (!fs.existsSync(absPath)) { res.status(404).json({ error: 'Datei nicht auf Filesystem gefunden' }); return; }
+  res.sendFile(absPath);
+});
+
 export default router;

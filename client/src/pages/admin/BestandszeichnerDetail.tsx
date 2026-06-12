@@ -4,11 +4,12 @@
 // Funktion (buildVollzahlerKontoView) wie die Investor-Sicht ausfuehrt -> kein zweiter Rechenweg.
 // offen-Weiche wie investor-seitig: Vollzahler (offen=0) -> Vollzahler-Block; Saeumiger (offen>0)
 // -> Forderungskonto via adminKontokorrent. NUR LESEN (Bearbeiten = Etappe 4).
+import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Upload, Loader2 } from "lucide-react";
 
 const eur = (n: number | null | undefined) =>
   n == null ? "—" : "€ " + Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2 });
@@ -32,6 +33,35 @@ export default function BestandszeichnerDetail() {
   const { data: c, isLoading } = trpc.legacyCustomer.getById.useQuery({ id: legacyId }, { enabled: legacyId > 0 });
   const { data: vz } = trpc.legacyCustomer.adminVollzahlerKonto.useQuery({ id: legacyId }, { enabled: legacyId > 0 });
   const { data: kk } = trpc.legacyCustomer.adminKontokorrent.useQuery({ id: legacyId }, { enabled: legacyId > 0 });
+  const { data: docs = [], refetch: refetchDocs } = trpc.legacyCustomer.documents.getByCustomerId.useQuery(
+    { legacyCustomerId: legacyId },
+    { enabled: legacyId > 0 }
+  );
+
+  // Upload (Admin) -> POST /api/legacy-document (legacy_customers-gekeyt, beliebiger Typ + Richtung).
+  const [file, setFile] = useState<File | null>(null);
+  const [docType, setDocType] = useState("other");
+  const [richtung, setRichtung] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("legacyCustomerId", String(legacyId));
+      fd.append("documentType", docType);
+      if (richtung) fd.append("richtung", richtung);
+      const res = await fetch("/api/legacy-document", { method: "POST", body: fd });
+      if (!res.ok) throw new Error((await res.json()).error || "Upload fehlgeschlagen");
+      setFile(null);
+      await refetchDocs();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (!legacyId) return null;
   if (isLoading) return <div className="p-8 text-muted-foreground">Lädt…</div>;
@@ -181,6 +211,53 @@ export default function BestandszeichnerDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dokumente (legacy_customers-Akte, gekeyt auf legacy_customers.id) */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Dokumente</CardTitle></CardHeader>
+        <CardContent className="text-sm space-y-4">
+          {docs.length === 0 ? (
+            <p className="text-muted-foreground">Keine Dokumente hinterlegt.</p>
+          ) : (
+            <div className="space-y-1">
+              {docs.map((d: any) => (
+                <div key={d.id} className="flex items-center justify-between gap-3 border-b last:border-0 py-1">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{d.fileName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {d.documentType}{d.richtung ? ` · ${d.richtung}` : ""}{(d.documentDate || d.uploadedAt) ? ` · ${de(d.documentDate || d.uploadedAt)}` : ""}
+                    </p>
+                  </div>
+                  <a href={`/api/admin/legacy-document/${d.id}`} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="gap-1"><Download className="w-4 h-4" />Download</Button>
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upload (Admin) */}
+          <div className="border-t pt-3 flex flex-wrap items-center gap-2">
+            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-xs" />
+            <select value={docType} onChange={(e) => setDocType(e.target.value)} className="text-xs border rounded px-2 py-1">
+              <option value="other">Sonstiges</option>
+              <option value="contract">Vertrag/Korrespondenz</option>
+              <option value="bank_statement">Kontoauszug</option>
+              <option value="tax_certificate">Steuerbescheinigung</option>
+              <option value="payment_confirmation">Zahlungsbestätigung</option>
+            </select>
+            <select value={richtung} onChange={(e) => setRichtung(e.target.value)} className="text-xs border rounded px-2 py-1">
+              <option value="">Richtung —</option>
+              <option value="eingehend">eingehend</option>
+              <option value="ausgehend">ausgehend</option>
+            </select>
+            <Button size="sm" className="gap-1" onClick={handleUpload} disabled={!file || uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Hochladen
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

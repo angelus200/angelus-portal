@@ -143,6 +143,7 @@ export const legacyCustomerDocuments = mysqlTable(
 
     // Document Data
     documentDate: date('document_date'), // Date of document
+    richtung: varchar('richtung', { length: 16 }), // null | 'eingehend' | 'ausgehend' (Korrespondenz-Richtung)
     description: text('description'),
 
     // Upload Information
