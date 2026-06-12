@@ -9,7 +9,7 @@ import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Upload, Loader2, Trash2 } from "lucide-react";
 
 const eur = (n: number | null | undefined) =>
   n == null ? "—" : "€ " + Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2 });
@@ -37,6 +37,7 @@ export default function BestandszeichnerDetail() {
     { legacyCustomerId: legacyId },
     { enabled: legacyId > 0 }
   );
+  const deleteDoc = trpc.legacyCustomer.documents.delete.useMutation({ onSuccess: () => refetchDocs() });
 
   // Upload (Admin) -> POST /api/legacy-document (legacy_customers-gekeyt, beliebiger Typ + Richtung).
   const [file, setFile] = useState<File | null>(null);
@@ -261,9 +262,18 @@ export default function BestandszeichnerDetail() {
                       {d.documentType}{d.richtung ? ` · ${d.richtung}` : ""}{(d.documentDate || d.uploadedAt) ? ` · ${de(d.documentDate || d.uploadedAt)}` : ""}
                     </p>
                   </div>
-                  <a href={`/api/admin/legacy-document/${d.id}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="gap-1"><Download className="w-4 h-4" />Download</Button>
-                  </a>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a href={`/api/admin/legacy-document/${d.id}`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" className="gap-1"><Download className="w-4 h-4" />Download</Button>
+                    </a>
+                    <Button
+                      variant="ghost" size="sm" className="text-red-600 hover:text-red-700"
+                      disabled={deleteDoc.isPending}
+                      onClick={() => { if (window.confirm(`„${d.fileName}" löschen?`)) deleteDoc.mutate({ documentId: d.id }); }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -292,11 +302,11 @@ export default function BestandszeichnerDetail() {
                 <option value="payment_confirmation">Zahlungsbestätigung</option>
               </select>
               <select value={richtung} onChange={(e) => setRichtung(e.target.value)} className="text-xs border rounded px-2 py-1">
-                <option value="">Richtung —</option>
+                <option value="">Richtung wählen *</option>
                 <option value="eingehend">eingehend</option>
                 <option value="ausgehend">ausgehend</option>
               </select>
-              <Button size="sm" className="gap-1" onClick={handleUpload} disabled={!file || uploading}>
+              <Button size="sm" className="gap-1" onClick={handleUpload} disabled={!file || !richtung || uploading}>
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Hochladen
               </Button>
