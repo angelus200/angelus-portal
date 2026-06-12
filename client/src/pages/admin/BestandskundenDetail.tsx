@@ -82,22 +82,18 @@ function ContractTab({ userId, contract, onSaved }: {
     onError: (e) => toast.error(e.message),
   });
 
+  // STILLGELEGT: legacy_contracts-Schreibpfad deaktiviert (Geister-Zeilen-Schutz). Bestandszeichner
+  // werden über legacy_customers gepflegt. Button ist disabled; Server wirft zusätzlich FORBIDDEN.
   const handleSave = () => {
-    if (!form.signedAmount || !form.interestRate || !form.startDate || !form.endDate) {
-      toast.error("Bitte alle Pflichtfelder ausfüllen");
-      return;
-    }
-    if (contract) {
-      updateMutation.mutate({ id: contract.id, data: { ...form, userId } });
-    } else {
-      createMutation.mutate({ ...form, userId });
-    }
+    toast.error("Stillgelegt — Bestandszeichner werden über legacy_customers gepflegt.");
   };
-
-  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-5 max-w-2xl">
+      <div className="p-3 border border-amber-300 bg-amber-50 rounded text-xs text-amber-900">
+        <p className="font-semibold mb-0.5">Stillgelegtes Modell (legacy_contracts)</p>
+        <p>Dieses Vertragsformular („Strafzins/Tag") gehört zum alten Bestandskunden-Modell und ist deaktiviert. Bestandszeichner werden über <strong>legacy_customers</strong> gepflegt (Quelle der Wahrheit). Anlegen/Ändern ist hier gesperrt.</p>
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Zeichnungsbetrag *</Label>
@@ -155,9 +151,8 @@ function ContractTab({ userId, contract, onSaved }: {
         <Textarea value={form.notes} rows={3}
           onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
       </div>
-      <Button onClick={handleSave} disabled={isPending} className="gap-2">
-        {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-        {contract ? "Aktualisieren" : "Vertrag anlegen"}
+      <Button onClick={handleSave} disabled className="gap-2">
+        {contract ? "Aktualisieren" : "Vertrag anlegen"} (stillgelegt)
       </Button>
     </div>
   );

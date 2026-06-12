@@ -81,6 +81,80 @@ function buildKontoInput(c: any, payments: any[], stichtag: Date): KontoInput | 
   };
 }
 
+// Geteilte Vollzahler-Kontosicht (P6/P7/P8): aus legacy_customer-Row + payment_history. EINE Quelle
+// fuer myVollzahlerKonto (self) UND die kuenftige Admin-Sicht (adminVollzahlerKonto by id) -> Admin-
+// und Investor-Sicht sind konstruktiv identisch, KEIN zweiter Rechenweg. null = kein Vollzahler
+// (kein Datensatz / kein investmentAmount / offene Einlage > 0 -> Forderungskonto via myKontokorrent).
+export function buildVollzahlerKontoView(c: any, payments: any[], today: Date) {
+  if (!c || c.investmentAmount == null) return null;
+  const conf = payments.filter((p: any) => (p.status ?? 'confirmed') === 'confirmed');
+  const sumOf = (t: string) => conf
+    .filter((p: any) => p.paymentType === t)
+    .reduce((s: Decimal, p: any) => s.plus(new Decimal(p.amount)), new Decimal(0));
+  const gezeichnet = new Decimal(c.investmentAmount);
+  const eingezahlt = sumOf('initial_investment');
+  const offen = gezeichnet.minus(eingezahlt);
+  if (offen.gt(new Decimal('0.005'))) return null; // offene Einlage > 0 -> Forderungskonto
+  const bereitsErhalten = sumOf('interest_payment');
+
+  const hatPeriodenBasis = c.valueDate != null && c.annualInterestDate != null && c.annualInterestRate != null;
+  const periodenInput = hatPeriodenBasis
+    ? {
+        valueDate: toUtcCalendarMidnight(c.valueDate),
+        annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
+        nominal: gezeichnet,
+        rate: Number(c.annualInterestRate),
+        basis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
+        zinsAbschlaege: conf
+          .filter((p: any) => p.paymentType === 'interest_payment')
+          .map((p: any) => ({ date: toUtcCalendarMidnight(p.paymentDate), amount: Number(p.amount) })),
+        today,
+      }
+    : null;
+  // P7-Saldo nur wenn refinancingRate (Vorfinanzierungssatz) gesetzt; offen=0 -> Weiche verhindert die kontinuierliche Engine.
+  const saldo = (periodenInput && c.refinancingRate != null)
+    ? computeVollzahlerSaldo({ ...periodenInput, refinancingRate: Number(c.refinancingRate) })
+    : null;
+  // P8: abgelaufene Periodenluecken, die der Vorfinanzierungssaldo traegt, als "bedient" markieren.
+  const perioden = periodenInput
+    ? buildVollzahlerPerioden({ ...periodenInput, ausgleichBudget: saldo?.sollVorfinanzierung ?? 0 })
+    : [];
+  const wording = c.annualInterestDate != null
+    ? buildVollzahlerWording({
+        annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
+        maturityDate: c.maturityDate != null ? toUtcCalendarMidnight(c.maturityDate) : null,
+        kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
+        kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm != null ? toUtcCalendarMidnight((c as any).kuendigungEingegangenAm) : null,
+        naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin != null ? toUtcCalendarMidnight((c as any).naechsterKuendigungstermin) : null,
+      })
+    : null;
+  const rueckzahlung = (c as any).naechsterKuendigungstermin != null
+    ? {
+        datum: toUtcCalendarMidnight((c as any).naechsterKuendigungstermin).toISOString().slice(0, 10),
+        betrag: Number(gezeichnet.toDecimalPlaces(2)),
+      }
+    : null;
+
+  return {
+    gezeichnet: Number(gezeichnet.toDecimalPlaces(2)),
+    eingezahlt: Number(eingezahlt.toDecimalPlaces(2)),
+    offen: 0,
+    couponRate: c.annualInterestRate != null ? Number(c.annualInterestRate) : null,
+    zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
+    bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
+    perioden,
+    saldo,
+    wording,
+    rueckzahlung,
+    contractDate: c.contractDate ?? null,
+    valueDate: c.valueDate ?? null,
+    maturityDate: c.maturityDate ?? null,
+    kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm ?? null,
+    kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
+    naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin ?? null,
+  };
+}
+
 /**
  * Validation Schemas
  */
@@ -510,82 +584,10 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
    */
   myVollzahlerKonto: protectedProcedure.query(async ({ ctx }) => {
     const c = await getLegacyCustomerByUserId(ctx.user.id);
-    if (!c || c.investmentAmount == null) return null;
+    if (!c) return null;
     const payments = await getLegacyCustomerPaymentHistory(c.id);
-    const conf = payments.filter((p: any) => (p.status ?? 'confirmed') === 'confirmed');
-    const sumOf = (t: string) => conf
-      .filter((p: any) => p.paymentType === t)
-      .reduce((s: Decimal, p: any) => s.plus(new Decimal(p.amount)), new Decimal(0));
-    const gezeichnet = new Decimal(c.investmentAmount);
-    const eingezahlt = sumOf('initial_investment');
-    const offen = gezeichnet.minus(eingezahlt);
-    if (offen.gt(new Decimal('0.005'))) return null; // offene Einlage > 0 -> Forderungskonto
-    const bereitsErhalten = sumOf('interest_payment');
-
-    // P6: Jahreszins pro Laufzeitjahr (Tabelle, ersetzt die fruehere Einzel-Zeile "naechste
-    // Zinsfaelligkeit"). Rumpfjahr anteilig ueber die 30E/360-Engine, volle Jahre = Jahreszins
-    // (Option A). Status datengetrieben aus den Abschlaegen (erfuellt/teilweise/offen). IMMER
-    // unter Vorbehalt §2/§3 nur fuer offene Perioden. Generisch ueber valueDate + annualInterestDate.
-    const today = toUtcCalendarMidnight(new Date());
-    const hatPeriodenBasis = c.valueDate != null && c.annualInterestDate != null && c.annualInterestRate != null;
-    const periodenInput = hatPeriodenBasis
-      ? {
-          valueDate: toUtcCalendarMidnight(c.valueDate),
-          annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
-          nominal: gezeichnet,
-          rate: Number(c.annualInterestRate),
-          basis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
-          zinsAbschlaege: conf
-            .filter((p: any) => p.paymentType === 'interest_payment')
-            .map((p: any) => ({ date: toUtcCalendarMidnight(p.paymentDate), amount: Number(p.amount) })),
-          today,
-        }
-      : null;
-    // P7: Kontokorrent-Saldo (periodenbasiert, NICHT die kontinuierliche Engine). Nur wenn der
-    // Vorfinanzierungssatz (refinancingRate) gesetzt ist. Bei Vollzahlern steuert refinancingRate
-    // den Vorfin, nicht den Negativzins (offen=0 -> Weiche in buildKontoInput verhindert die Engine).
-    const saldo = (periodenInput && c.refinancingRate != null)
-      ? computeVollzahlerSaldo({ ...periodenInput, refinancingRate: Number(c.refinancingRate) })
-      : null;
-    // P8: abgelaufene Periodenluecken, die der Vorfinanzierungssaldo traegt, als "bedient" markieren.
-    const perioden = periodenInput
-      ? buildVollzahlerPerioden({ ...periodenInput, ausgleichBudget: saldo?.sollVorfinanzierung ?? 0 })
-      : [];
-    // Wording-Datumswerte (parametrisiert, generisch aus Feldern -> keine kunden-spezifischen Literale).
-    const wording = c.annualInterestDate != null
-      ? buildVollzahlerWording({
-          annualInterestDate: toUtcCalendarMidnight(c.annualInterestDate),
-          maturityDate: c.maturityDate != null ? toUtcCalendarMidnight(c.maturityDate) : null,
-          kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
-          kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm != null ? toUtcCalendarMidnight((c as any).kuendigungEingegangenAm) : null,
-          naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin != null ? toUtcCalendarMidnight((c as any).naechsterKuendigungstermin) : null,
-        })
-      : null;
-    const rueckzahlung = (c as any).naechsterKuendigungstermin != null
-      ? {
-          datum: toUtcCalendarMidnight((c as any).naechsterKuendigungstermin).toISOString().slice(0, 10),
-          betrag: Number(gezeichnet.toDecimalPlaces(2)),
-        }
-      : null;
-
-    return {
-      gezeichnet: Number(gezeichnet.toDecimalPlaces(2)),
-      eingezahlt: Number(eingezahlt.toDecimalPlaces(2)),
-      offen: 0,
-      couponRate: c.annualInterestRate != null ? Number(c.annualInterestRate) : null,
-      zinsbasis: ((c as any).zinsbasis as 'act/365' | '30E/360' | null) ?? 'act/365',
-      bereitsErhalten: Number(bereitsErhalten.toDecimalPlaces(2)),
-      perioden,
-      saldo,
-      wording,
-      rueckzahlung,
-      contractDate: c.contractDate ?? null,
-      valueDate: c.valueDate ?? null,
-      maturityDate: c.maturityDate ?? null,
-      kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm ?? null,
-      kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
-      naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin ?? null,
-    };
+    // Geteilte Sicht (gleiche Funktion wie die kuenftige Admin-Sicht) -> kein zweiter Rechenweg.
+    return buildVollzahlerKontoView(c, payments, toUtcCalendarMidnight(new Date()));
   }),
 
   /**

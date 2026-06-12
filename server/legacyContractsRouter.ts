@@ -33,24 +33,16 @@ const contractInput = z.object({
 export const legacyContractsRouter = router({
   // ==================== ADMIN ====================
 
+  // STILLGELEGT (Legacy-Konsolidierung): legacy_contracts wird NICHT mehr beschrieben. Bestandszeichner
+  // werden ausschliesslich ueber legacy_customers gepflegt (Quelle der Wahrheit). Schreibpfad gesperrt,
+  // damit keine Geister-Vertraege im alten Modell entstehen, die der legacy_customers-Wahrheit widersprechen.
   create: adminProcedure
     .input(contractInput)
-    .mutation(async ({ input }) => {
-      await db.createLegacyContract({
-        userId: input.userId,
-        subscriptionId: input.subscriptionId ?? null,
-        signedAmount: input.signedAmount,
-        paidAmount: '0',
-        interestRate: input.interestRate,
-        penaltyRatePerDay: input.penaltyRatePerDay,
-        startDate: new Date(input.startDate),
-        endDate: new Date(input.endDate),
-        paymentInterval: input.paymentInterval,
-        currency: input.currency,
-        status: input.status,
-        notes: input.notes ?? null,
-      } as any);
-      return { success: true };
+    .mutation(async () => {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Stillgelegt: legacy_contracts wird nicht mehr beschrieben. Bestandszeichner über legacy_customers anlegen/pflegen.',
+      });
     }),
 
   update: adminProcedure
@@ -58,12 +50,11 @@ export const legacyContractsRouter = router({
       id: z.number().int().positive(),
       data: contractInput.partial(),
     }))
-    .mutation(async ({ input }) => {
-      const patch: Record<string, unknown> = { ...input.data };
-      if (input.data.startDate) patch.startDate = new Date(input.data.startDate);
-      if (input.data.endDate) patch.endDate = new Date(input.data.endDate);
-      await db.updateLegacyContract(input.id, patch as any);
-      return { success: true };
+    .mutation(async () => {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Stillgelegt: legacy_contracts wird nicht mehr beschrieben. Bestandszeichner über legacy_customers pflegen.',
+      });
     }),
 
   addPayment: adminProcedure
