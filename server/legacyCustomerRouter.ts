@@ -16,6 +16,8 @@ import {
   getLegacyCustomerByUserId,
   getAllLegacyCustomers,
   getLegacyCustomerUserLinks,
+  getLegacyBondsByCustomerId,
+  getPaymentHistoryByBond,
   searchLegacyCustomers,
   updateLegacyCustomer,
   deleteLegacyCustomer,
@@ -188,6 +190,21 @@ export function buildForderungskontoView(c: any, payments: any[], today: Date) {
     return { ...base, massgeblich: 'vfe' as const, vfe };
   }
   return { ...base, massgeblich: 'verzugszins' as const };
+}
+
+// E3: Per-Bond-Sicht (1:n). Kombiniert die Weiche: Vollzahler (offen=0) ODER Forderung/VFE (offen>0)
+// — DIESELBEN geteilten Engines wie self/admin (kein zweiter Rechenweg). Payments sind bond-eigen.
+function buildBondView(bond: any, payments: any[], today: Date) {
+  const vollzahler = buildVollzahlerKontoView(bond, payments, today); // null wenn offen>0 / keine Anleihedaten
+  const forderung = vollzahler ? null : buildForderungskontoView(bond, payments, today);
+  return {
+    bondId: bond.id,
+    contractNumber: bond.contractNumber,
+    bondNumber: bond.bondNumber,
+    status: bond.status,
+    vollzahler,
+    forderung,
+  };
 }
 
 /**
@@ -613,6 +630,25 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       if (!c) return null;
       const payments = await getLegacyCustomerPaymentHistory(c.id);
       return buildVollzahlerKontoView(c, payments, toUtcCalendarMidnight(new Date()));
+    }),
+
+  // E3: Array-Procedures (1:n) — eine View je Anleihe des Kunden, bond-eigene Payments (Schaerfung C).
+  // Fuer n=1 (Brendel/Brenner) ist Array[0] === die heutige self/admin-Einzelsicht (Regressions-Anker).
+  // Die alten Procedures (myVollzahlerKonto/myKontokorrent/admin*) bleiben unangetastet als Vergleichsbasis (UI-Cutover = E4).
+  myLegacyBonds: protectedProcedure.query(async ({ ctx }) => {
+    const c = await getLegacyCustomerByUserId(ctx.user.id);
+    if (!c) return [];
+    const bonds = await getLegacyBondsByCustomerId(c.id);
+    const today = toUtcCalendarMidnight(new Date());
+    return Promise.all(bonds.map(async (bond: any) => buildBondView(bond, await getPaymentHistoryByBond(bond.id), today)));
+  }),
+
+  adminLegacyBonds: adminProcedure
+    .input(z.object({ legacyCustomerId: z.number() }))
+    .query(async ({ input }) => {
+      const bonds = await getLegacyBondsByCustomerId(input.legacyCustomerId);
+      const today = toUtcCalendarMidnight(new Date());
+      return Promise.all(bonds.map(async (bond: any) => buildBondView(bond, await getPaymentHistoryByBond(bond.id), today)));
     }),
 
   /**

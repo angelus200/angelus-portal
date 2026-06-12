@@ -1,11 +1,12 @@
 import { getDb } from './db';
 import {
   legacyCustomers,
+  legacyBonds,
   legacyCustomerDocuments,
   legacyCustomerInterestCalculations,
   legacyCustomerPaymentHistory,
 } from '../drizzle/legacy-schema';
-import { eq, and, gte, lte, desc, asc, like, sql, or, isNotNull } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, asc, like, sql, or, isNotNull, inArray } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 /**
@@ -102,11 +103,50 @@ export async function createLegacyCustomer(data: {
 /**
  * Get legacy customer by contract number
  */
+// E3: Lookup primaer ueber legacy_bonds.contract_number (Vertragsnummer wohnt jetzt am Bond),
+// Fallback auf die (waehrend des Uebergangs noch vorhandene) legacy_customers.contract_number.
 export async function getLegacyCustomerByContractNumber(contractNumber: string) {
   const db = await getDb();
   if (!db) return null;
+  const bond = await db.select().from(legacyBonds).where(eq(legacyBonds.contractNumber, contractNumber)).limit(1).execute();
+  if (bond.length > 0) {
+    const c = await db.select().from(legacyCustomers).where(eq(legacyCustomers.id, bond[0].legacyCustomerId)).limit(1).execute();
+    if (c.length > 0) return c[0];
+  }
   const result = await db.select().from(legacyCustomers).where(eq(legacyCustomers.contractNumber, contractNumber)).limit(1).execute();
   return result.length > 0 ? result[0] : null;
+}
+
+// ===== E3: legacy_bonds-Leser (1:n) =====
+export async function getLegacyBondsByCustomerId(legacyCustomerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyBonds).where(eq(legacyBonds.legacyCustomerId, legacyCustomerId)).orderBy(asc(legacyBonds.id)).execute();
+}
+
+export async function getLegacyBondById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const r = await db.select().from(legacyBonds).where(eq(legacyBonds.id, id)).limit(1).execute();
+  return r.length > 0 ? r[0] : null;
+}
+
+export async function getLegacyBondByContractNumber(contractNumber: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const r = await db.select().from(legacyBonds).where(eq(legacyBonds.contractNumber, contractNumber)).limit(1).execute();
+  return r.length > 0 ? r[0] : null;
+}
+
+// Schaerfung C: Payments AUSSCHLIESSLICH des Bonds (WHERE legacy_bond_id) — bei Mehrfach-Zeichnern
+// darf ein Bond NICHT die Payments der anderen Bonds desselben Kunden sehen.
+export async function getPaymentHistoryByBond(legacyBondId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(legacyCustomerPaymentHistory)
+    .where(eq(legacyCustomerPaymentHistory.legacyBondId, legacyBondId))
+    .orderBy(asc(legacyCustomerPaymentHistory.paymentDate))
+    .execute();
 }
 
 /**
@@ -189,17 +229,20 @@ export async function searchLegacyCustomers(query: string, limit: number = 20) {
   if (!db) return [];
   const searchTerm = `%${query}%`;
 
-  const results = await db.select().from(legacyCustomers)
-    .where(or(
-      like(legacyCustomers.firstName, searchTerm),
-      like(legacyCustomers.lastName, searchTerm),
-      like(legacyCustomers.email, searchTerm),
-      like(legacyCustomers.contractNumber, searchTerm)
-    ))
-    .limit(limit)
-    .execute();
+  // E3: Vertragsnummer wohnt am Bond -> Kunden finden, deren Bond auf die Suche passt.
+  const bondMatches = await db.select({ cid: legacyBonds.legacyCustomerId })
+    .from(legacyBonds).where(like(legacyBonds.contractNumber, searchTerm)).execute();
+  const bondCustomerIds = Array.from(new Set(bondMatches.map((b) => b.cid)));
 
-  return results;
+  const conditions: any[] = [
+    like(legacyCustomers.firstName, searchTerm),
+    like(legacyCustomers.lastName, searchTerm),
+    like(legacyCustomers.email, searchTerm),
+    like(legacyCustomers.contractNumber, searchTerm), // Uebergang: alte Kunden-Spalte
+  ];
+  if (bondCustomerIds.length) conditions.push(inArray(legacyCustomers.id, bondCustomerIds));
+
+  return db.select().from(legacyCustomers).where(or(...conditions)).limit(limit).execute();
 }
 
 /**
