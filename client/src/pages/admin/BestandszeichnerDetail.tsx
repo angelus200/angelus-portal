@@ -4,7 +4,7 @@
 // Funktion (buildVollzahlerKontoView) wie die Investor-Sicht ausfuehrt -> kein zweiter Rechenweg.
 // offen-Weiche wie investor-seitig: Vollzahler (offen=0) -> Vollzahler-Block; Saeumiger (offen>0)
 // -> Forderungskonto via adminKontokorrent. NUR LESEN (Bearbeiten = Etappe 4).
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -40,6 +40,7 @@ export default function BestandszeichnerDetail() {
 
   // Upload (Admin) -> POST /api/legacy-document (legacy_customers-gekeyt, beliebiger Typ + Richtung).
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [docType, setDocType] = useState("other");
   const [richtung, setRichtung] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -61,6 +62,7 @@ export default function BestandszeichnerDetail() {
         throw new Error(`Upload fehlgeschlagen (HTTP ${res.status})${detail ? ": " + String(detail).slice(0, 200) : ""}`);
       }
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await refetchDocs();
     } catch (e: any) {
       alert(e.message);
@@ -267,9 +269,11 @@ export default function BestandszeichnerDetail() {
             </div>
           )}
 
-          {/* Upload (Admin) */}
+          {/* Upload (Admin) — versteckter Input + sichtbarer Button (ref.click()): umgeht Overlay-/
+              pointer-events-Probleme am nativen File-Input; der Klick triggert den Dialog programmatisch. */}
           <div className="border-t pt-3 flex flex-wrap items-center gap-2">
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-xs" />
+            <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Datei wählen</Button>
             <select value={docType} onChange={(e) => setDocType(e.target.value)} className="text-xs border rounded px-2 py-1">
               <option value="other">Sonstiges</option>
               <option value="contract">Vertrag/Korrespondenz</option>
