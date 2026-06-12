@@ -90,6 +90,7 @@ function BondSection({ bond, showHeader }: { bond: any; showHeader: boolean }) {
                         <td className="text-right py-1.5 pl-2">
                           {p.status === "erfuellt" && <span className="text-green-700">Erfüllt</span>}
                           {p.status === "bedient" && <span className="text-green-700">bedient (Saldo-Ausgleich)</span>}
+                          {p.status === "getragen" && <span className="text-green-700">durch Vorfinanzierung getragen (Restguthaben {eur(p.restguthaben)})</span>}
                           {p.status === "teilweise" && <span className="text-amber-700">Teilweise (offen {eur(p.deckungsluecke)})</span>}
                           {p.status === "offen" && <span className="text-amber-700">Offen *</span>}
                         </td>

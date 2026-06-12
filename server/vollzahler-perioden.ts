@@ -33,7 +33,7 @@
 import { Decimal } from 'decimal.js';
 import { calculateInterestByDateRange, days30E360, type ZinsBasis } from './interest-calculation';
 
-export type PeriodeStatus = 'erfuellt' | 'bedient' | 'teilweise' | 'offen';
+export type PeriodeStatus = 'erfuellt' | 'bedient' | 'getragen' | 'teilweise' | 'offen';
 
 export interface VollzahlerPeriode {
   index: number;
@@ -43,7 +43,8 @@ export interface VollzahlerPeriode {
   istRumpf: boolean;
   zins: number;
   erhaltenInPeriode: number;
-  deckungsluecke: number; // nur bei 'teilweise' > 0
+  deckungsluecke: number; // nominale Kuponluecke (bei 'getragen'/'teilweise' > 0)
+  restguthaben: number; // nur bei 'getragen' > 0: Rest-Kuponguthaben nach Vorfin-Deckung (KG schuldet Zeichner)
   status: PeriodeStatus;
   unterVorbehalt: boolean; // true NUR fuer offene (zukuenftige) Perioden
 }
@@ -126,6 +127,7 @@ export function buildVollzahlerPerioden(inp: PeriodenInput): VollzahlerPeriode[]
   return bounds.map((b, i) => {
     let status: PeriodeStatus;
     let luecke = new Decimal(0);
+    let restguthaben = new Decimal(0);
     if (!b.past) {
       status = 'offen';
     } else if (erhalten[i].gte(b.zins.minus(EPS))) {
@@ -133,10 +135,15 @@ export function buildVollzahlerPerioden(inp: PeriodenInput): VollzahlerPeriode[]
     } else {
       luecke = Decimal.max(new Decimal(0), b.zins.minus(erhalten[i])); // nominale Luecke, immer ausgewiesen
       if (luecke.lte(remaining.plus(EPS))) {
-        status = 'bedient';                  // durch Vorfinanzierungssaldo getragen (P8)
+        status = 'bedient';                  // Vorfinanzierungssaldo deckt die Luecke GANZ (P8)
         remaining = remaining.minus(luecke);
       } else {
-        status = 'teilweise';
+        // Vollzahler (offen=0): die Rest-Kuponluecke ist unbezahlter Kupon = KG schuldet dem
+        // Zeichner, NIE eine Zeichner-Schuld. Vorfin traegt 'remaining', der Rest ist Restguthaben.
+        // -> 'getragen' (Guthaben), NICHT amber 'teilweise' (das suggeriert Zeichner-Unterzahlung).
+        restguthaben = luecke.minus(remaining);
+        remaining = new Decimal(0);
+        status = 'getragen';
       }
     }
     return {
@@ -148,6 +155,7 @@ export function buildVollzahlerPerioden(inp: PeriodenInput): VollzahlerPeriode[]
       zins: Number(b.zins.toDecimalPlaces(2)),
       erhaltenInPeriode: Number(erhalten[i].toDecimalPlaces(2)),
       deckungsluecke: Number(luecke.toDecimalPlaces(2)),
+      restguthaben: Number(restguthaben.toDecimalPlaces(2)),
       status,
       unterVorbehalt: !b.past,
     };
