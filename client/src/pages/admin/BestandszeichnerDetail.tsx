@@ -107,7 +107,7 @@ function BondSection({ bond, showHeader }: { bond: any; showHeader: boolean }) {
                 <div className="flex justify-between font-medium border-t pt-1">
                   <span>Saldo</span>
                   <span className={vz.saldo.saldo > 0 ? "text-amber-700" : "text-green-700"}>
-                    {eur(vz.saldo.saldo)} {vz.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben)"}
+                    {eur(Math.abs(vz.saldo.saldo))} {vz.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben Zeichner)"}
                   </span>
                 </div>
               </div>

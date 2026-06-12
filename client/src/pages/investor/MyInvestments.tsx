@@ -337,7 +337,7 @@ export default function MyInvestments() {
                       <div className="flex justify-between font-medium border-t pt-1">
                         <span>Saldo</span>
                         <span className={vollzahler.saldo.saldo > 0 ? "text-amber-700" : "text-green-700"}>
-                          {eur(vollzahler.saldo.saldo)} {vollzahler.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben)"}
+                          {eur(Math.abs(vollzahler.saldo.saldo))} {vollzahler.saldo.saldo > 0 ? "(KG-Forderung)" : "(Guthaben Zeichner)"}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground pt-1">
