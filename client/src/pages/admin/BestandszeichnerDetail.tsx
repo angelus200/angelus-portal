@@ -59,7 +59,7 @@ export default function BestandszeichnerDetail() {
         const text = await res.text().catch(() => "");
         let detail = text;
         try { detail = JSON.parse(text).error || text; } catch { /* HTML/leer -> Rohtext */ }
-        throw new Error(`Upload fehlgeschlagen (HTTP ${res.status})${detail ? ": " + String(detail).slice(0, 200) : ""}`);
+        throw new Error(`Upload fehlgeschlagen (HTTP ${res.status})${detail ? ": " + String(detail).slice(0, 500) : ""}`);
       }
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";

@@ -145,7 +145,7 @@ export const legacyCustomerDocuments = mysqlTable(
     fileName: varchar('file_name', { length: 255 }).notNull(),
     filePath: varchar('file_path', { length: 500 }).notNull(), // S3 path
     fileSize: int('file_size'), // in bytes
-    fileType: varchar('file_type', { length: 50 }), // e.g., 'application/pdf'
+    fileType: varchar('file_type', { length: 255 }), // MIME, z.B. Office-Typen >50 Zeichen (.docx = 71)
 
     // Document Data
     documentDate: date('document_date'), // Date of document
