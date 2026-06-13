@@ -113,3 +113,15 @@ describe('Journal-Sortierung K4a — ISO-Datum + chronologisch (drizzle Date-Obj
     expect(sollMinusHaben(k.zeilen)).toBe(-312.5);
   });
 });
+
+describe('Coupon-Buchungstext: Periode deutsch (kein ISO) — Vorweg-Fix A', () => {
+  it('Coupon-Gutschrift-Zeilen tragen TT.MM.JJJJ, kein ISO-Muster im Buchungstext', () => {
+    const k = buildKontoauszug(BONDS.kirstenA2.meta, BONDS.kirstenA2.payments as any[], STICHTAG);
+    const coupons = k.zeilen.filter((z) => z.typ === 'coupon_gutschrift');
+    expect(coupons.length).toBeGreaterThan(0);
+    for (const z of coupons) {
+      expect(z.buchungstext).not.toMatch(/\d{4}-\d{2}-\d{2}/); // kein ISO mehr
+      expect(z.buchungstext).toMatch(/\d{2}\.\d{2}\.\d{4}/);    // deutsche Periodendaten
+    }
+  });
+});

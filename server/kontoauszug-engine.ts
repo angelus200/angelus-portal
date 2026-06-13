@@ -11,6 +11,7 @@ import {
   buildForderungskontoView,
   toUtcCalendarMidnight,
 } from './legacy-konto-views';
+import { isoToDe } from '../shared/format-date'; // ISO -> TT.MM.JJJJ fuer Anzeige-Strings (Buchungstext)
 
 const r2 = (d: Decimal): number => Number(d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP));
 // Robust auf ISO YYYY-MM-DD (TZ-sicher), egal ob die Quelle ein Date-Objekt (drizzle payment_history)
@@ -117,7 +118,7 @@ export function buildKontoauszug(bond: any, payments: any[], stichtag: string, o
     for (const per of (vz.perioden ?? []).filter((per: any) => !per.unterVorbehalt)) {
       roh.push({
         datum: per.faelligkeit,
-        buchungstext: `Coupon-Gutschrift ${per.von}–${per.bis}${per.istRumpf ? ' (Rumpfjahr)' : ''} (brutto)`,
+        buchungstext: `Coupon-Gutschrift ${isoToDe(per.von)}–${isoToDe(per.bis)}${per.istRumpf ? ' (Rumpfjahr)' : ''} (brutto)`,
         soll: 0, haben: r2(new Decimal(per.zins)), typ: 'coupon_gutschrift',
       });
       if (opts?.steuerSaetze) {
