@@ -678,6 +678,89 @@ export const faqAcknowledgements = mysqlTable("faq_acknowledgements", {
 export type FaqAcknowledgement = typeof faqAcknowledgements.$inferSelect;
 export type InsertFaqAcknowledgement = typeof faqAcknowledgements.$inferInsert;
 
+/**
+ * KYC/AML-Sorgfaltsmodul (Bestandszeichner, Angelus-only). Gerichts-/aufsichtsfester Entlastungs-
+ * nachweis: versionierte Einreichung + individuelle Risikoanalyse + lückenloser append-only Case-Log +
+ * Eskalations-/Verdachtsflag (Anwalts-/FIU-Weg). Dateien verschlüsselt at rest (kyc-crypto), nur
+ * Metadaten in DB. Prod-Tabellen via scripts/kyc/*.cjs (utf8mb4), hier Defs für typsichere Queries.
+ */
+export const kycSubmissions = mysqlTable("kyc_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  kycVersion: varchar("kyc_version", { length: 16 }).notNull(),
+  status: mysqlEnum("status", ["eingereicht", "in_pruefung", "akzeptiert", "abgelehnt", "nachforderung", "verweigert"]).default("eingereicht").notNull(),
+  serverTimestamp: timestamp("server_timestamp").defaultNow().notNull(),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type KycSubmission = typeof kycSubmissions.$inferSelect;
+export type InsertKycSubmission = typeof kycSubmissions.$inferInsert;
+
+export const kycSubmissionFields = mysqlTable("kyc_submission_fields", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submission_id").notNull(),
+  fieldKey: varchar("field_key", { length: 64 }).notNull(), // z.B. block1.source_of_funds
+  fieldValue: text("field_value"),
+});
+export type KycSubmissionField = typeof kycSubmissionFields.$inferSelect;
+export type InsertKycSubmissionField = typeof kycSubmissionFields.$inferInsert;
+
+export const kycDocuments = mysqlTable("kyc_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submission_id").notNull(),
+  userId: int("user_id").notNull(),
+  docType: varchar("doc_type", { length: 64 }).notNull(),
+  filePath: varchar("file_path", { length: 512 }).notNull(), // Volume, verschlüsselt
+  originalFilename: varchar("original_filename", { length: 255 }),
+  mimeType: varchar("mime_type", { length: 128 }),
+  size: int("size"),
+  encrypted: boolean("encrypted").default(true).notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+export type KycDocument = typeof kycDocuments.$inferSelect;
+export type InsertKycDocument = typeof kycDocuments.$inferInsert;
+
+export const kycRiskAssessment = mysqlTable("kyc_risk_assessment", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  submissionId: int("submission_id"),
+  riskLevel: mysqlEnum("risk_level", ["niedrig", "mittel", "hoch"]).notNull(),
+  begruendung: text("begruendung"),
+  assessedBy: int("assessed_by"),
+  assessedAt: timestamp("assessed_at").defaultNow().notNull(),
+});
+export type KycRiskAssessment = typeof kycRiskAssessment.$inferSelect;
+export type InsertKycRiskAssessment = typeof kycRiskAssessment.$inferInsert;
+
+// Append-only Audit-Trail über den Fall-Lebenszyklus — DER Entlastungsnachweis.
+export const kycCaseLog = mysqlTable("kyc_case_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  submissionId: int("submission_id"),
+  eventType: varchar("event_type", { length: 48 }).notNull(), // eingereicht/geprueft/risiko_gesetzt/eskaliert/verdacht_geflaggt/status_geaendert
+  actor: varchar("actor", { length: 128 }),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type KycCaseLogEntry = typeof kycCaseLog.$inferSelect;
+export type InsertKycCaseLogEntry = typeof kycCaseLog.$inferInsert;
+
+// Verdachts-/Eskalationsflag — Meldeweg über Anwalt (kein eigenes goAML).
+export const kycEscalation = mysqlTable("kyc_escalation", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  flaggedBy: int("flagged_by"),
+  flaggedAt: timestamp("flagged_at").defaultNow().notNull(),
+  grund: text("grund"),
+  status: mysqlEnum("status", ["offen", "an_anwalt_uebergeben", "an_FIU_gemeldet", "erledigt"]).default("offen").notNull(),
+  uebergebenAnAnwaltAm: timestamp("uebergeben_an_anwalt_am"),
+  anwaltReferenz: varchar("anwalt_referenz", { length: 128 }),
+  fiuAktenzeichen: varchar("fiu_aktenzeichen", { length: 128 }),
+});
+export type KycEscalation = typeof kycEscalation.$inferSelect;
+export type InsertKycEscalation = typeof kycEscalation.$inferInsert;
+
 
 
 /**

@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import interestCalculationRouter from "../routers/interest-calculation.router";
 import uploadRouter from "../upload-router";
+import kycUploadRouter from "../kyc-upload-router";
 import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -67,6 +68,9 @@ async function startServer() {
 
   // File Upload & Serving
   app.use("/api", uploadRouter);
+
+  // KYC-Dokumente (verschlüsselt at rest, Admin-Download im Stream)
+  app.use("/api", kycUploadRouter);
   
   // Stripe webhook - must be before express.json() to access raw body
   app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {

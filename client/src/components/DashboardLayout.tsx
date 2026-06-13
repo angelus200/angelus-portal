@@ -52,6 +52,7 @@ import Footer from "./Footer";
 import { BRAND } from '@shared/brand';
 import { trpc } from "@/lib/trpc";
 import { FaqGate } from "./FaqGate";
+import { KycGate } from "./KycGate";
 
 // Icon mapping
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -140,6 +141,12 @@ export default function DashboardLayout({
   const faqGateEnabled = BRAND.key === "angelus" && variant === "investor";
   const { data: faqStatus, isLoading: faqStatusLoading, refetch: refetchFaqStatus } =
     trpc.faq.status.useQuery(undefined, { enabled: faqGateEnabled });
+  // FAQ erledigt? Dann erst feuert das KYC-Gate (Chaining FAQ -> KYC -> Dashboard). KYC-Status erst
+  // abfragen, wenn FAQ durch ist — sonst sähe der Zeichner beide gleichzeitig.
+  const faqPassed = faqGateEnabled ? (faqStatus ? (!faqStatus.applicable || faqStatus.acknowledged) : false) : true;
+  const kycGateEnabled = faqGateEnabled && faqPassed;
+  const { data: kycStatus, isLoading: kycStatusLoading, refetch: refetchKycStatus } =
+    trpc.kyc.status.useQuery(undefined, { enabled: kycGateEnabled });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -198,6 +205,13 @@ export default function DashboardLayout({
   if (faqGateEnabled && faqStatusLoading) return <DashboardLayoutSkeleton />;
   if (faqGateEnabled && faqStatus?.applicable && !faqStatus.acknowledged) {
     return <FaqGate onAcknowledged={() => { void refetchFaqStatus(); }} />;
+  }
+
+  // KYC-Pflicht-Gate (blockierend, NACH FAQ): Bestandszeichner ohne vollständige, serverseitig
+  // bestätigte Einreichung sehen erst das KYC-Gate. gateSatisfied ist die Server-Wahrheit.
+  if (kycGateEnabled && kycStatusLoading) return <DashboardLayoutSkeleton />;
+  if (kycGateEnabled && kycStatus?.applicable && !kycStatus.gateSatisfied) {
+    return <KycGate onCompleted={() => { void refetchKycStatus(); }} />;
   }
 
   // Bestandskunden füllen kein Risikoprofil aus (kommt aus dem Zeichnungsschein) → Menüpunkt ausblenden.

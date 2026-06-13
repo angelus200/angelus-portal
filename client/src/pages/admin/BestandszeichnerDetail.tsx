@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Upload, Loader2, Trash2 } from "lucide-react";
 import { KontoauszugView, KonsolidierungView } from "@/components/KontoauszugView";
+import { KycAdminBlock } from "@/components/KycAdminBlock";
 
 const eur = (n: number | null | undefined) =>
   n == null ? "—" : "€ " + Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2 });
@@ -283,6 +284,9 @@ export default function BestandszeichnerDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* KYC / Geldwäsche-Sorgfalt (Eigen-Identifizierung, Mittelherkunft, Eskalation, Case-Log). */}
+      <KycAdminBlock userId={(c as any).userId ?? null} />
 
       {/* Je Anleihe eine Sektion (Header nur bei n>1) */}
       {bonds.map((bond: any) => (
