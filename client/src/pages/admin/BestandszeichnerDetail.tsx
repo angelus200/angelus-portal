@@ -24,14 +24,10 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+// Serien-bewusster Kuendigungs-/Laufzeit-Satz kommt jetzt aus der Engine (buildVollzahlerWording.satz);
+// kein hartkodierter §/Intervall mehr im Frontend (war uniform falsch fuer KI 06-2022).
 function laufzeitSatzOf(w: any): string {
-  if (!w) return "";
-  return [
-    w.mindestlaufzeitEnde ? `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. ` : "",
-    `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
-    w.verfristeterTermin ? `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). ` : "",
-    w.naechsterTermin ? `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.` : "",
-  ].join("");
+  return w?.satz ?? "";
 }
 
 // Eine Anleihe-Sektion (1:n). Karten-Inhalte byte-gleich zur Vor-E4-Sicht; showHeader nur bei n>1.

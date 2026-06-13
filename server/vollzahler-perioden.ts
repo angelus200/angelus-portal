@@ -234,7 +234,19 @@ export interface VollzahlerWording {
   verfristeterEingangBis: string | null;    // "28.02.2026"
   naechsterTermin: string | null;           // "31.05.2027"
   naechsterEingangBis: string | null;       // "28.02.2027"
+  satz: string;                             // serien-bewusster Kuendigungs-/Laufzeit-Satz (EINE Quelle f. beide Clients)
 }
+
+// Serien-Kuendigungs-Config: § + Intervall sind SERIEN-Eigenschaften (nie pro Zeichner) -> zentral hier
+// statt im Frontend hartkodiert; neuer Zeichner derselben Serie erbt korrekt. Termin (MM.) kommt aus
+// couponTerminMMDD (= annualInterestDate−1), nicht doppelt gepflegt. typ steuert den Satz:
+//   'mindestlaufzeit' = feste Mindestlaufzeit, danach unbefristet (60-2023);
+//   'zyklus'          = feste N-Monats-Kuendigungszyklen, Verlaengerung gezogen (KI 06-2022).
+// Unbekannte Serie -> kein §/Intervall-Satz (nur Termin-Teil), damit nie ein falscher § behauptet wird.
+const SERIEN_KUENDIGUNG: Record<string, { paragraph: string; mlParagraph: string; intervallMonate: number; fristMonate: number; typ: 'mindestlaufzeit' | 'zyklus' }> = {
+  '60-2023': { paragraph: '§ 5 Abs. 1', mlParagraph: '§ 4 Abs. 2', intervallMonate: 12, fristMonate: 3, typ: 'mindestlaufzeit' },
+  '06-2022': { paragraph: '§ 4 Abs. 1', mlParagraph: '', intervallMonate: 36, fristMonate: 3, typ: 'zyklus' },
+};
 
 function fmtDE(d: Date): string {
   return `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${d.getUTCFullYear()}`;
@@ -254,6 +266,8 @@ export function buildVollzahlerWording(inp: {
   kuendigungStatus: string | null;
   kuendigungEingegangenAm: Date | null;
   naechsterKuendigungstermin: Date | null;
+  serie?: string | null;     // Serie (bondNumber) -> Kuendigungs-Config; unbekannt -> kein §/Intervall-Satz
+  today?: Date | null;       // fuer die Zeitform (Mindestlaufzeit endete/endet)
 }): VollzahlerWording {
   const stich = utcMidnight(inp.annualInterestDate);
   const term1 = new Date(stich.getTime());
@@ -282,13 +296,30 @@ export function buildVollzahlerWording(inp: {
     naechsterEingangBis = fmtDE(minusMonths(nt, 3));
   }
 
+  const mindestlaufzeitEnde = inp.maturityDate ? fmtDE(utcMidnight(inp.maturityDate)) : null;
+
+  // Serien-bewusster Kuendigungs-/Laufzeit-Satz (EINE Quelle; beide Clients rendern nur w.satz).
+  const cfg = inp.serie != null ? SERIEN_KUENDIGUNG[inp.serie] : undefined;
+  const today = inp.today != null ? utcMidnight(inp.today) : null;
+  const mlVergangen = inp.maturityDate != null && today != null && utcMidnight(inp.maturityDate).getTime() < today.getTime();
+  const teile: string[] = [];
+  if (cfg?.typ === 'mindestlaufzeit') {
+    if (mindestlaufzeitEnde) teile.push(`Die Mindestlaufzeit (${cfg.mlParagraph}) ${mlVergangen ? 'endete' : 'endet'} am ${mindestlaufzeitEnde}. `);
+    teile.push(`Die Anleihe läuft ${mlVergangen ? 'seither' : 'danach'} unbefristet weiter und ist ordentlich nur zu den ${cfg.intervallMonate}-Monats-Terminen (jeweils ${couponTerminMMDD}) mit einer Frist von ${cfg.fristMonate} Monaten kündbar (${cfg.paragraph}). `);
+  } else if (cfg?.typ === 'zyklus') {
+    teile.push(`Die Anleihe ist ordentlich alle ${cfg.intervallMonate} Monate jeweils zum ${couponTerminMMDD} mit einer Frist von ${cfg.fristMonate} Monaten kündbar (${cfg.paragraph}); die Verlängerung um weitere ${cfg.intervallMonate} Monate wurde gezogen. `);
+  }
+  if (verfristeterTermin) teile.push(`Die Kündigung vom ${kuendigungDatum} war für den Termin ${verfristeterTermin} verfristet (Eingang erforderlich bis ${verfristeterEingangBis}). `);
+  if (naechsterTermin) teile.push(`Nächstmöglicher Termin: ${naechsterTermin}, Eingang bis ${naechsterEingangBis}.`);
+
   return {
     couponTerminMMDD,
-    mindestlaufzeitEnde: inp.maturityDate ? fmtDE(utcMidnight(inp.maturityDate)) : null,
+    mindestlaufzeitEnde,
     kuendigungDatum,
     verfristeterTermin,
     verfristeterEingangBis,
     naechsterTermin,
     naechsterEingangBis,
+    satz: teile.join(''),
   };
 }

@@ -220,8 +220,10 @@ describe('Kontokorrent-Forderungsmodul', () => {
       kuendigungStatus: 'zurueckgewiesen',
       kuendigungEingegangenAm: d('2026-05-19'),
       naechsterKuendigungstermin: d('2027-05-31'),
+      serie: '60-2023',
+      today: d('2026-06-12'),
     });
-    expect(w).toEqual({
+    expect(w).toMatchObject({
       couponTerminMMDD: '31.05.',
       mindestlaufzeitEnde: '31.05.2026',
       kuendigungDatum: '19.05.2026',
@@ -230,15 +232,32 @@ describe('Kontokorrent-Forderungsmodul', () => {
       naechsterTermin: '31.05.2027',
       naechsterEingangBis: '28.02.2027',
     });
+    // Voller Satz jetzt aus der Engine (serien-bewusst) -> byte-identisch zum freigegebenen Brendel-Wortlaut
+    // (Mindestlaufzeit VERGANGEN -> "endete/seither").
+    expect(w.satz).toBe('Die Mindestlaufzeit (§ 4 Abs. 2) endete am 31.05.2026. Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils 31.05.) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). Die Kündigung vom 19.05.2026 war für den Termin 31.05.2026 verfristet (Eingang erforderlich bis 28.02.2026). Nächstmöglicher Termin: 31.05.2027, Eingang bis 28.02.2027.');
+  });
 
-    // Voller Satz, exakt wie im Frontend zusammengesetzt -> muss dem freigegebenen Wortlaut entsprechen.
-    const satz = [
-      `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. `,
-      `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
-      `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). `,
-      `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.`,
-    ].join('');
-    expect(satz).toBe('Die Mindestlaufzeit (§ 4 Abs. 2) endete am 31.05.2026. Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils 31.05.) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). Die Kündigung vom 19.05.2026 war für den Termin 31.05.2026 verfristet (Eingang erforderlich bis 28.02.2026). Nächstmöglicher Termin: 31.05.2027, Eingang bis 28.02.2027.');
+  // K-FIX: serien-bewusstes Wording. KI 06-2022 = §4/36 Mon./30.09., KEIN Mindestlaufzeit-Satz, Verlaengerung gezogen.
+  it('Wording KI-06-2022: §4 Abs.1, alle 36 Monate zum 30.09., kein Mindestlaufzeit-Satz', () => {
+    const w = buildVollzahlerWording({
+      annualInterestDate: d('2022-10-01'), maturityDate: null,
+      kuendigungStatus: null, kuendigungEingegangenAm: null,
+      naechsterKuendigungstermin: d('2028-09-30'),
+      serie: '06-2022', today: d('2026-06-13'),
+    });
+    expect(w.mindestlaufzeitEnde).toBeNull();
+    expect(w.satz).toBe('Die Anleihe ist ordentlich alle 36 Monate jeweils zum 30.09. mit einer Frist von 3 Monaten kündbar (§ 4 Abs. 1); die Verlängerung um weitere 36 Monate wurde gezogen. Nächstmöglicher Termin: 30.09.2028, Eingang bis 30.06.2028.');
+  });
+
+  // K-FIX: 60-2023 mit ZUKÜNFTIGER Mindestlaufzeit (Kirsten A1) -> "endet/danach" (nicht "endete/seither").
+  it('Wording 60-2023 Zukunft (Kirsten A1): Mindestlaufzeit "endet/danach", nächster Termin 31.05.2029', () => {
+    const w = buildVollzahlerWording({
+      annualInterestDate: d('2025-06-01'), maturityDate: d('2028-06-26'),
+      kuendigungStatus: null, kuendigungEingegangenAm: null,
+      naechsterKuendigungstermin: d('2029-05-31'),
+      serie: '60-2023', today: d('2026-06-13'),
+    });
+    expect(w.satz).toBe('Die Mindestlaufzeit (§ 4 Abs. 2) endet am 26.06.2028. Die Anleihe läuft danach unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils 31.05.) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). Nächstmöglicher Termin: 31.05.2029, Eingang bis 28.02.2029.');
   });
 
   // P/Teil B — VFE-Schlussabrechnung (Brenner, gekündigter Säumiger). Maßgeblicher Saldo = volle

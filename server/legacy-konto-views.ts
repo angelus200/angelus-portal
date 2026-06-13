@@ -97,6 +97,8 @@ export function buildVollzahlerKontoView(c: any, payments: any[], today: Date) {
         kuendigungStatus: ((c as any).kuendigungStatus as string | null) ?? null,
         kuendigungEingegangenAm: (c as any).kuendigungEingegangenAm != null ? toUtcCalendarMidnight((c as any).kuendigungEingegangenAm) : null,
         naechsterKuendigungstermin: (c as any).naechsterKuendigungstermin != null ? toUtcCalendarMidnight((c as any).naechsterKuendigungstermin) : null,
+        serie: (c as any).bondNumber ?? null, // Serie -> Kuendigungs-Config (§/Intervall/Typ)
+        today,                                  // Zeitform Mindestlaufzeit endete/endet
       })
     : null;
   const rueckzahlung = (c as any).naechsterKuendigungstermin != null

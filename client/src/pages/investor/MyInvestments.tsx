@@ -116,12 +116,9 @@ export default function MyInvestments() {
   const { data: myKa } = trpc.legacyCustomer.myZeichnerKontoauszug.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
   // E4b: Wording-/Laufzeit-Satz ist bond-spezifisch -> Helper, im Bond-Loop pro Anleihe aufgerufen.
-  const laufzeitSatzOf = (w: any): string => !w ? "" : [
-    w.mindestlaufzeitEnde ? `Die Mindestlaufzeit (§ 4 Abs. 2) endete am ${w.mindestlaufzeitEnde}. ` : "",
-    `Die Anleihe läuft seither unbefristet weiter und ist ordentlich nur zu den 12-Monats-Terminen (jeweils ${w.couponTerminMMDD}) mit einer Frist von 3 Monaten kündbar (§ 5 Abs. 1). `,
-    w.verfristeterTermin ? `Die Kündigung vom ${w.kuendigungDatum} war für den Termin ${w.verfristeterTermin} verfristet (Eingang erforderlich bis ${w.verfristeterEingangBis}). ` : "",
-    w.naechsterTermin ? `Nächstmöglicher Termin: ${w.naechsterTermin}, Eingang bis ${w.naechsterEingangBis}.` : "",
-  ].join("");
+  // Serien-bewusster Kuendigungs-/Laufzeit-Satz aus der Engine (buildVollzahlerWording.satz) — kein
+  // hartkodierter §/Intervall mehr (war uniform falsch fuer KI 06-2022); Admin+Investor teilen die Quelle.
+  const laufzeitSatzOf = (w: any): string => w?.satz ?? "";
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpand = (id: number) => {
@@ -269,9 +266,7 @@ export default function MyInvestments() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Zinssatz</span><span className="font-medium">{vollzahler.couponRate.toLocaleString("de-DE")} % p.a.</span></div>
                 )}
                 <div className="flex justify-between"><span className="text-muted-foreground">Bereits erhaltene Zinsen (brutto)</span><span className="font-medium">{eur(vollzahler.bereitsErhalten)}</span></div>
-                {vollzahler.maturityDate && (
-                  <div className="flex justify-between"><span className="text-muted-foreground">Mindestlaufzeit bis</span><span className="font-medium">{new Date(vollzahler.maturityDate).toLocaleDateString("de-DE")}</span></div>
-                )}
+                <div className="flex justify-between"><span className="text-muted-foreground">Mindestlaufzeit bis</span><span className="font-medium">{vollzahler.maturityDate ? new Date(vollzahler.maturityDate).toLocaleDateString("de-DE") : "entfällt"}</span></div>
               </div>
 
               {/* Jahreszins pro Laufzeitjahr (P6) — Status datengetrieben; Vorbehalt (*) NUR für offene Perioden */}
