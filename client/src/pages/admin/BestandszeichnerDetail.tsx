@@ -172,6 +172,12 @@ export default function BestandszeichnerDetail() {
     { legacyCustomerId: legacyId },
     { enabled: legacyId > 0 }
   );
+  // FAQ-Bestätigungs-Nachweis: braucht den verknüpften User. Kirsten-Sonderfall (user_id=NULL) ->
+  // Query NICHT feuern (kein Crash), unten als "kein Account verknüpft" ausweisen.
+  const { data: faqAck } = trpc.faq.adminAcknowledgement.useQuery(
+    { userId: (c as any)?.userId ?? 0 },
+    { enabled: !!(c as any)?.userId }
+  );
   const { data: docs = [], refetch: refetchDocs } = trpc.legacyCustomer.documents.getByCustomerId.useQuery(
     { legacyCustomerId: legacyId },
     { enabled: legacyId > 0 }
@@ -255,6 +261,28 @@ export default function BestandszeichnerDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* FAQ-Bestätigung (Nachweis je Zeichner). Kirsten-Sonderfall: kein verknüpfter User -> kein Crash. */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">FAQ-Bestätigung</CardTitle></CardHeader>
+        <CardContent className="text-sm space-y-0.5">
+          {!(c as any).userId ? (
+            <p className="text-amber-700">Kein Account verknüpft — Bestätigung noch nicht möglich (Account-Anlage/Verknüpfung ausstehend, Schritt 3).</p>
+          ) : !faqAck || faqAck.length === 0 ? (
+            <p className="text-amber-700">Noch nicht bestätigt.</p>
+          ) : (
+            <>
+              <Row label="Status" value={<span className="text-green-700">bestätigt</span>} />
+              <Row label="Version" value={faqAck[0].faqVersion} />
+              <Row label="Zeitpunkt (Server)" value={faqAck[0].serverTimestamp ? new Date(faqAck[0].serverTimestamp).toLocaleString("de-DE") : "—"} />
+              <Row label="IP-Adresse" value={faqAck[0].ipAddress ?? "—"} />
+              <Row label="Bis Ende gescrollt" value={faqAck[0].scrolledToEnd ? "ja" : "nein"} />
+              <Row label="User-Agent" value={<span className="text-xs break-all text-right">{faqAck[0].userAgent ?? "—"}</span>} />
+              <p className="text-xs text-muted-foreground border-t pt-2 mt-1">Bestätigter Wortlaut: „{faqAck[0].confirmationText}"</p>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Je Anleihe eine Sektion (Header nur bei n>1) */}
       {bonds.map((bond: any) => (

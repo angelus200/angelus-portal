@@ -56,6 +56,7 @@ import Bestandskunden from './pages/admin/Bestandskunden';
 import BestandskundenDetail from './pages/admin/BestandskundenDetail';
 import BestandszeichnerDetail from './pages/admin/BestandszeichnerDetail';
 import BestandszeichnerListe from './pages/admin/BestandszeichnerListe';
+import AdminFaq from './pages/admin/Faq';
 import LegacyCustomerDocuments from './pages/admin/LegacyCustomerDocuments';
 import IssuersManagement from './pages/admin/IssuersManagement';
 import AccessRequests from './pages/admin/AccessRequests';
@@ -120,6 +121,7 @@ function Router() {
       <Route path="/admin/bestandszeichner" component={BestandszeichnerListe} />
       <Route path="/admin/bestandszeichner/:legacyId" component={BestandszeichnerDetail} />
       <Route path="/admin/bestandskunden-dokumente" component={LegacyCustomerDocuments} />
+      <Route path="/admin/faq" component={AdminFaq} />
 
       {/* Fallback */}
       <Route path="/404" component={NotFound} />

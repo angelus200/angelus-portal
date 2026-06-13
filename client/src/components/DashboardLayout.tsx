@@ -50,6 +50,8 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import Footer from "./Footer";
 import { BRAND } from '@shared/brand';
+import { trpc } from "@/lib/trpc";
+import { FaqGate } from "./FaqGate";
 
 // Icon mapping
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -98,6 +100,7 @@ const adminMenuItems = [
         { icon: "Users", label: "Bestandszeichner", path: "/admin/bestandszeichner" },
         { icon: "FileText", label: "Bestandsverträge (alt)", path: "/admin/bestandskunden" },
         { icon: "Upload", label: "Bestandskunden-Dokumente", path: "/admin/bestandskunden-dokumente" },
+        { icon: "FileText", label: "FAQ", path: "/admin/faq" },
       ]
     : []),
   { icon: "Percent", label: "Zinsparameter", path: "/admin/interest-parameters" },
@@ -133,6 +136,10 @@ export default function DashboardLayout({
   const { loading, user } = useAuth();
   const { isBestandskunde } = useIsBestandskunde();
   const [, setLocation] = useLocation();
+  // FAQ-Pflicht-Gate: NUR KG-Investor-Bereich. Query feuert nur dann (sonst assertAngelus-Fehler/Logspam).
+  const faqGateEnabled = BRAND.key === "angelus" && variant === "investor";
+  const { data: faqStatus, isLoading: faqStatusLoading, refetch: refetchFaqStatus } =
+    trpc.faq.status.useQuery(undefined, { enabled: faqGateEnabled });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -184,6 +191,13 @@ export default function DashboardLayout({
         </div>
       </div>
     );
+  }
+
+  // FAQ-Pflicht-Gate (blockierend): Bestandszeichner ohne Bestätigung der AKTIVEN Version sehen erst
+  // das Gate, dann das Dashboard. Skeleton während des Status-Loads -> kein Dashboard-Flash davor.
+  if (faqGateEnabled && faqStatusLoading) return <DashboardLayoutSkeleton />;
+  if (faqGateEnabled && faqStatus?.applicable && !faqStatus.acknowledged) {
+    return <FaqGate onAcknowledged={() => { void refetchFaqStatus(); }} />;
   }
 
   // Bestandskunden füllen kein Risikoprofil aus (kommt aus dem Zeichnungsschein) → Menüpunkt ausblenden.
