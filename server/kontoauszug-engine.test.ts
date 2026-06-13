@@ -97,3 +97,19 @@ describe('Coupon-Termin-Quelle: §4-Termin (annual_interest_date), NICHT value_d
     expect(buggy.endsaldo).not.toBe(korrekt.endsaldo);
   });
 });
+
+describe('Journal-Sortierung K4a — ISO-Datum + chronologisch (drizzle Date-Objekte)', () => {
+  it('Date-Objekt-paymentDate → ISO-Datum, chronologisch monoton, Einzahlung zuerst, Endsaldo unberührt', () => {
+    // drizzle liefert payment_history.paymentDate als Date-Objekt (lokale Mitternacht wie mysql2).
+    // Bewusst in verkehrter Reihenfolge -> der Fix MUSS auf ISO normalisieren UND sortieren.
+    const dated = [...BONDS.kirstenA1.payments]
+      .map((p) => { const [y, m, d] = p.paymentDate.split('-').map(Number); return { ...p, paymentDate: new Date(y, m - 1, d) }; })
+      .reverse();
+    const k = buildKontoauszug(BONDS.kirstenA1.meta, dated as any[], STICHTAG);
+    for (const z of k.zeilen) expect(z.datum).toMatch(/^\d{4}-\d{2}-\d{2}$/);            // ISO, kein "Tue Jul 15"
+    for (let i = 1; i < k.zeilen.length; i++) expect(k.zeilen[i].datum >= k.zeilen[i - 1].datum).toBe(true); // monoton
+    expect(k.zeilen[0].typ).toBe('einzahlung');                                          // erster Vorgang oben
+    expect(k.endsaldo).toBe(-312.5);                                                     // Anker unberührt
+    expect(sollMinusHaben(k.zeilen)).toBe(-312.5);
+  });
+});

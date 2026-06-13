@@ -5,6 +5,11 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const eur = (n: number) => "€ " + Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// ISO YYYY-MM-DD -> TT.MM.JJJJ per String-Split (kein new Date -> kein TZ-Drift, kein engl. Wochentag).
+const deDate = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : (iso ?? "");
+};
 const FALL_LABEL: Record<string, string> = {
   vollzahler: "Vollzahler",
   verzugszins: "Säumiger (Verzugszins)",
@@ -34,7 +39,7 @@ export function KontoauszugView({ auszug }: { auszug: Auszug }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Kontoauszug — Anleihe {m.bondNumber ?? "—"} · Vertrag {m.contractNumber ?? "—"}</CardTitle>
-        <p className="text-xs text-muted-foreground">{FALL_LABEL[auszug.fallTyp] ?? auszug.fallTyp} · Stichtag {stichtag}</p>
+        <p className="text-xs text-muted-foreground">{FALL_LABEL[auszug.fallTyp] ?? auszug.fallTyp} · Stichtag {deDate(stichtag)}</p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -53,7 +58,7 @@ export function KontoauszugView({ auszug }: { auszug: Auszug }) {
                 const memo = z.soll === 0 && z.haben === 0; // Einzahlung / Steuer -> optisch abgesetzt
                 return (
                   <tr key={i} className={`border-b last:border-0 ${memo ? "text-muted-foreground italic" : ""}`}>
-                    <td className="py-1.5 pr-2 whitespace-nowrap">{z.datum}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap">{deDate(z.datum)}</td>
                     <td className="py-1.5 px-2">{z.buchungstext}</td>
                     <td className="text-right py-1.5 px-2 whitespace-nowrap">{z.soll ? eur(z.soll) : ""}</td>
                     <td className="text-right py-1.5 px-2 whitespace-nowrap">{z.haben ? eur(z.haben) : ""}</td>

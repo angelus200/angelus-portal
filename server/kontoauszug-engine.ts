@@ -13,6 +13,9 @@ import {
 } from './legacy-konto-views';
 
 const r2 = (d: Decimal): number => Number(d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP));
+// Robust auf ISO YYYY-MM-DD (TZ-sicher), egal ob die Quelle ein Date-Objekt (drizzle payment_history)
+// oder schon ein String ist. NIE String(dateObj) (-> "Tue Jul 15") oder toISOString roh (TZ-Drift).
+const isoDate = (v: any): string => toUtcCalendarMidnight(v).toISOString().slice(0, 10);
 
 export type KontoauszugTyp =
   | 'einzahlung'
@@ -108,7 +111,7 @@ export function buildKontoauszug(bond: any, payments: any[], stichtag: string, o
 
     // Einzahlungen (Memo — Kapital steht nicht im Zins-Kontokorrent)
     for (const p of payments.filter((x: any) => (x.status ?? 'confirmed') === 'confirmed' && x.paymentType === 'initial_investment')) {
-      roh.push({ datum: String(p.paymentDate).slice(0, 10), buchungstext: `Einzahlung Kapital ${eur(Number(p.amount))}`, soll: 0, haben: 0, typ: 'einzahlung' });
+      roh.push({ datum: isoDate(p.paymentDate), buchungstext: `Einzahlung Kapital ${eur(Number(p.amount))}`, soll: 0, haben: 0, typ: 'einzahlung' });
     }
     // Coupon-Gutschriften je FÄLLIGER Periode (brutto, HABEN) + optionales Steuer-Memo
     for (const per of (vz.perioden ?? []).filter((per: any) => !per.unterVorbehalt)) {
@@ -124,7 +127,7 @@ export function buildKontoauszug(bond: any, payments: any[], stichtag: string, o
     }
     // Monatliche Abschläge (SOLL)
     for (const p of payments.filter((x: any) => (x.status ?? 'confirmed') === 'confirmed' && x.paymentType === 'interest_payment')) {
-      roh.push({ datum: String(p.paymentDate).slice(0, 10), buchungstext: `Zinsabschlag (Vorauszahlung, brutto)`, soll: r2(new Decimal(p.amount)), haben: 0, typ: 'abschlag' });
+      roh.push({ datum: isoDate(p.paymentDate), buchungstext: `Zinsabschlag (Vorauszahlung, brutto)`, soll: r2(new Decimal(p.amount)), haben: 0, typ: 'abschlag' });
     }
     // Vorfinanzierungszins (Aggregat zum Stichtag; refinancing_rate pro Bond) — signiert
     const vorfin = new Decimal(vz.saldo?.sollVorfinanzierung ?? 0);
