@@ -137,13 +137,16 @@ export function buildVollzahlerPerioden(inp: PeriodenInput): VollzahlerPeriode[]
       if (luecke.lte(remaining.plus(EPS))) {
         status = 'bedient';                  // Vorfinanzierungssaldo deckt die Luecke GANZ (P8)
         remaining = remaining.minus(luecke);
-      } else {
-        // Vollzahler (offen=0): die Rest-Kuponluecke ist unbezahlter Kupon = KG schuldet dem
-        // Zeichner, NIE eine Zeichner-Schuld. Vorfin traegt 'remaining', der Rest ist Restguthaben.
-        // -> 'getragen' (Guthaben), NICHT amber 'teilweise' (das suggeriert Zeichner-Unterzahlung).
+      } else if (remaining.gt(EPS)) {
+        // Vollzahler (offen=0): Vorfin traegt 'remaining', der Rest ist Restguthaben (= KG schuldet
+        // dem Zeichner) -> 'getragen' (Guthaben), NICHT amber 'teilweise' (suggeriert Zeichner-Unterzahlung).
+        // NUR wenn die Vorfin tatsaechlich einen Teil traegt (remaining>0); sonst waere "getragen" ein Fehletikett.
         restguthaben = luecke.minus(remaining);
         remaining = new Decimal(0);
         status = 'getragen';
+      } else {
+        // Kein Vorfinanzierungs-Budget vorhanden -> Vorfin trug nichts; reine (noch) offene Kuponluecke.
+        status = 'teilweise';
       }
     }
     return {
