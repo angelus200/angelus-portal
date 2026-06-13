@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Upload, Loader2, Trash2 } from "lucide-react";
+import { KontoauszugView, KonsolidierungView } from "@/components/KontoauszugView";
 
 const eur = (n: number | null | undefined) =>
   n == null ? "—" : "€ " + Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2 });
@@ -171,6 +172,10 @@ export default function BestandszeichnerDetail() {
 
   const { data: c, isLoading } = trpc.legacyCustomer.getById.useQuery({ id: legacyId }, { enabled: legacyId > 0 });
   const { data: bonds = [] } = trpc.legacyCustomer.adminLegacyBonds.useQuery({ legacyCustomerId: legacyId }, { enabled: legacyId > 0 });
+  const { data: ka, isLoading: kaLoading, error: kaError } = trpc.legacyCustomer.adminZeichnerKontoauszug.useQuery(
+    { legacyCustomerId: legacyId },
+    { enabled: legacyId > 0 }
+  );
   const { data: docs = [], refetch: refetchDocs } = trpc.legacyCustomer.documents.getByCustomerId.useQuery(
     { legacyCustomerId: legacyId },
     { enabled: legacyId > 0 }
@@ -259,6 +264,21 @@ export default function BestandszeichnerDetail() {
       {bonds.map((bond: any) => (
         <BondSection key={bond.bondId} bond={bond} showHeader={bonds.length > 1} />
       ))}
+
+      {/* K3: Kontoauszug — je Bond das Journal + §387-Konsolidierung (adminZeichnerKontoauszug) */}
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold border-b pb-1">Kontoauszug</h2>
+        {kaLoading ? (
+          <p className="text-muted-foreground text-sm">Lädt…</p>
+        ) : kaError ? (
+          <p className="text-destructive text-sm">Kontoauszug konnte nicht geladen werden: {kaError.message}</p>
+        ) : (
+          <div className="space-y-5">
+            {(ka?.bonds ?? []).map((a: any, i: number) => <KontoauszugView key={i} auszug={a} />)}
+            {ka?.konsolidierung && <KonsolidierungView konsolidierung={ka.konsolidierung} />}
+          </div>
+        )}
+      </div>
 
       {/* Dokumente (legacy_customers-Akte, am Kunden — kombinierte Steuerbescheinigung gehoert hierher) */}
       <Card>

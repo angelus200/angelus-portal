@@ -11,6 +11,7 @@ import { Link } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { BRAND } from "@shared/brand";
+import { KontoauszugView, KonsolidierungView } from "@/components/KontoauszugView";
 
 function AuszahlungsplanRow({ subscriptionId }: { subscriptionId: number }) {
   const { data, isLoading } = trpc.tax.auszahlungsplan.useQuery({ subscriptionId });
@@ -112,6 +113,7 @@ export default function MyInvestments() {
   const isKG = BRAND.key === "angelus";
   const { data: zeichnungsschein } = trpc.legacyCustomer.myZeichnungsschein.useQuery(undefined, { enabled: isKG });
   const { data: legacyBonds = [] } = trpc.legacyCustomer.myLegacyBonds.useQuery(undefined, { enabled: isKG });
+  const { data: myKa } = trpc.legacyCustomer.myZeichnerKontoauszug.useQuery(undefined, { enabled: isKG });
   const eur = (n: number) => "€ " + n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
   // E4b: Wording-/Laufzeit-Satz ist bond-spezifisch -> Helper, im Bond-Loop pro Anleihe aufgerufen.
   const laufzeitSatzOf = (w: any): string => !w ? "" : [
@@ -392,6 +394,15 @@ export default function MyInvestments() {
             </Fragment>
           );
         })}
+
+        {/* K4: Mein Kontoauszug — je Bond Journal + §387-Konsolidierung (myZeichnerKontoauszug, Kunden-ID aus Login) */}
+        {isKG && (myKa?.bonds?.length ?? 0) > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold border-b pb-1">Mein Kontoauszug</h2>
+            {(myKa?.bonds ?? []).map((a: any, i: number) => <KontoauszugView key={i} auszug={a} />)}
+            {myKa?.konsolidierung && <KonsolidierungView konsolidierung={myKa.konsolidierung} />}
+          </div>
+        )}
 
         {/* Mein Zeichnungsschein (KG-Bestandszeichner) — Download via no-id Route /api/zeichnungsschein */}
         {isKG && zeichnungsschein && (
