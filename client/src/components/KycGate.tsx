@@ -152,7 +152,9 @@ export function KycGate({ onCompleted }: { onCompleted: () => void }) {
     }
     const missingFiles = docsToUpload.filter((t) => !files[t]);
     if (missingFiles.length > 0) {
-      setSubmitError(`Bitte alle Pflicht-Nachweise auswählen: ${missingFiles.join(", ")}`);
+      // Lesbare Labels statt doc_type-Keys (ein Anleger versteht "sow_nachweis" nicht).
+      const labelOf = (t: string) => docDefs.find((d) => d.docType === t)?.label ?? t;
+      setSubmitError(`Bitte alle Pflicht-Nachweise auswählen: ${missingFiles.map(labelOf).join(", ")}`);
       return;
     }
 
