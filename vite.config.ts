@@ -3,8 +3,23 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "path";
 import { defineConfig } from "vite";
+import { getBrand } from "./shared/brand";
 
-const plugins = [react(), tailwindcss()];
+// Brand: index.html marken-bewusst (lang/title/description aus brand.ts, build-time via VITE_BRAND).
+// Crawler/Link-Previews holen HTML OHNE JS -> muss build-time stehen, nicht zur Laufzeit. Ersetzt die
+// Tags strukturell (nicht text-exakt) -> der statische Fallback im index.html (Angelus/DE) bleibt robust.
+const brandHtmlPlugin = {
+  name: "brand-index-html",
+  transformIndexHtml(html: string) {
+    const b = getBrand();
+    return html
+      .replace(/<html lang="[^"]*">/, () => `<html lang="${b.htmlLang}">`)
+      .replace(/<title>[\s\S]*?<\/title>/, () => `<title>${b.htmlTitle}</title>`)
+      .replace(/<meta name="description" content="[^"]*"\s*\/?>/, () => `<meta name="description" content="${b.htmlDescription}" />`);
+  },
+};
+
+const plugins = [react(), tailwindcss(), brandHtmlPlugin];
 
 export default defineConfig({
   plugins,

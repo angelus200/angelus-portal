@@ -10,6 +10,11 @@ export interface BrandConfig {
   contactEmail: string;
   domain: string;
   issuer: string;
+  // Marken-bewusster HTML-Kopf (build-time in index.html via vite transformIndexHtml). Crawler/
+  // Link-Previews holen HTML ohne JS -> diese Werte muessen build-time stehen, nicht zur Laufzeit.
+  htmlLang: string;
+  htmlTitle: string;
+  htmlDescription: string;
 }
 
 const BRANDS: Record<string, BrandConfig> = {
@@ -21,6 +26,9 @@ const BRANDS: Record<string, BrandConfig> = {
     contactEmail: 'office@angelus.group',
     domain: 'unternehmerrente.app',
     issuer: 'Angelus Managementberatungs und Service KG',
+    htmlLang: 'de',
+    htmlTitle: 'Angelus Group Portal',
+    htmlDescription: 'Investorenportal der Angelus Group. Zugang für bestehende Zeichner.',
   },
   'angelus-alpha': {
     key: 'angelus-alpha',
@@ -30,6 +38,9 @@ const BRANDS: Record<string, BrandConfig> = {
     contactEmail: 'office@angelus.group',
     domain: 'angelus-alpha.app',
     issuer: 'Angelus Alpha Beteiligungen GmbH',
+    htmlLang: 'de',
+    htmlTitle: 'Angelus Alpha — Investorenportal',
+    htmlDescription: 'Privates Investorenportal der Angelus Alpha Beteiligungen GmbH — Zugang nur per Einladung.',
   },
   // Steuert NUR Landing/Logo/Sprache/Footer — KEIN Emittent (Investizo ist Betreiber, nicht Emittent).
   'mybonds': {
@@ -40,6 +51,9 @@ const BRANDS: Record<string, BrandConfig> = {
     contactEmail: 'office@angelus.group',
     domain: 'mybonds.net',
     issuer: '',
+    htmlLang: 'en',
+    htmlTitle: 'MyBonds — Fixed-Income Corporate Bonds for Professional Investors',
+    htmlDescription: 'Earn predictable passive income with high-yield corporate bonds. Fixed rates, fixed terms, minimum investment €100,000. By invitation.',
   },
 };
 
