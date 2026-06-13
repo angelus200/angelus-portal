@@ -647,6 +647,37 @@ export const consentLogs = mysqlTable("consent_logs", {
 export type ConsentLog = typeof consentLogs.$inferSelect;
 export type InsertConsentLog = typeof consentLogs.$inferInsert;
 
+/**
+ * FAQ-Pflicht-Gate (Bestandszeichner, Angelus-only). Beweissicher: Versions-Archiv mit content_hash +
+ * append-only Bestätigungen (server-Timestamp/IP, scrolled-Flags). Prod-Tabellen via scripts/faq/*.cjs
+ * (content als LONGTEXT/utf8mb4), hier Defs für typsichere Queries. NIE drizzle push auf Prod.
+ */
+export const faqVersions = mysqlTable("faq_versions", {
+  id: int("id").autoincrement().primaryKey(),
+  faqVersion: varchar("faq_version", { length: 16 }).notNull().unique(),
+  content: text("content").notNull(),                          // Volltext, unveränderlich
+  contentHash: varchar("content_hash", { length: 64 }).notNull(), // SHA-256 des Volltexts
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+});
+export type FaqVersion = typeof faqVersions.$inferSelect;
+export type InsertFaqVersion = typeof faqVersions.$inferInsert;
+
+export const faqAcknowledgements = mysqlTable("faq_acknowledgements", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  faqVersion: varchar("faq_version", { length: 16 }).notNull(),
+  faqContentHash: varchar("faq_content_hash", { length: 64 }).notNull(), // Hash der gesehenen Version (server-seitig)
+  confirmationText: text("confirmation_text").notNull(),                  // exakter bestätigter Wortlaut
+  scrolledToEnd: boolean("scrolled_to_end").default(false).notNull(),
+  gatingCompletedAt: timestamp("gating_completed_at"),                    // Zeitpunkt Scroll-Ende (Client-Uhr, informativ)
+  serverTimestamp: timestamp("server_timestamp").defaultNow().notNull(),  // maßgebliche Serverzeit
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({ uniqUserVersion: uniqueIndex("uniq_faq_ack_user_version").on(t.userId, t.faqVersion) }));
+export type FaqAcknowledgement = typeof faqAcknowledgements.$inferSelect;
+export type InsertFaqAcknowledgement = typeof faqAcknowledgements.$inferInsert;
+
 
 
 /**

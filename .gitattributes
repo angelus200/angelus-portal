@@ -1,0 +1,3 @@
+# FAQ-Seed-Quelle: byte-genau einfrieren (kein EOL-/Encoding-Drift), sonst kippt der content_hash
+# zwischen Seed und Auslieferung und der Beweis-Mechanismus wird wertlos.
+scripts/faq/Angelus_FAQ_2026-06.md binary
