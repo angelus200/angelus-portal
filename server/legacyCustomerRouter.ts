@@ -17,6 +17,7 @@ import {
   getAllLegacyCustomers,
   getLegacyCustomerUserLinks,
   getLegacyBondsByCustomerId,
+  getLegacyBondById,
   getPaymentHistoryByBond,
   searchLegacyCustomers,
   updateLegacyCustomer,
@@ -41,6 +42,18 @@ import {
   buildForderungskontoView,
   buildBondView,
 } from './legacy-konto-views';
+import { buildKontoauszug, buildZeichnerKonsolidierung } from './kontoauszug-engine';
+import { BRAND } from '../shared/brand';
+
+// K2: heutiger Stichtag als YYYY-MM-DD (kalendertag-konsistent, kein toISOString-DB-Read-Drift).
+const heute = (): string => toUtcCalendarMidnight(new Date()).toISOString().slice(0, 10);
+const STICHTAG = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Stichtag muss YYYY-MM-DD sein').optional();
+// K2-Gate: Kontoauszug = vollstaendiges Finanzdokument -> expliziter Server-Riegel auf den Angelus-
+// Kontext, zusaetzlich zu Ownership/Daten-Isolation. (Nachzieh-Ticket E6: dasselbe Gate fuer die
+// bestehenden myLegacyBonds/adminLegacyBonds/admin*-Procedures, die es bislang nicht haben.)
+function assertAngelus(): void {
+  if (BRAND.key !== 'angelus') throw new TRPCError({ code: 'FORBIDDEN', message: 'Bestandszeichner nur im Angelus-Kontext' });
+}
 
 /**
  * Validation Schemas
@@ -484,6 +497,70 @@ Antworte NUR mit dem JSON-Objekt, keine Erklaerungen, kein Markdown.`,
       const bonds = await getLegacyBondsByCustomerId(input.legacyCustomerId);
       const today = toUtcCalendarMidnight(new Date());
       return Promise.all(bonds.map(async (bond: any) => buildBondView(bond, await getPaymentHistoryByBond(bond.id), today)));
+    }),
+
+  // ===== K2: Kontoauszug ueber tRPC (Angelus-only, explizites Gate). Reine Lese-Procedures, kein
+  // audit_log. Datenbeschaffung 1:1 wie die Bond-Procedures oben; Journal/Konsolidierung = K1-Engine. =====
+
+  // 1) Admin: Kontoauszug EINES Bonds.
+  adminBondKontoauszug: adminProcedure
+    .input(z.object({ legacyBondId: z.number(), stichtag: STICHTAG }))
+    .query(async ({ input }) => {
+      assertAngelus();
+      const bond = await getLegacyBondById(input.legacyBondId);
+      if (!bond) throw new TRPCError({ code: 'NOT_FOUND', message: 'Anleihe nicht gefunden' });
+      const payments = await getPaymentHistoryByBond(bond.id);
+      return buildKontoauszug(bond, payments, input.stichtag ?? heute());
+    }),
+
+  // 2) Investor: Kontoauszug EINES eigenen Bonds. OWNERSHIP erzwungen (Bond muss zum legacy_customer
+  //    des eingeloggten Users gehoeren) — nicht nur nach legacyBondId filtern.
+  myBondKontoauszug: protectedProcedure
+    .input(z.object({ legacyBondId: z.number(), stichtag: STICHTAG }))
+    .query(async ({ ctx, input }) => {
+      assertAngelus();
+      const c = await getLegacyCustomerByUserId(ctx.user.id);
+      const bond = await getLegacyBondById(input.legacyBondId);
+      if (!c || !bond || bond.legacyCustomerId !== c.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Kein Zugriff auf diese Anleihe' });
+      }
+      const payments = await getPaymentHistoryByBond(bond.id);
+      return buildKontoauszug(bond, payments, input.stichtag ?? heute());
+    }),
+
+  // 3) Admin: konsolidierter Kontoauszug eines Zeichners (alle Bonds + §387-Konsolidierung).
+  adminZeichnerKontoauszug: adminProcedure
+    .input(z.object({ legacyCustomerId: z.number(), stichtag: STICHTAG }))
+    .query(async ({ input }) => {
+      assertAngelus();
+      const stichtag = input.stichtag ?? heute();
+      const bonds = await getLegacyBondsByCustomerId(input.legacyCustomerId);
+      const auszuege = await Promise.all(
+        bonds.map(async (bond: any) => buildKontoauszug(bond, await getPaymentHistoryByBond(bond.id), stichtag)),
+      );
+      const konsolidierung = buildZeichnerKonsolidierung(
+        auszuege.map((a) => ({ endsaldo: a.endsaldo, bondMeta: a.bondMeta, fallTyp: a.fallTyp })),
+      );
+      return { bonds: auszuege, konsolidierung };
+    }),
+
+  // 4) Investor: eigener konsolidierter Kontoauszug. Kunden-ID HART aus dem Login (NICHT aus Input)
+  //    -> kein Fremdzugriff durch Setzen einer fremden ID moeglich.
+  myZeichnerKontoauszug: protectedProcedure
+    .input(z.object({ stichtag: STICHTAG }).optional())
+    .query(async ({ ctx, input }) => {
+      assertAngelus();
+      const c = await getLegacyCustomerByUserId(ctx.user.id);
+      if (!c) return { bonds: [] as any[], konsolidierung: { positionen: [] as any[], gesamtsaldo: 0 } };
+      const stichtag = input?.stichtag ?? heute();
+      const bonds = await getLegacyBondsByCustomerId(c.id);
+      const auszuege = await Promise.all(
+        bonds.map(async (bond: any) => buildKontoauszug(bond, await getPaymentHistoryByBond(bond.id), stichtag)),
+      );
+      const konsolidierung = buildZeichnerKonsolidierung(
+        auszuege.map((a) => ({ endsaldo: a.endsaldo, bondMeta: a.bondMeta, fallTyp: a.fallTyp })),
+      );
+      return { bonds: auszuege, konsolidierung };
     }),
 
   /**
